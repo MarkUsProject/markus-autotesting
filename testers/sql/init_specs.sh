@@ -18,7 +18,7 @@ SCHEMAFILE=${SOLUTIONDIR}/schema.ddl
 
 echo "[SQL] Loading solutions into the oracle database"
 ALLTESTUSERS=$(IFS=,; echo "${TESTUSERS[*]}")
-cp -a ${WORKINGDIR}/solution ${SPECSDIR}
+mv ${WORKINGDIR}/solution ${SPECSDIR}
 schemas=""
 queries=( $(jq -r '.matrix | keys[]' ${SPECS}) )
 for queryfile in "${queries[@]}"; do

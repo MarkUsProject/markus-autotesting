@@ -17,7 +17,7 @@ create_specs() {
     rm -rf ${SPECSDIR} # clean up existing specs if any
     mkdir -p ${SPECSDIR}
     if [[ -e ${WORKINGDIR}/specs.json ]]; then
-        cp ${WORKINGDIR}/specs.json ${SPECSDIR}
+        mv ${WORKINGDIR}/specs.json ${SPECSDIR}
     else
         cp ${TESTERDIR}/specs.json ${SPECSDIR}
     fi

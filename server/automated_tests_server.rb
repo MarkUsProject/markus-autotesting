@@ -43,14 +43,20 @@ class AutomatedTestsServer
       start_time = Time.now
       Open3.popen3(run_command, pgroup: true) do |stdin, stdout, stderr, thread|
         pid = thread.pid
-        # mimic capture3 to read safely
-        stdout_thread = Thread.new { stdout.read }
-        stderr_thread = Thread.new { stderr.read }
+        stdin.close
+        # mimic capture3 to read safely and capture each line as it comes so that
+        # these threads don't hang or raise an error if we have to kill them early
+        stdout_thread = Thread.new { stdout.each { |line| output << line + $/} }
+        stderr_thread = Thread.new { stderr.each { |line| errors << line + $/} }
         if !thread.join(script['timeout']) # still running, let's kill the process group
           if test_username.nil?
             Process.kill('KILL', -pid)
           else
             Open3.capture3("sudo -u #{test_username} -- bash -c \"kill -KILL -#{pid}\"")
+          end
+          # prepend errors with output up to when the timeout occured
+          unless output.empty?
+            errors = ["STDOUT BEFORE TIMEOUT OCCURED:", output, "ERRORS:", errors].join($/)
           end
           # timeout output
           output = "
@@ -60,14 +66,14 @@ class AutomatedTestsServer
   <expected></expected>
   <actual>#{script['timeout']} seconds timeout expired</actual>
   <marks_earned>0</marks_earned>
+  <marks_total>0</marks_total>
   <status>error</status>
 </test>"
-        else
-          # normal output
-          output = stdout_thread.value
         end
-        # always collect errors
-        errors = stderr_thread.value
+        # kill threads otherwise stdout.each will raise an IOError 
+        # once the pipes are closed at the end of this block
+        stdout_thread.kill
+        stderr_thread.kill
       end
       run_time = (Time.now - start_time) * 1000.0 # milliseconds
       all_output += "
