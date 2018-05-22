@@ -73,8 +73,10 @@ public class MarkusJavaTester {
                     return;
                 }
                 TestResult result = new TestResult();
-                result.name = ((MethodSource) source).getClassName() + "." + ((MethodSource) source).getMethodName();
-                if (!testIdentifier.getDisplayName().equals(result.name)) { // @DisplayName annotation
+                String className = ((MethodSource) source).getClassName();
+                String methodName = ((MethodSource) source).getMethodName();
+                result.name = className + "." + methodName;
+                if (!testIdentifier.getDisplayName().equals(methodName + "()")) { // @DisplayName annotation
                     result.description = testIdentifier.getDisplayName();
                 }
                 result.status = testExecutionResult.getStatus();
