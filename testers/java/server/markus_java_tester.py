@@ -23,7 +23,7 @@ class MarkusJavaTest(MarkusTest):
         test_file = f'{self.class_name}.java'
         all_points = tester.specs.matrix[test_file][MarkusTestSpecs.MATRIX_NODATA_KEY]
         points = all_points.get(self.method_name, all_points.get(self.class_name, 1))
-        self.description = result['description']
+        self.description = result.get('description', None)
         self.status = MarkusJavaTest.JUnitStatus[result['status']]
         self.message = result.get('message', None)
         super().__init__(tester, test_file, [MarkusTestSpecs.MATRIX_NODATA_KEY], points, {}, feedback_open)
