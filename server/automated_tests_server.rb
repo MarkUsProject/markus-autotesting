@@ -48,8 +48,8 @@ class AutomatedTestsServer
           stdin.close
           # mimic capture3 to read safely and capture each line as it comes so that
           # these threads don't hang or raise an error if we have to kill them early
-          stdout_thread = Thread.new { stdout.each_line('</test>') { |line| output << "#{line}" } }
-          stderr_thread = Thread.new { stderr.each { |line| errors << "#{line}\n" } }
+          stdout_thread = Thread.new { stdout.each { |line| output << "#{line}" } }
+          stderr_thread = Thread.new { stderr.each { |line| errors << "#{line}" } }
           if !thread.join(script['timeout']) # still running, let's kill the process group
             if test_username.nil?
               Process.kill('KILL', -pid)
@@ -72,10 +72,10 @@ class AutomatedTestsServer
   <status>error</status>
 </test>"
           end
-          # kill threads otherwise stdout.each will raise an IOError 
-          # once the pipes are closed at the end of this block
-          stdout_thread.kill
-          stderr_thread.kill
+          # join threads otherwise stdout/stderr.each will raise an IOError once the pipes are closed at the end of this
+          # block; joining is safe here, the write end of the pipe has already finished or has been killed by timeout
+          stdout_thread.join
+          stderr_thread.join
         end
         run_time = (Time.now - start_time) * 1000.0 # milliseconds
         all_output += "
