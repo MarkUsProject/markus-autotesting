@@ -19,7 +19,7 @@ supervisor.rpcinterface_factory = supervisor.rpcinterface:make_main_rpcinterface
 
 content = """[program:rq_worker_type{type_ind}]
 command={rq} worker {worker_args} {queues}
-process_name=%(program_name)%(process_num)
+process_name=%(program_name)s-%(process_num)02d
 numprocs={numprocs}
 directory={directory}
 stopsignal=TERM
