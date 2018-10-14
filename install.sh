@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -eu -o pipefail
+
 install_packages() {
     echo "[AUTOTEST] Installing system packages"
     sudo apt-get install python3.7 python3.7-venv redis-server
@@ -80,24 +82,23 @@ install_venv() {
     echo "[AUTOTEST] Installing server virtual environment in '${servervenv}'"
     rm -rf ${servervenv}
     python3.7 -m venv ${servervenv}
-    source ${servervenv}/bin/activate
-    pip install wheel # must be installed before requirements
-    pip install -r ${SERVERDIR}/requirements.txt
+    ${servervenv}/bin/pip install wheel # must be installed before requirements
+    ${servervenv}/bin/pip install -r ${SERVERDIR}/requirements.txt
 }
 
 start_queues() {
     local supervisorconf=${SERVERDIR}/supervisord.conf
-    local supervisorcmd="supervisord -c ${supervisorconf}"
+    local supervisorcmd="${SERVERDIR}/venv/bin/supervisord -c ${supervisorconf}"
     if [[ -n ${SERVERUSER} ]]; then
         supervisorcmd="sudo -u ${SERVERUSER} --set-home -- ${supervisorcmd}"
     fi
 
     echo "[AUTOTEST] Generating supervisor config in '${supervisorconf}' and starting rq workers"
-    ${SERVERDIR}/generate_supervisord_conf.py ${supervisorconf}
+    bash -c "source ${SERVERDIR}/venv/bin/activate; ${SERVERDIR}/generate_supervisord_conf.py ${supervisorconf}"
+    chown -R "${SERVERUSER}:${SERVERUSER}" .
     pushd ${SERVERDIR} > /dev/null
     ${supervisorcmd}
     popd > /dev/null
-    deactivate
 }
 
 compile_reaper_script() {
@@ -147,7 +148,7 @@ suggest_next_steps() {
     if [[ -n ${SERVERUSER} ]]; then
         echo "[AUTOTEST] (You must add MarkUs web server's public key to ${SERVERUSER}'s '~/.ssh/authorized_keys')"
     fi
-    echo "[AUTOTEST] (You may want to add 'source ${SERVERDIR}/venv/bin/activate && cd ${WORKSPACEDIR} && supervisord -c ${SERVERDIR}/supervisord.conf && deactivate' to ${SERVERUSEREFFECTIVE}'s crontab with a @reboot time)"
+    echo "[AUTOTEST] (You may want to add '${SERVERDIR}/venv/bin/supervisord -c ${SERVERDIR}/supervisord.conf' to ${SERVERUSEREFFECTIVE}'s crontab with a @reboot time)"
     echo "[AUTOTEST] (You should install the individual testers you plan to use)"
 }
 
