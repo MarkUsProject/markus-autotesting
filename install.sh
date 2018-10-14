@@ -2,6 +2,13 @@
 
 set -eu -o pipefail
 
+redis_command() {
+  if grep REDIS_CONNECTION_KWARGS ${CONFIGFILE} | grep -q unix_socket_path; then
+    redis-cli -s $(grep REDIS_CONNECTION_KWARGS ${CONFIGFILE}  | grep -Eo '\"unix_socket_path\":\s*\".*\"' | cut -d\" -f4) $@
+  else
+    redis-cli $@
+  fi
+}
 install_packages() {
     echo "[AUTOTEST] Installing system packages"
     sudo apt-get install python3.7 python3.7-venv redis-server
@@ -44,11 +51,12 @@ create_worker_dir() {
     sudo mkdir -p ${workerdir}
     sudo chown ${SERVERUSEREFFECTIVE}:${workeruser} ${workerdir}
     sudo chmod ug=rwx,o=,+t ${workerdir}
-    redis-cli RPUSH ${REDISWORKERS} "{\"username\":\"${workeruser}\",\"worker_dir\":\"${workerdir}\"}" > /dev/null
+    redis_command RPUSH ${REDISWORKERS} "{\"username\":\"${workeruser}\",\"worker_dir\":\"${workerdir}\"}" > /dev/null
 }
 
 create_worker_and_reaper_users() {
-    redis-cli DEL ${REDISWORKERS} > /dev/null
+    while ! redis_command PING >/dev/null 2>&1; do echo "waiting for redis..."; sleep 1; done
+    redis_command DEL ${REDISWORKERS} > /dev/null
     if [[ -z ${WORKERUSERS} ]]; then
         echo "[AUTOTEST] No dedicated worker user, using '${SERVERUSEREFFECTIVE}'"
         create_worker_dir ${SERVERUSEREFFECTIVE}

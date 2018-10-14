@@ -30,11 +30,14 @@ autorestart=true
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
-try:
-    rkw = config.REDIS_CONNECTION_KWARGS
-    redis_url = '--url redis://{}:{}/{}'.format(rkw['host'], rkw['port'], rkw['db'])
-except KeyError:
-    redis_url = ''
+rkw = config.REDIS_CONNECTION_KWARGS
+if 'unix_socket_path' in rkw:
+    redis_url = '--url unix://{}'.format(rkw['unix_socket_path'])
+else:
+    try:
+        redis_url = '--url redis://{}:{}/{}'.format(rkw['host'], rkw['port'], rkw['db'])
+    except KeyError:
+        redis_url = ''
 
 with open(sys.argv[1], 'w') as f:
     f.write(header)
