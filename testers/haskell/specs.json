@@ -1,5 +1,4 @@
 {
   "test_timeout": 10,
-  "feedback_file": null,
-  "ghc_package_path": null
+  "feedback_file": null
 }
