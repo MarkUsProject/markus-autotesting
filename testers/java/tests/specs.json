@@ -1,0 +1,9 @@
+{
+  "path_to_tester_jars": "/path/to/tester/jars",
+  "feedback_file": null,
+  "enable_feedback_file_hook": false,
+  "hooks": null,
+  "script_files": [],
+  "support_files": [],
+  "points": {}
+}

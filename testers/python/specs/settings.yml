@@ -1,0 +1,59 @@
+feedback_file:
+  TEXT_MATCHER: .*
+enable_feedback_file_hook:
+  DEPENDS: feedback_file
+  OPTIONS:
+    - true
+    - false 
+hooks:
+  TYPE: FILE
+  REPEAT: '?'
+pyta_enabled:
+  OPTIONS:
+    - false
+    - true
+  ASSOCIATE: solution_files
+pyta_settings: 
+  DEPENDS: pyta_enabled==true
+  TEXT_MATCHER: '[\s\S]*'
+pyta_feedback_file:
+  DEPENDS: pyta_enabled==true
+  TEXT_MATCHER: .*
+enable_pyta_feedback_file_hook:
+  DEPENDS: pyta_feedback_file
+  OPTIONS:
+    - true
+    - false 
+pyta_annotations: 
+  DEPENDS: pyta_enabled==true
+  OPTIONS:
+    - true
+    - false
+tester: 
+  OPTIONS:
+    - pytest
+    - unittest
+pytest_tb_format: 
+  DEPENDS: tester==unittest
+  OPTIONS:
+    - short
+    - auto 
+    - long 
+    - "no" 
+    - line 
+    - native
+unittest_verbosity:
+  DEPENDS: tester==pytest
+  OPTIONS:
+    - "2"
+    - "1"
+    - "0"
+script_files:
+  TYPE: FILE
+  REPEAT: '+'
+support_files:
+  TYPE: FILE
+  REPEAT: '*'
+solution_files: 
+  TYPE: FILE
+  REPEAT: '*'

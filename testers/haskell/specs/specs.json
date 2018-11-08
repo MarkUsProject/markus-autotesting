@@ -1,0 +1,10 @@
+{
+  "test_timeout": 10,
+  "test_cases": 100,
+  "feedback_file": null,
+  "enable_feedback_file_hook": false,
+  "hooks": null,
+  "script_files": [],
+  "support_files": [],
+  "points": {}
+}

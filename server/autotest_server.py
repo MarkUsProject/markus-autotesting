@@ -16,8 +16,8 @@ from functools import wraps
 import resource
 import uuid
 import tempfile
-import config
 from markusapi import Markus
+from . import config
 
 CURRENT_TEST_SCRIPT_FORMAT = '{}_{}'
 TEST_SCRIPT_DIR = os.path.join(config.WORKSPACE_DIR, config.SCRIPTS_DIR_NAME)

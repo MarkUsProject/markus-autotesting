@@ -6,9 +6,9 @@ import argparse
 import rq
 import json
 import inspect
-import autotest_server as ats
+from . import autotest_server as ats
 import time
-import config
+from . import config
 import shutil
 from functools import wraps
 

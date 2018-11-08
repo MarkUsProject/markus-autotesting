@@ -1,5 +1,0 @@
-testtools
-timeout-decorator
-python-ta
-pytest
-pytest-timeout

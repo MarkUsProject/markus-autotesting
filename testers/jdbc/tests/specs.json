@@ -1,0 +1,52 @@
+{
+  "matrix": {
+    "CorrectNoOrder.CONNECTION": {
+      "nodata": 1
+    },
+    "CorrectNoOrder.DISCONNECTION": {
+      "nodata": 1
+    },
+    "CorrectNoOrder.select": {
+      "data1j.sql": 1, "data2j.sql": 1
+    },
+    "CorrectNoOrder.insert": {
+      "data1j.sql": {"JAVA": 1, "table1": 1}, "data2j.sql": {"JAVA": 1, "table1": 1}
+    },
+    "CorrectWithOrder.select": {
+      "data1j.sql": 1, "data2j.sql": 1,
+      "extra": {"order_on": true}
+    },
+    "BadConnection.CONNECTION": {
+      "nodata": 1
+    },
+    "ExceptionConnection.CONNECTION": {
+      "nodata": 1
+    },
+    "BadDisconnection.DISCONNECTION": {
+      "nodata": 1
+    },
+    "ExceptionDisconnection.DISCONNECTION": {
+      "nodata": 1
+    },
+    "BadSelect.select": {
+      "data1j.sql": 1, "data2j.sql": 1
+    },
+    "ExceptionSelect.select": {
+      "data1j.sql": 1, "data2j.sql": 1
+    },
+    "NoInsert.insert": {
+      "data1j.sql": {"JAVA": 1, "table1": 1}, "data2j.sql": {"JAVA": 1, "table1": 1}
+    },
+    "BadInsert.insert": {
+      "data1j.sql": {"JAVA": 1, "table1": 1}, "data2j.sql": {"JAVA": 1, "table1": 1}
+    },
+    "ExceptionInsert.insert": {
+      "data1j.sql": {"JAVA": 1, "table1": 1}, "data2j.sql": {"JAVA": 1, "table1": 1}
+    }
+  },
+  "path_to_jdbc_jar": "/path/to/jdbc/jar",
+  "oracle_database": "oracle_db",
+  "tests": [{"database": "test_db", "user": "test_user", "password": "test_password"}],
+  "path_to_solution": "/path/to/solution",
+  "feedback_file": null
+}

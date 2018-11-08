@@ -1,0 +1,23 @@
+feedback_file:
+  TEXT_MATCHER: .*
+enable_feedback_file_hook:
+  DEPENDS: feedback_file
+  OPTIONS:
+    - true
+    - false 
+hooks:
+  TYPE: FILE
+  REPEAT: '?'
+test_timeout: 
+  TEXT_MATCHER: \d+
+test_cases:
+  TEXT_MATCHER: \d+
+script_files:
+  TYPE: FILE
+  REPEAT: '+'
+support_files:
+  TYPE: FILE
+  REPEAT: '*'
+solution_files: 
+  TYPE: FILE
+  REPEAT: '*'
