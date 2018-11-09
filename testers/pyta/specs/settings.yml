@@ -1,18 +1,26 @@
 UPLOADFILES:
   hooks:
     REPEAT: '?'
+  pylintrc_file:
+    REPEAT: '?'
 
 METADATA:
   REPEAT+:
     runnable_group:
       REPEAT+:
-        solution_file_path: 
+        student_file_path: 
           TEXT_MATCHER: .+
-        dataset_file_path:
-          TEXT_MATCHER: .*
     enable_feedback_file_hook:
       OPTIONS:
         - true
         - false 
+    enable_annotations_hook:
+      OPTIONS:
+      - true
+      - false
     feedback_file:
       TEXT_MATCHER: .*
+    points:
+      {}
+    config:
+      {}

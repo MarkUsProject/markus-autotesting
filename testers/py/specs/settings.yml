@@ -15,14 +15,25 @@ METADATA:
     enable_feedback_file_hook:
       OPTIONS:
         - true
-        - false
+        - false 
     feedback_file:
       TEXT_MATCHER: .*
-    test_timeout: 
-      TEXT_MATCHER: \d+
-      DEFAULT: "10"
-    test_cases:
-      TEXT_MATCHER: \d+
-      DEFAULT: "100"
     points:
       {}
+    tester: 
+      OPTIONS:
+        - pytest
+        - unittest
+    pytest_tb_format: 
+      OPTIONS:
+        - short
+        - auto 
+        - long 
+        - "no" 
+        - line 
+        - native
+    unittest_verbosity:
+      OPTIONS:
+        - "2"
+        - "1"
+        - "0"

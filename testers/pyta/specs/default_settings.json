@@ -1,0 +1,12 @@
+{
+  	"runnable_group": [
+		{
+			"student_file_path": null
+		}
+	],
+	"enable_feedback_file_hook": false,
+	"feedback_file": null,
+	"enable_annotations_hook": false,
+	"points": {},
+	"config": {}
+}

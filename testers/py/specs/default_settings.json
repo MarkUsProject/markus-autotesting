@@ -1,0 +1,13 @@
+{
+  	"runnable_group": [
+		{
+			"solution_file_path": null
+		}
+	],
+	"enable_feedback_file_hook": false,
+	"feedback_file": null,
+	"points": {},
+	"tester": "pytest",
+	"pytest_tb_format": "short",
+	"unittest_verbosity": "2"
+}

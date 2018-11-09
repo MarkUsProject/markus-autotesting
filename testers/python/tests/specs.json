@@ -1,7 +1,0 @@
-{
-  "feedback_file": null,
-  "legacy_virtualenv": null,
-  "pytest_tb_format": "short",
-  "unittest_verbosity": 2,
-  "tester": "pytest"
-}

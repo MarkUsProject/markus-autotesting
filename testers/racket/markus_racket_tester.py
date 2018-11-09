@@ -4,7 +4,7 @@ import json
 import subprocess
 import os
 
-from markus_tester import MarkusTester, MarkusTest, MarkusTestSpecs
+from testers.markus_tester import MarkusTester, MarkusTest, MarkusTestSpecs
 
 
 class MarkusRacketTest(MarkusTest):
@@ -46,7 +46,7 @@ class MarkusRacketTester(MarkusTester):
         markus.rkt tester.  
         """
         results = {}
-        markus_rkt = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'markus.rkt')
+        markus_rkt = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'lib', 'markus.rkt')
         for test_file in self.specs.tests:
             suite_name = self.specs['test_suite_name'][test_file]
             cmd = [markus_rkt, '--test-suite', suite_name, test_file]

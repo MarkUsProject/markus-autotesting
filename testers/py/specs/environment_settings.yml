@@ -1,0 +1,8 @@
+METADATA:
+  python_version:
+    OPTIONS:
+      - "3.7"      
+      - "3.6"
+      - "2.7"
+  pip_requirements:
+    TEXT_MATCHER: '[\s\S]*'

@@ -1,0 +1,12 @@
+{
+	"runnable_group": [
+		{
+			"script_file_path": null
+		}
+	],
+	"enable_feedback_file_hook": false,
+	"feedback_file": null,
+	"test_timeout": 10,
+	"test_cases": 100,
+	"points": {}
+}

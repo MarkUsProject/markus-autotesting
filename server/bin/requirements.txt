@@ -3,3 +3,4 @@ requests
 rq
 rq-dashboard
 git+https://github.com/Supervisor/supervisor@master
+psycopg2-binary

@@ -4,7 +4,6 @@ import enum
 import json
 import os
 import subprocess
-from xml.sax import saxutils
 import sys
 
 class MarkusTestSpecs(collections.MutableMapping):

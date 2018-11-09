@@ -1,25 +1,18 @@
-feedback_file:
-  TEXT_MATCHER: .*
-enable_feedback_file_hook:
-  DEPENDS: feedback_file
-  OPTIONS:
-    - true
-    - false 
-hooks:
-  TYPE: FILE
-  REPEAT: '?'
-dataset_files:
-  TYPE: FILE
-  REPEAT: '+'
-schema_file:
-  TYPE: FILE
-  REPEAT: '?'
-solution_files:
-  TYPE: FILE
-  REPEAT: '+'
-  ASSOCIATE: dataset_files
-order_by:
-  TEXT_MATCHER: .*
-  ASSOCIATE: 
-    - dataset_files
-    - solution_files
+UPLOADFILES:
+  hooks:
+    REPEAT: '?'
+
+METADATA:
+  REPEAT+:
+    runnable_group:
+      REPEAT+:
+        solution_file_path: 
+          TEXT_MATCHER: .+
+        dataset_file_path:
+          TEXT_MATCHER: .+
+    enable_feedback_file_hook:
+      OPTIONS:
+        - true
+        - false 
+    feedback_file:
+      TEXT_MATCHER: .*

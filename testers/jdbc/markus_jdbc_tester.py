@@ -2,8 +2,8 @@ import collections
 import os
 import subprocess
 
-from markus_sql_tester import MarkusSQLTester, MarkusSQLTest
-from markus_tester import MarkusTester, MarkusTest
+from testers.sql.markus_sql_tester import MarkusSQLTester, MarkusSQLTest
+from testers.markus_tester import MarkusTester, MarkusTest
 
 
 class MarkusJDBCTest(MarkusSQLTest):

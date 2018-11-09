@@ -2,11 +2,11 @@
 .idea
 __pycache__
 .DS_Store
+supervisord.*
 
 # server
 server/venv
 server/workspace
-server/supervisord.*
 server/kill_worker_procs
 markus_config.rb
 
