@@ -34,6 +34,8 @@ VENVS_DIR_NAME = 'venvs'
 SPECS_DIR_NAME = 'specs'
 # name of the directory containing workspaces for the workers
 WORKERS_DIR_NAME = 'workers'
+# name of the directory containing log files 
+LOGS_DIR_NAME = 'logs'
 # name of the server user
 SERVER_USER = ''
 # names of the worker users
@@ -41,6 +43,8 @@ WORKER_USERS = ''
 # prefix used to name reaper users 
 # (reapers not used to kill worker processes if set to the empty string)
 REAPER_USER_PREFIX = ''
+# default tester venv name
+DEFAULT_VENV_NAME = 'defaultvenv'
 
 ## RLIMIT SETTINGS FOR TESTER PROCESSES ##
 

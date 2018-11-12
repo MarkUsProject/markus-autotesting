@@ -72,8 +72,9 @@ create_workspace_dirs() {
     sudo mkdir -p ${SPECSDIR}
     sudo mkdir -p ${VENVSDIR}
     sudo mkdir -p ${WORKERSSDIR}
-    sudo chown ${SERVERUSEREFFECTIVE}:${SERVERUSEREFFECTIVE} ${RESULTSDIR} ${SCRIPTSDIR} ${SPECSDIR} ${VENVSDIR} ${WORKERSSDIR}
-    sudo chmod u=rwx,go= ${RESULTSDIR} ${SCRIPTSDIR}
+    sudo mkdir -p ${LOGSDIR}
+    sudo chown ${SERVERUSEREFFECTIVE}:${SERVERUSEREFFECTIVE} ${RESULTSDIR} ${SCRIPTSDIR} ${SPECSDIR} ${VENVSDIR} ${WORKERSSDIR} ${LOGSDIR}
+    sudo chmod u=rwx,go= ${RESULTSDIR} ${SCRIPTSDIR} ${LOGSDIR}
     sudo chmod u=rwx,go=rx ${SPECSDIR} ${VENVSDIR} ${WORKERSSDIR}
 }
 
@@ -89,14 +90,25 @@ install_venv() {
     deactivate
 }
 
+install_default_tester_venv() {
+    local defaultvenv=${VENVSDIR}/$(get_config_param DEFAULT_VENV_NAME)
+
+    echo "[AUTOTEST] Installing default tester virtual environment in '${defaultvenv}'"
+    rm -rf ${defaultvenv}
+    python3.7 -m venv ${defaultvenv}
+    source ${defaultvenv}/bin/activate
+    pip install wheel
+    deactivate    
+}
+
 start_queues() {
     local servervenv=${SERVERDIR}/venv/bin/activate
-    local supervisorconf=${SERVERDIR}/supervisord.conf
+    local supervisorconf=${LOGSDIR}/supervisord.conf
 
     echo "[AUTOTEST] Generating supervisor config in '${supervisorconf}' and starting rq workers"
     source ${servervenv}
-    ${SERVERDIR}/generate_supervisord_conf.py ${supervisorconf}
-    pushd ${WORKSPACEDIR} > /dev/null
+    sudo ${BINDIR}/generate_supervisord_conf.py ${supervisorconf}
+    sudo pushd ${LOGSDIR} > /dev/null
     if [[ -z ${SERVERUSER} ]]; then
         supervisord -c ${supervisorconf}
     else
@@ -105,12 +117,12 @@ start_queues() {
                                           supervisord -c ${supervisorconf} &&
                                           deactivate"
     fi
-    popd > /dev/null
+    sudo popd > /dev/null
     deactivate
 }
 
 compile_reaper_script() {
-    local reaperexe="${SERVERDIR}/kill_worker_procs"
+    local reaperexe="${BINDIR}/kill_worker_procs"
 
     echo "[AUTOTEST] Compiling reaper script"
     gcc "${reaperexe}.c" -o  ${reaperexe}
@@ -161,7 +173,7 @@ suggest_next_steps() {
 }
 
 get_config_param() {
-    grep -Po "^$1\s*=\s*([\'\"])\K.*(?=\1)" ${CONFIGFILE}
+    echo $(cd ${SERVERDIR} && python -c "import config; print(config.$1)")
 }
 
 # script starts here
@@ -172,10 +184,14 @@ fi
 
 # vars
 THISSCRIPT=$(readlink -f ${BASH_SOURCE})
-THISSCRIPTDIR=$(dirname ${THISSCRIPT})
-SERVERDIR=${THISSCRIPTDIR}/server
-CONFIGFILE=${THISSCRIPTDIR}/server/config.py
+BINDIR=$(dirname ${THISSCRIPT})
+SERVERDIR=$(dirname ${BINDIR})
+CONFIGFILE=${SERVERDIR}/config.py
 THISUSER=$(whoami)
+
+# install python here so we can parse arguments from the config file more easily
+install_packages
+
 SERVERUSER=$(get_config_param SERVER_USER)
 if [[ -n ${SERVERUSER} ]]; then
     SERVERUSEREFFECTIVE=${SERVERUSER}
@@ -189,16 +205,17 @@ VENVSDIR=${WORKSPACEDIR}/$(get_config_param VENVS_DIR_NAME)
 RESULTSDIR=${WORKSPACEDIR}/$(get_config_param RESULTS_DIR_NAME)
 SCRIPTSDIR=${WORKSPACEDIR}/$(get_config_param SCRIPTS_DIR_NAME)
 WORKERSSDIR=${WORKSPACEDIR}/$(get_config_param WORKERS_DIR_NAME)
+LOGSDIR=${WORKSPACEDIR}/$(get_config_param LOGS_DIR_NAME)
 REDISPREFIX=$(get_config_param REDIS_PREFIX)
 REDISWORKERS=${REDISPREFIX}:$(get_config_param REDIS_WORKERS_LIST)
 REAPERPREFIX=$(get_config_param REAPER_USER_PREFIX)
 
 # main
-install_packages
 create_server_user
 create_worker_and_reaper_users
 create_workspace_dirs
 install_venv
+install_default_tester_venv
 start_queues
 compile_reaper_script
 create_enqueuer_wrapper
