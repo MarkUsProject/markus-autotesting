@@ -1,4 +1,4 @@
 {
 	"python_version": "3.7",
-	"pip_requirements": null
+	"pip_requirements": "pytest"
 }

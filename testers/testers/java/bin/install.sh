@@ -14,7 +14,7 @@ compile_tester() {
 
 update_specs() {
     echo "[JAVA] Updating json specs file"
-    sed -i -e "s#/path/to/tester/jars#${JAVADIR}/build/install/MarkusJavaTester/lib#g" ${TESTERDIR}/specs/specs.json
+    sed -i -e "s#/path/to/tester/jars#${JAVADIR}/build/install/MarkusJavaTester/lib#g" ${TESTERDIR}/specs/install_settings.json
 }
 
 # script starts here

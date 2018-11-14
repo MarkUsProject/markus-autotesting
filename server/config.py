@@ -28,8 +28,6 @@ WORKSPACE_DIR = '/home/vagrant/markus-autotesting/server/workspace'
 SCRIPTS_DIR_NAME = 'scripts'
 # name of the directory containing test results
 RESULTS_DIR_NAME = 'results'
-# name of the directory containing virtual environments
-VENVS_DIR_NAME = 'venvs'
 # name of the directory containing specs files
 SPECS_DIR_NAME = 'specs'
 # name of the directory containing workspaces for the workers

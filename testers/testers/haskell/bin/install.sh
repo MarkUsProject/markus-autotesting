@@ -2,7 +2,7 @@
 
 install_packages() {
     echo "[HASKELL] Installing system packages"
-    sudo apt-get install ghc cabal-install
+    sudo apt-get install ghc cabal-install python3
 }
 
 install_haskell_packages() {

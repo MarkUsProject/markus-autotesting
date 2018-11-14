@@ -1,5 +1,38 @@
 #!/usr/bin/env bash
 
+install_system_packages() {
+    echo "[JDBC] Installing system packages"
+    sudo apt-get install openjdk-11-jre python3
+}
+
+install_sql_tester() {
+    if [[ $# -eq 1 ]]; then
+        echo "[JDBC] Reusing already installed SQL tester"
+    else
+        local oracleuser=$2
+        local testuser=$3
+        echo "[JDBC] Installing SQL tester"
+        if [[ $# -eq 4 ]]; then
+            local numusers=$4
+            ${SQLDIR}/bin/install.sh ${oracleuser} ${testuser} ${numusers}
+        else
+            ${SQLDIR}/bin/install.sh ${oracleuser} ${testuser}
+        fi
+    fi
+}
+
+update_install_settings() {
+    local oracledb=$(awk "/oracle_database/" ${SQLDIR}/specs/install_settings.json) # copy sql oracle_database line
+    local tests=$(awk "/tests/" ${SQLDIR}/specs.json) # copy sql tests line
+    
+    echo "[JDBC] Updating installation settings file"
+    sed -i -e "\#oracle_database#c\\${oracledb}" ${SPECS}
+    
+    #TODO the copy does not work with multiple test users
+    sed -i -e "\#tests#c\\${tests}" ${SPECS}
+    sed -i -e "s#/path/to/jdbc/jar#${JARPATH}#g" ${SPECS}
+}
+
 if [[ $# -lt 1 || $# -gt 4 || $# -eq 2 ]]; then
 	echo "Usage: $0 jdbc_jar_path [oracle_user] [test_user] [num_users]"
 	exit 1
@@ -7,29 +40,11 @@ fi
 
 THISSCRIPT=$(readlink -f ${BASH_SOURCE})
 TESTERDIR=$(dirname $(dirname ${THISSCRIPT}))
-SPECS=${TESTERDIR}/specs/specs.json
+SPECS=${TESTERDIR}/specs/install_settings.json
+SQLDIR=$(dirname ${TESTERDIR})/sql
 JARPATH=$(readlink -f $1)
 
-if [[ $# -eq 1 ]]; then
-    echo "[JDBC] Reusing already installed SQL tester"
-else
-    ORACLEUSER=$2
-    TESTUSER=$3
-    echo "[JDBC] Installing SQL tester"
-    if [[ $# -eq 4 ]]; then
-        NUMUSERS=$4
-        ${TESTERDIR}/../sql/bin/install.sh ${ORACLEUSER} ${TESTUSER} ${NUMUSERS}
-    else
-        ${TESTERDIR}/../sql/bin/install.sh ${ORACLEUSER} ${TESTUSER}
-    fi
-fi
-ln -s ${TESTERDIR}/../sql/server/markus_sql_tester.py ${TESTERDIR}/server/markus_sql_tester.py
-echo "[JDBC] Installing system packages"
-sudo apt-get install python3 openjdk-11-jre jq
-echo "[JDBC] Updating json specs file"
-ORACLEDB=$(awk "/oracle_database/" ${TESTERDIR}/../sql/specs.json) # copy sql oracle_database line
-sed -i -e "\#oracle_database#c\\${ORACLEDB}" ${SPECS}
-#TODO the copy does not work with multiple test users
-TESTS=$(awk "/tests/" ${TESTERDIR}/../sql/specs.json) # copy sql tests line
-sed -i -e "\#tests#c\\${TESTS}" ${SPECS}
-sed -i -e "s#/path/to/jdbc/jar#${JARPATH}#g" ${SPECS}
+install_system_packages
+install_sql_tester $@
+update_install_settings
+

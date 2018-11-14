@@ -2,7 +2,7 @@
 
 install_packages() {
     echo "[RACKET] Installing system packages"
-    sudo apt-get install racket
+    sudo apt-get install racket python3
 }
 
 # script starts here

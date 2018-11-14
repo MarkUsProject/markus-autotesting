@@ -1,10 +1,16 @@
 {
-	"solution_file_path": null,
-	"order_by": null,
-	"dataset_files": [
-		{
-			"dataset_file_path": null,
-			"points": 1
-		}
-	]
+	"matrix":
+		[
+			{
+				"java_method_name": null,
+				"order_by": null,
+				"dataset_files": [
+					{
+						"dataset_file_path": null,
+						"points": 1
+					}
+				]
+			}
+		],
+	"schema_file_path": null
 }
