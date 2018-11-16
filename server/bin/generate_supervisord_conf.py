@@ -25,6 +25,8 @@ directory={directory}
 stopsignal=TERM
 autostart=true
 autorestart=true
+stopasgroup=true
+killasgroup=true
 
 """
 

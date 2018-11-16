@@ -174,7 +174,7 @@ suggest_next_steps() {
 }
 
 get_config_param() {
-    echo $(cd ${SERVERDIR} && python -c "import config; print(config.$1)")
+    echo $(cd ${SERVERDIR} && python3 -c "import config; print(config.$1)")
 }
 
 # script starts here
@@ -188,7 +188,6 @@ THISSCRIPT=$(readlink -f ${BASH_SOURCE})
 BINDIR=$(dirname ${THISSCRIPT})
 SERVERDIR=$(dirname ${BINDIR})
 TESTERSDIR=$(dirname ${SERVERDIR})/testers
-CONFIGFILE=${SERVERDIR}/config.py
 THISUSER=$(whoami)
 PYTHONVERSION="3.7"
 
