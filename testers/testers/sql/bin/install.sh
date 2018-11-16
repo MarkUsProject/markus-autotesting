@@ -47,6 +47,7 @@ create_test_users() {
 update_install_settings() {
 	TESTS="${TESTS}],"
 	echo "[SQL] Updating installation settings file"
+	cp ${SPECSDIR}/default_install_settings.json ${SPECSDIR}/install_settings.json
 	sed -i -e "s#oracle_db#${ORACLEDB}#g" ${SPECSDIR}/install_settings.json
 	sed -i -e "\#tests#c\\${TESTS}" ${SPECSDIR}/install_settings.json
 }

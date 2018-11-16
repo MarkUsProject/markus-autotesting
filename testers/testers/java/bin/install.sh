@@ -2,7 +2,7 @@
 
 install_packages() {
     echo "[JAVA] Installing system packages"
-    sudo apt-get install python3 openjdk-8-jre
+    sudo apt-get install python3 openjdk-11-jre
 }
 
 compile_tester() {
@@ -14,6 +14,7 @@ compile_tester() {
 
 update_specs() {
     echo "[JAVA] Updating json specs file"
+    cp ${TESTERDIR}/specs/default_install_settings.json ${TESTERDIR}/specs/install_settings.json
     sed -i -e "s#/path/to/tester/jars#${JAVADIR}/build/install/MarkusJavaTester/lib#g" ${TESTERDIR}/specs/install_settings.json
 }
 

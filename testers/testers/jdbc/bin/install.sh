@@ -25,6 +25,8 @@ update_install_settings() {
     local oracledb=$(awk "/oracle_database/" ${SQLDIR}/specs/install_settings.json) # copy sql oracle_database line
     local tests=$(awk "/tests/" ${SQLDIR}/specs.json) # copy sql tests line
     
+    cp ${DEFAULTSPECS} ${SPECS}
+
     echo "[JDBC] Updating installation settings file"
     sed -i -e "\#oracle_database#c\\${oracledb}" ${SPECS}
     
@@ -41,6 +43,7 @@ fi
 THISSCRIPT=$(readlink -f ${BASH_SOURCE})
 TESTERDIR=$(dirname $(dirname ${THISSCRIPT}))
 SPECSDIR=${TESTERDIR}/specs
+DEFAULTSPECS=${SPECSDIR}/default_install_settings.json
 SPECS=${SPECSDIR}/install_settings.json
 SQLDIR=$(dirname ${TESTERDIR})/sql
 JARPATH=$(readlink -f $1)

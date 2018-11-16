@@ -11,12 +11,13 @@ server/workspace
 server/kill_worker_procs
 markus_config.rb
 
+# tester
+testers/**/install_settings.json
+
 #java
-testers/java/server/.gradle
-testers/java/server/build
+testers/java/lib/.gradle
+testers/java/lib/build
 
 #racket
 testers/racket/**/compiled/
 
-#haskell
-markus_cabal
