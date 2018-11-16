@@ -40,11 +40,12 @@ fi
 
 THISSCRIPT=$(readlink -f ${BASH_SOURCE})
 TESTERDIR=$(dirname $(dirname ${THISSCRIPT}))
-SPECS=${TESTERDIR}/specs/install_settings.json
+SPECSDIR=${TESTERDIR}/specs
+SPECS=${SPECSDIR}/install_settings.json
 SQLDIR=$(dirname ${TESTERDIR})/sql
 JARPATH=$(readlink -f $1)
 
 install_system_packages
 install_sql_tester $@
 update_install_settings
-
+touch ${SPECSDIR}/.installed

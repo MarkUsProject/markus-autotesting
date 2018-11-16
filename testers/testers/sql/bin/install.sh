@@ -47,8 +47,8 @@ create_test_users() {
 update_install_settings() {
 	TESTS="${TESTS}],"
 	echo "[SQL] Updating installation settings file"
-	sed -i -e "s#oracle_db#${ORACLEDB}#g" ${TESTERDIR}/specs/install_settings.json
-	sed -i -e "\#tests#c\\${TESTS}" ${TESTERDIR}/specs/install_settings.json
+	sed -i -e "s#oracle_db#${ORACLEDB}#g" ${SPECSDIR}/install_settings.json
+	sed -i -e "\#tests#c\\${TESTS}" ${SPECSDIR}/install_settings.json
 }
 
 if [[ $# -lt 2 || $# -gt 3 ]]; then
@@ -58,6 +58,7 @@ fi
 
 THISSCRIPT=$(readlink -f ${BASH_SOURCE})
 TESTERDIR=$(dirname $(dirname ${THISSCRIPT}))
+SPECSDIR=${TESTERDIR}/specs
 ORACLEUSER=$1
 TESTUSER=$2
 ORACLEDB=${ORACLEUSER}
@@ -79,4 +80,4 @@ install_system_packages
 create_db_and_users
 create_test_users
 update_install_settings
-
+touch ${SPECSDIR}/.installed

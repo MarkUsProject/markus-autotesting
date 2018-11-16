@@ -41,5 +41,3 @@ PIPREQUIREMENTS="$(get_default_setting pip_requirements) $(get_setting pip_requi
 
 create_venv
 
-echo ${VENVDIR}
-exit 0

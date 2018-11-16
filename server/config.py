@@ -2,10 +2,6 @@
 
 #### CHANGE CONFIG PARAMETERS BELOW ####
 
-## PYTHON CONFIGS ##
-
-ADDITIONAL_PIP_PACKAGES = ''
-
 ## REDIS CONFIGS ##
 
 # name of redis hash used to store the locations of test script directories

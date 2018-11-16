@@ -13,11 +13,14 @@ import rq
 import pwd
 from contextlib import contextmanager
 from functools import wraps
+from itertools import zip_longest
 import resource
 import uuid
 import tempfile
+import hashlib
+import yaml
 from markusapi import Markus
-from . import config
+import config
 
 CURRENT_TEST_SCRIPT_FORMAT = '{}_{}'
 TEST_SCRIPT_DIR = os.path.join(config.WORKSPACE_DIR, config.SCRIPTS_DIR_NAME)
@@ -54,8 +57,8 @@ def current_user():
 def get_reaper_username(test_username):
     return '{}{}'.format(config.REAPER_USER_PREFIX, test_username)
 
-def decode_if_bytes(b):
-    return b.decode('utf-8') if isinstance(b, bytes) else b
+def decode_if_bytes(b, format='utf-8'):
+    return b.decode(format) if isinstance(b, bytes) else b
 
 def clean_dir_name(name):
     """ Return name modified so that it can be used as a unix style directory name """
@@ -664,4 +667,118 @@ def update_test_scripts(files_path, assignment_id, markus_address):
         with fd_open(old_test_script_dir) as fd:
             with fd_lock(fd, exclusive=True):
                 shutil.rmtree(old_test_script_dir, onerror=ignore_missing_dir_error)
+
+
+### MANAGE TESTER ENVIRONMENTS ###
+
+def get_unique_env_name(markus_address, tester_type, tester_name, sha_length=10):
+    """
+
+    """
+    return hashlib.sha256(f'{markus_address}{tester_type}{tester_name}'.encode())[:sha_length]
+ 
+def get_tester_root_dir(tester_type):
+    """
+
+    """
+    this_dir = os.path.dirname(os.path.abspath(__file__))
+    root_dir = os.path.dirname(this_dir)
+    tester_dir = os.path.join(root_dir, 'testers', 'testers', tester_type)
+    if not os.path.isdir(tester_dir):
+        raise FileNotFoundError(f'{tester_type} is not a valid tester name')
+    return tester_dir
+
+def generate_checksum(files):
+    """
+
+    """
+    files = sorted(files)
+    h = hashlib.sha256()
+    for fname in files:
+        with open(fname, 'rb') as f:
+            h.update(f.read())
+    return h.digest()
+
+def deep_dict_equal(a, b, ignore=set()):
+    """
+
+    """
+    if isinstance(a, dict) and isinstance(b, dict):
+        ak = a.keys() - ignore
+        bk = b.keys() - ignore
+        if ak == bk:
+            return all(deep_dict_equal(a[k], b[k], ignore) for k in ak)
+        return False
+    try:
+        return all(deep_dict_equal(*z, ignore) for z in zip_longest(a,b))
+    except TypeError:
+        return a == b
+
+def settings_changed(env_dir, env_settings, checksum, specs_dir):
+    """
+
+    """
+    settings_file = os.path.join(env_dir, 'environment_settings.json')
+    checksum_file = os.path.join(env_dir, 'checksum')
+    ignore_file = os.path.join(specs_dir, 'evironment_ignore.yml')
+    if os.path.isfile(settings_file):
+        if os.path.isfile(checksum_file) and checksum is not None:
+            with open(checksum_file, 'rb') as f:
+                old_checksum = f.read()
+            return checksum == old_checksum
+        if os.path.isfile(ignore_file):
+            with open(ignore_file) as f:
+                ignore_keys = set(yaml.load(f))
+        else:
+            ignore_keys = set()
+        with open(settings_file) as f:
+            current_settings = json.load(f)
+        return deep_equal(env_settings, current_settings, ignore=ignore_keys) 
+    return False
+
+@clean_after
+def manage_tester_envirionment(markus_address, tester_type, tester_name, env_settings, files_dir):
+    """
+
+    """
+    env_name = get_unique_env_name(markus_address, tester_type, tester_name)
+    env_dir = os.path.join(config.WORKSPACE_DIR, config.SCRIPTS_DIR_NAME, env_name)
+    try:
+        tester_dir = get_tester_root_dir(tester_type)
+        specs_dir = os.path.join(tester_dir, 'specs')
+        bin_dir = os.path.join(tester_dir, 'bin')
+        if files_dir is not None:
+            files = (fname for fd, fname in recursive_iglob(files_dir) if fd == 'f')
+            checksum = generate_checksum(files)
+        else:
+            checksum = None
+        if os.path.isdir(env_dir):
+            if settings_changed(env_dir, env_settings, checksum, specs_dir):
+                destroy_file = os.path.join(bin_dir, 'destroy_environment.sh')
+                if os.path.isfile(destroy_file):
+                    proc = subprocess.run([f'./{destroy_file}', env_dir], stderr=subprocess.PIPE)
+                    if proc.returncode != 0:
+                        raise AutotestError(f'destroy tester environment failed with:\n{proc.stderr}')
+            else:
+                with open(os.path.join(env_dir, 'environment_settings.json'), 'w') as f:
+                    json.dump(env_settings, f)
+                return
+        shutil.rmtree(env_dir, onerror=ignore_missing_dir_error)
+        os.makedirs(env_dir, exist_ok=True)
+        if checksum:
+            with open(os.path.join(env_dir, 'checksum'), 'wb') as f:
+                f.write(checksum)
+        with open(os.path.join(env_dir, 'environment_settings.json'), 'w') as f:
+            json.dump(env_settings, f)
+        create_file  = os.path.join(bin_dir, 'create_environment.sh')
+        cmd = [f'./{create_file}', os.path.basename(env_dir), env_name, json.dumps(env_settings), files_dir]
+        proc = subprocess.run(cmd, stderr=subprocess.PIPE)
+        if proc.returncode != 0:
+            raise AutotestError(f'create tester environment failed with:\n{proc.stderr}')
+    except Exception as e:
+        error_file = os.path.join(env_dir, 'env_creation_errors.txt')
+        with open(error_file, 'a') as f:
+            f.write(f'{str(e)}\n')
+    finally:
+        shutil.rmtree(files_dir, onerror=ignore_missing_dir_error)
 

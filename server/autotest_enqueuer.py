@@ -6,9 +6,10 @@ import argparse
 import rq
 import json
 import inspect
-from . import autotest_server as ats
+import glob
+import autotest_server as ats
 import time
-from . import config
+import config
 import shutil
 from functools import wraps
 
@@ -122,12 +123,25 @@ def cancel_test(markus_address, run_ids, **kw):
             job_id = format_job_id(markus_address, run_id)
             rq.cancel_job(job_id)
 
-def manage_test_env(markus_address, tester_type, tester_name, **kw):
-    pass
+def manage_test_env(**kw):
+    """
+    markus_address, tester_type, tester_name, env_settings
+    """
+    queue = rq.Queue(config.SERVICE_QUEUE, connection=ats.redis_connection())
+    check_args(ats.manage_tester_envirionment, **kw)
+    queue.enqueue_call(ats.manage_tester_envirionment, kwargs=kw)
+    
 
 def get_available_testers(**kw):
-    pass
-
+    """
+    Print a list of installed tester names as a json string
+    """
+    root_dir = os.path.dirname(os.path.dirname(__file__))
+    glob_pattern = os.path.join(root_dir, 'testers', 'testers', '*', 'specs', '.installed')
+    testers = []
+    for path in glob.glob(glob_pattern):
+        testers.append(os.path.basename(os.path.dirname(os.path.dirname(path))))
+    print(json.dumps(testers))
 
 def parse_arg_file(arg_file):
     """

@@ -26,9 +26,11 @@ fi
 # vars
 THISSCRIPT=$(readlink -f ${BASH_SOURCE})
 TESTERDIR=$(dirname $(dirname ${THISSCRIPT}))
+SPECSDIR=${TESTERDIR}/specs
 JAVADIR=${TESTERDIR}/lib
 
 # main
 install_packages
 compile_tester
 update_specs
+touch ${SPECSDIR}/.installed
