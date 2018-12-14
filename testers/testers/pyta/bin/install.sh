@@ -20,3 +20,4 @@ SPECSDIR=${TESTERDIR}/specs
 
 # main
 install_packages
+touch ${SPECSDIR}/.installed

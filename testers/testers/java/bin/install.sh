@@ -36,3 +36,4 @@ JAVADIR=${TESTERDIR}/lib
 install_packages
 compile_tester
 update_specs
+touch ${SPECSDIR}/.installed

@@ -83,3 +83,4 @@ install_system_packages
 create_db_and_users
 create_test_users
 update_install_settings
+touch ${SPECSDIR}/.installed

@@ -53,3 +53,4 @@ JARPATH=$(readlink -f $1)
 install_system_packages
 install_sql_tester $@
 update_install_settings
+touch ${SPECSDIR}/.installed

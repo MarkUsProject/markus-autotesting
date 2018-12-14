@@ -30,3 +30,4 @@ SPECSDIR=${TESTERDIR}/specs
 # main
 install_packages
 install_haskell_packages
+touch ${SPECSDIR}/.installed
