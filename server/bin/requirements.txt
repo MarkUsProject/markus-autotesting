@@ -2,3 +2,4 @@ redis
 requests
 rq
 git+https://github.com/Supervisor/supervisor@master
+pyyaml

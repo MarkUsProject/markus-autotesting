@@ -1,0 +1,31 @@
+UPLOADFILES:
+  script_files:
+    REPEAT: '+'
+  support_files:
+    REPEAT: '*'
+  hooks:
+    REPEAT: '?'
+
+METADATA:
+  tester_type: racket
+  tester_name:
+    TEXT_MATCHER: .+
+  script_data:
+    REPEAT+:
+      runnable_group:
+        REPEAT+:
+          script_file_path: 
+            TEXT_MATCHER: .+
+      enable_feedback_file_hook:
+        OPTIONS:
+          - true
+          - false 
+      feedback_file:
+        TEXT_MATCHER: .*
+      test_suite_name:
+        TEXT_MATCHER: .+
+      script_timeout:
+        TEXT_MATCHER: \d+
+        DEFAULT: "30"
+      hooks_file_path:
+        TEXT_MATCHER: .*

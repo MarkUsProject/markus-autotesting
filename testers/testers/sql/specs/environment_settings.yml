@@ -1,0 +1,23 @@
+UPLOADFILES:
+  dataset_files:
+    REPEAT: '+'
+  schema_file:
+    REPEAT: '1'
+  solution_files:
+    REPEAT: '+'
+
+METADATA:
+  matrix:
+    REPEAT+:
+      solution_file_path:
+        TEXT_MATCHER: .+
+      dataset_files:
+        REPEAT+:
+          dataset_file_path:
+            TEXT_MATCHER: .+
+          points:
+            TEXT_MATCHER: '\d+'
+            DEFAULT: "1"
+      order_by:
+        TEXT_MATCHER: .*
+  schema_file_path: .+

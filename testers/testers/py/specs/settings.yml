@@ -1,0 +1,48 @@
+UPLOADFILES:
+  script_files:
+    REPEAT: '+'
+  support_files:
+    REPEAT: '*'
+  hooks:
+    REPEAT: '?'
+
+METADATA:
+  tester_type: py
+  tester_name:
+    TEXT_MATCHER: .+
+  script_data:
+    REPEAT+:
+      runnable_group:
+        REPEAT+:
+          script_file_path: 
+            TEXT_MATCHER: .+
+      enable_feedback_file_hook:
+        OPTIONS:
+          - true
+          - false 
+      feedback_file:
+        TEXT_MATCHER: .*
+      points:
+        {}
+      tester: 
+        OPTIONS:
+          - pytest
+          - unittest
+      pytest_tb_format: 
+        OPTIONS:
+          - short
+          - auto 
+          - long 
+          - "no" 
+          - line 
+          - native
+      unittest_verbosity:
+        OPTIONS:
+          - "2"
+          - "1"
+          - "0"
+      script_timeout:
+        TEXT_MATCHER: \d+
+        DEFAULT: "30"
+      hooks_file_path:
+        TEXT_MATCHER: .*

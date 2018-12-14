@@ -1,0 +1,37 @@
+UPLOADFILES:
+  script_files:
+    REPEAT: '+'
+  support_files:
+    REPEAT: '*'
+  hooks:
+    REPEAT: '?'
+
+METADATA:
+  tester_type: haskell
+  tester_name:
+    TEXT_MATCHER: .+
+  script_data:
+    REPEAT+:
+      runnable_group:
+        REPEAT+:
+          script_file_path: 
+            TEXT_MATCHER: .+
+      enable_feedback_file_hook:
+        OPTIONS:
+          - true
+          - false
+      feedback_file:
+        TEXT_MATCHER: .*
+      test_timeout: 
+        TEXT_MATCHER: \d+
+        DEFAULT: "10"
+      test_cases:
+        TEXT_MATCHER: \d+
+        DEFAULT: "100"
+      points:
+        {}
+      script_timeout:
+        TEXT_MATCHER: \d+
+        DEFAULT: "30"
+      hooks_file_path:
+        TEXT_MATCHER: .*

@@ -1,0 +1,11 @@
+{
+	"runnable_group": [
+		{
+			"script_file_path": null
+		}
+	],
+	"enable_feedback_file_hook": false,
+	"feedback_file": null,
+	"test_suite_name" : "all-tests",
+	"points": {}
+}
