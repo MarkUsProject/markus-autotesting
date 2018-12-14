@@ -32,6 +32,15 @@ def check_args(func, *args, **kwargs):
     except TypeError as e:
         raise type(e)('{}\nWith args: {}\nWith kwargs:{}'.format(e, args, tuple(kwargs))).with_traceback(sys.exc_info()[2])
 
+def check_for_environment_errors(markus_address, tester_type, tester_name):
+    env_dir = ats.get_unique_env_name(markus_address, tester_type, tester_name)
+    error_file = os.path.join(env_dir, 'env_creation_errors.txt')
+    if os.path.isfile(error_file):
+        with open(error_file) as f:
+            msg = 'Test environment was not successfully created.\nFailed with the following error:\n'
+            msg = f'{msg}{f.read()}'
+        raise RuntimeError(msg)
+
 def queue_name(queue, i):
     """
     Return a formatted queue name from a queue object and an integer
@@ -100,6 +109,7 @@ def run_test(user_type, batch_id, **kw):
     queue = get_queue(user_type=user_type, batch_id=batch_id, **kw)
     check_args(ats.run_test, **kw)
     check_test_script_files_exist(**kw)
+    check_for_environment_errors(**kw)
     print_queue_info(queue)
     timeout = get_job_timeout(kw.get('test_scripts', {}))
     queue.enqueue_call(ats.run_test, kwargs=kw, job_id=format_job_id(**kw), timeout=timeout)
@@ -122,6 +132,16 @@ def cancel_test(markus_address, run_ids, **kw):
         for run_id in run_ids:
             job_id = format_job_id(markus_address, run_id)
             rq.cancel_job(job_id)
+
+@clean_on_error
+def manage_test_env(**kw):
+    """
+    Create or update a test environment
+    """
+    queue = rq.Queue(config.SERVICE_QUEUE, connection=ats.redis_connection())
+    check_args(ats.manage_tester_environment, **kw)
+    queue.enqueue_call(ats.manage_tester_environment, kwargs=kw)
+    
 
 def get_available_testers(**kw):
     """
@@ -159,7 +179,8 @@ def parse_arg_file(arg_file):
 COMMANDS = {'run'       : run_test,
             'scripts'   : update_scripts,
             'cancel'    : cancel_test,
-            'testers'   : get_available_testers}
+            'testers'   : get_available_testers,
+            'env'       : manage_test_env}
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
