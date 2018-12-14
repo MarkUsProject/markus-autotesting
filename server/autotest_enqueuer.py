@@ -6,6 +6,7 @@ import argparse
 import rq
 import json
 import inspect
+import glob
 import autotest_server as ats
 import time
 import config
@@ -122,6 +123,17 @@ def cancel_test(markus_address, run_ids, **kw):
             job_id = format_job_id(markus_address, run_id)
             rq.cancel_job(job_id)
 
+def get_available_testers(**kw):
+    """
+    Print a list of installed tester names as a json string
+    """
+    root_dir = os.path.dirname(os.path.dirname(__file__))
+    glob_pattern = os.path.join(root_dir, 'testers', 'testers', '*', 'specs', '.installed')
+    testers = []
+    for path in glob.glob(glob_pattern):
+        testers.append(os.path.basename(os.path.dirname(os.path.dirname(path))))
+    print(json.dumps(testers))
+
 def parse_arg_file(arg_file):
     """
     Load arg_file as a json and return a dictionary
@@ -146,7 +158,8 @@ def parse_arg_file(arg_file):
 
 COMMANDS = {'run'       : run_test,
             'scripts'   : update_scripts,
-            'cancel'    : cancel_test}
+            'cancel'    : cancel_test,
+            'testers'   : get_available_testers}
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
