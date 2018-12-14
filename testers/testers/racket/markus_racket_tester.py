@@ -4,7 +4,7 @@ import json
 import subprocess
 import os
 
-from markus_tester import MarkusTester, MarkusTest, MarkusTestSpecs
+from testers.markus_tester import MarkusTester, MarkusTest, MarkusTestSpecs
 
 
 class MarkusRacketTest(MarkusTest):

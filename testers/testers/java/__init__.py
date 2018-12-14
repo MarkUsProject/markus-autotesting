@@ -1,0 +1,1 @@
+from .markus_java_tester import MarkusJavaTester as JavaTester

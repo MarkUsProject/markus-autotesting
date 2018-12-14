@@ -7,7 +7,7 @@ import python_ta
 from pylint.config import VALIDATORS
 from python_ta.reporters import PositionReporter, PlainReporter
 
-from markus_tester import MarkusTester, MarkusTest
+from testers.markus_tester import MarkusTester, MarkusTest
 
 
 class MarkusPyTAReporter(PositionReporter):

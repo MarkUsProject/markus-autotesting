@@ -4,7 +4,7 @@ import subprocess
 
 import psycopg2
 
-from markus_tester import MarkusTester, MarkusTest, MarkusTestSpecs
+from testers.markus_tester import MarkusTester, MarkusTest, MarkusTestSpecs
 
 
 class MarkusSQLTest(MarkusTest):

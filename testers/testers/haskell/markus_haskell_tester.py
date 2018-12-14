@@ -4,7 +4,7 @@ import os
 import tempfile
 import csv
 
-from markus_tester import MarkusTester, MarkusTest, MarkusTestSpecs
+from testers.markus_tester import MarkusTester, MarkusTest, MarkusTestSpecs
 
 class MarkusHaskellTest(MarkusTest):
 

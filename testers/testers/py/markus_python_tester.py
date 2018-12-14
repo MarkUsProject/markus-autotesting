@@ -8,7 +8,7 @@ import sys
 import subprocess
 import xml.etree.ElementTree as eTree
 
-from markus_tester import MarkusTester, MarkusTest, MarkusTestSpecs
+from testers.markus_tester import MarkusTester, MarkusTest, MarkusTestSpecs
 
 class MarkusTextTestResults(unittest.TextTestResult):
     """
