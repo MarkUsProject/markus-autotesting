@@ -142,21 +142,10 @@ class MarkusPythonTester(MarkusTester):
         with open(os.devnull, 'w') as null_out:
             try:
                 sys.stdout = null_out
-                legacy_venv_dir = self.specs.get('legacy_virtualenv')
                 verbosity=self.specs.get('pytest_tb_format', 'short')
-                if legacy_venv_dir is None:
-                    with tempfile.NamedTemporaryFile(mode="w+", dir=this_dir) as sf:
-                        pytest.main([test_file, '--junitxml', f'--tb={verbosity}', sf.name], plugins=[AddDocstringToJunitXMLPlugin()])
-                        results = list(self._parse_junitxml(sf))
-                else:
-                    try:
-                        with tempfile.NamedTemporaryFile(dir=this_dir, delete=False) as sf:
-                            tmp_file_path = sf.name
-                        pytest_exec = os.path.join(legacy_venv_dir, 'bin', 'pytest')
-                        subprocess.run([pytest_exec, '--junitxml', f'--tb={verbosity}', tmp_file_path, test_file])
-                        results = list(self._parse_junitxml(tmp_file_path))
-                    finally:
-                        os.unlink(tmp_file_path)
+                with tempfile.NamedTemporaryFile(mode="w+", dir=this_dir) as sf:
+                    pytest.main([test_file, '--junitxml', f'--tb={verbosity}', sf.name], plugins=[AddDocstringToJunitXMLPlugin()])
+                    results = list(self._parse_junitxml(sf))
             finally:
                 sys.stdout = sys.__stdout__
         return results
