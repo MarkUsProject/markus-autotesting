@@ -66,19 +66,6 @@ class MarkusHaskellTester(MarkusTester):
             test_results.append(result)
         return test_results
 
-    def _get_haskell_env(self):
-        """
-        Return a dictionary of all environment variables required to run haskell tests.
-        The environment variable are a copy of the current environment with extra paths
-        added to the GHC_PACKAGE_PATH.
-
-        GHC_PACKAGE_PATH <- tells the haskell compiler where to find installed packages
-        """
-        ghc_pkg_pth = self.specs.get('ghc_package_path')
-        if ghc_pkg_pth is not None:
-            return {**os.environ, **{'GHC_PACKAGE_PATH' : ghc_pkg_pth}}
-        return os.environ
-
     def run_haskell_tests(self):
         """
         Return test results for each test file. Results contain a list of parsed test results and the 
@@ -92,12 +79,10 @@ class MarkusHaskellTester(MarkusTester):
         for test_file in self.specs.tests:
             with tempfile.NamedTemporaryFile(dir=this_dir) as f:
                 cmd = ['tasty-discover', '.', '_', f.name] + self._test_run_flags(test_file)
-                discover_proc = subprocess.run(cmd, stdout=subprocess.DEVNULL,
-                                               universal_newlines=True, env=self._get_haskell_env())
+                discover_proc = subprocess.run(cmd, stdout=subprocess.DEVNULL, universal_newlines=True)
                 with tempfile.NamedTemporaryFile(mode="w+", dir=this_dir) as sf:
                     cmd = ['runghc', f.name, f"--stats={sf.name}"]
-                    test_proc = subprocess.run(cmd, stdout=subprocess.DEVNULL,
-                                               universal_newlines=True, env=self._get_haskell_env())
+                    test_proc = subprocess.run(cmd, stdout=subprocess.DEVNULL, universal_newlines=True)
                     results[test_file] = {'stderr':test_proc.stderr, 'results':self._parse_test_results(csv.reader(sf))}
         return results
 
