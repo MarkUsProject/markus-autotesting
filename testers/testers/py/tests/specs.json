@@ -1,0 +1,6 @@
+{
+  "feedback_file": null,
+  "pytest_tb_format": "short",
+  "unittest_verbosity": 2,
+  "tester": "pytest"
+}

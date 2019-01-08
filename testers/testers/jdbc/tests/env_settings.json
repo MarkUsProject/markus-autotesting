@@ -1,0 +1,319 @@
+{
+  "matrix": [
+    {
+      "java_method_name": "CorrectNoOrder.CONNECTION",
+      "order_by": null,
+      "dataset_files": [
+        {
+          "dataset_file_path": null,
+          "tables": [
+            {
+              "table_name": null,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "java_method_name": "CorrectNoOrder.DISCONNECTION",
+      "order_by": null,
+      "dataset_files": [
+        {
+          "dataset_file_path": null,
+          "tables": [
+            {
+              "table_name": null,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "java_method_name": "CorrectNoOrder.select",
+      "order_by": null,
+      "dataset_files": [
+        {
+          "dataset_file_path": "data1j.sql",
+          "tables": [
+            {
+              "table_name": null,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "dataset_file_path": "data2j.sql",
+          "tables": [
+            {
+              "table_name": null,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "java_method_name": "CorrectNoOrder.insert",
+      "order_by": null,
+      "dataset_files": [
+        {
+          "dataset_file_path": "data1j.sql",
+          "tables": [
+            {
+              "table_name": null,
+              "points": 1
+            },
+            {
+              "table_name": "table1",
+              "points": 1
+            }
+          ]
+        },
+        {
+          "dataset_file_path": "data2j.sql",
+          "tables": [
+            {
+              "table_name": null,
+              "points": 1
+            },
+            {
+              "table_name": "table1",
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "java_method_name": "CorrectWithOrder.select",
+      "order_by": true,
+      "dataset_files": [
+        {
+          "dataset_file_path": "data1j.sql",
+          "tables": [
+            {
+              "table_name": null,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "dataset_file_path": "data2j.sql",
+          "tables": [
+            {
+              "table_name": null,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "java_method_name": "BadConnection.CONNECTION",
+      "order_by": null,
+      "dataset_files": [
+        {
+          "dataset_file_path": null,
+          "tables": [
+            {
+              "table_name": null,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "java_method_name": "ExceptionConnection.CONNECTION",
+      "order_by": null,
+      "dataset_files": [
+        {
+          "dataset_file_path": null,
+          "tables": [
+            {
+              "table_name": null,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "java_method_name": "BadDisconnection.DISCONNECTION",
+      "order_by": null,
+      "dataset_files": [
+        {
+          "dataset_file_path": null,
+          "tables": [
+            {
+              "table_name": null,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "java_method_name": "ExceptionDisconnection.DISCONNECTION",
+      "order_by": null,
+      "dataset_files": [
+        {
+          "dataset_file_path": null,
+          "tables": [
+            {
+              "table_name": null,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "java_method_name": "BadSelect.select",
+      "order_by": null,
+      "dataset_files": [
+        {
+          "dataset_file_path": "data1j.sql",
+          "tables": [
+            {
+              "table_name": null,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "dataset_file_path": "data2j.sql",
+          "tables": [
+            {
+              "table_name": null,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "java_method_name": "ExceptionSelect.select",
+      "order_by": null,
+      "dataset_files": [
+        {
+          "dataset_file_path": "data1j.sql",
+          "tables": [
+            {
+              "table_name": null,
+              "points": 1
+            }
+          ]
+        },
+        {
+          "dataset_file_path": "data2j.sql",
+          "tables": [
+            {
+              "table_name": null,
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "java_method_name": "NoInsert.insert",
+      "order_by": null,
+      "dataset_files": [
+        {
+          "dataset_file_path": "data1j.sql",
+          "tables": [
+            {
+              "table_name": null,
+              "points": 1
+            },
+            {
+              "table_name": "table1",
+              "points": 1
+            }
+          ]
+        },
+        {
+          "dataset_file_path": "data2j.sql",
+          "tables": [
+            {
+              "table_name": null,
+              "points": 1
+            },
+            {
+              "table_name": "table1",
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "java_method_name": "BadInsert.insert",
+      "order_by": null,
+      "dataset_files": [
+        {
+          "dataset_file_path": "data1j.sql",
+          "tables": [
+            {
+              "table_name": null,
+              "points": 1
+            },
+            {
+              "table_name": "table1",
+              "points": 1
+            }
+          ]
+        },
+        {
+          "dataset_file_path": "data2j.sql",
+          "tables": [
+            {
+              "table_name": null,
+              "points": 1
+            },
+            {
+              "table_name": "table1",
+              "points": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "java_method_name": "ExceptionInsert.insert",
+      "order_by": null,
+      "dataset_files": [
+        {
+          "dataset_file_path": "data1j.sql",
+          "tables": [
+            {
+              "table_name": null,
+              "points": 1
+            },
+            {
+              "table_name": "table1",
+              "points": 1
+            }
+          ]
+        },
+        {
+          "dataset_file_path": "data2j.sql",
+          "tables": [
+            {
+              "table_name": null,
+              "points": 1
+            },
+            {
+              "table_name": "table1",
+              "points": 1
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "schema_file_path": "schema.ddl"
+}
