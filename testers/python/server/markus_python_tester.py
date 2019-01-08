@@ -168,8 +168,7 @@ class MarkusPythonTester(MarkusTester):
         """
         results = {}
         for test_file in self.specs.tests:
-            func = self._detect_test_tool_function(test_file)
-            if specs.get('tester', 'pytest') == 'unittest':
+            if self.specs.get('tester', 'pytest') == 'unittest':
                 result = self._run_unittest_tests(test_file)
             else:
                 result = self._run_pytest_tests(test_file)
