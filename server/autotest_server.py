@@ -498,7 +498,8 @@ def load_hooks(hooks_script_path):
                 hooks_module = __import__(module_name)
         except Exception as e:
             return None, f'import error: {str(e)}\n'
-    return hooks_module, ''
+        return hooks_module, ''
+    return None, ''
 
 def run_hooks(hooks_module, function_name, tests_path, kwargs={}):
     """
