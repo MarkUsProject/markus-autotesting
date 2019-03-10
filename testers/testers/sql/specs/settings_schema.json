@@ -1,0 +1,94 @@
+{
+  "properties": {
+    "tester_type": {
+      "enum": [
+        "sql"
+      ]
+    },
+    "env_data": {
+      "type": "object",
+      "properties": {
+        "schema_name": {
+          "type": "string",
+          "default": "autotest"
+        },
+        "schema_file_path": {
+          "$ref": "#/definitions/files_list"
+        }
+      }
+    },
+    "test_data": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "timeout",
+          "environment",
+          "schema_name"
+        ],
+        "properties": {
+          "query_files": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "properties": {
+                "query_file": {
+                  "$ref": "#/definitions/files_list"
+                }
+              },
+              "dependencies": {
+                "query_file": {
+                  "properties": {
+                    "order_by": {
+                      "type": "string"
+                    },
+                    "data_files": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/definitions/files_list"
+                      },
+                      "uniqueItems": true
+                    }
+                  }
+                }
+              }
+            },
+            "uniqueItems": true
+          },
+          "category": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "$ref": "#/definitions/test_data_categories"
+            },
+            "uniqueItems": true
+          },
+          "timeout": {
+            "type": "integer",
+            "default": 30
+          },
+          "feedback_file_name": {
+            "type": "string"
+          }
+        },
+        "dependencies": {
+          "feedback_file_name": {
+            "properties": {
+              "upload_feedback_to_repo": {
+                "type": "boolean",
+                "default": false
+              },
+              "upload_feedback_file": {
+                "type": "boolean",
+                "default": false
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

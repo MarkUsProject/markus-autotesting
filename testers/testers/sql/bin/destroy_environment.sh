@@ -2,69 +2,41 @@
 
 set -e
 
-get_query_files() {
-python3 - <<EOPY
-import json
-with open('${ENVSETTINGS}') as f:
-	settings = json.load(f)
-solution_group = settings['solution_group']
-files = set()
-for group in solution_group:
-	solution_file = group['solution_file_path']
-	if solution_file not in files:
-		print(solution_file)
-	files.add(solution_file)
-EOPY
-}
-
-get_datasets_from_query_file() {
-python3 - <<EOPY
-import json
-with open('${ENVSETTINGS}') as f:
-	settings = json.load(f)
-solution_group = settings['solution_group']
-for group in solution_group:
-	if group['solution_file_path'] == '$1':
-		print(group['dataset_file_path'])
-EOPY
+get_test_data() {
+    echo ${SETTINGS_JSON} | 
+        jq --compact-output '
+            .test_data |
+            .[] |
+            .query_files |
+            .[] |
+            {query_file: .query_file, data_files: [(.data_files | .[] | .data_file)]}'
 }
 
 remove_schema_string() {
-	echo "$(get_query_files)" | while read -r queryfile; do
-		echo "$(get_datasets_from_query_file ${queryfile})" | while read -r datafile; do
-    		local schemaname="${TESTERNAME}_$(basename -s .sql ${datafile})"
-    		echo "DROP SCHEMA IF EXISTS ${schemaname} CASCADE;"
-    	done
-	done
+    local tester_name=$(basename ${ENV_DIR})
+    while read -r files_json; do
+        local data_files=$(echo ${files_json} | jq --raw-output '.data_files | .[]')
+        echo "${data_files}" | while read -r data_file; do
+            local schema_name="${tester_name}_$(basename -s .sql ${data_file})"
+            echo "DROP SCHEMA IF EXISTS ${schema_name} CASCADE;"
+        done
+    done < <(get_test_data)
 }
 
 remove_schemas() {
-	local oracledb=$(get_install_setting oracle_database)
-	local oracleuser=${oracledb}
-	psql -U ${oracleuser} -d ${oracledb} -h localhost -f <(echo $(remove_schema_string))
-}
-
-get_setting() {
-    cat ${ENVSETTINGS} | python3 -c "import sys, json; print(json.load(sys.stdin)['$1'])"
-}
-
-get_install_setting() {
-	cat ${INSTALLSETTINGS} | python3 -c "import sys, json; print(json.load(sys.stdin)['$1'])"
+    local oracle_db=$(echo ${SETTINGS_JSON} | jq --raw-output .install_data.oracle_database)
+    local oracle_user=${oracle_db}
+    psql -U ${oracle_user} -d ${oracle_db} -h localhost -f <(echo $(remove_schema_string))
 }
 
 # script starts here
 if [[ $# -lt 1 ]]; then
-    echo "Usage: $0 environment_dir"
+    echo "Usage: $0 settings_json"
     exit 1
 fi
 
-ENVDIR=$(readlink -f $1)
-TESTERNAME=$(basename ${ENVDIR})
-ENVSETTINGS=${ENVDIR}/environment_settings.json
+SETTINGS_JSON=$1
 
-THISSCRIPT=$(readlink -f ${BASH_SOURCE})
-BINDIR=$(dirname ${THISSCRIPT})
-SPECSDIR=$(dirname ${BINDIR})/specs
-INSTALLSETTINGS=${SPECSDIR}/install_settings.json
+ENV_DIR=$(echo ${SETTINGS_JSON} | jq --raw-output .env_loc)
 
 remove_schemas

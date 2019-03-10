@@ -5,17 +5,6 @@ reset_specs() {
     rm -f ${SPECSDIR}/install_settings.json
 }
 
-get_test_users() {
-python3 - <<EOPY
-import sys, json
-with open('${INSTALLSETTINGS}') as f:
-	settings = json.load(f)
-tests = settings['tests']
-for test in tests:
-	print(test['user'])
-EOPY
-}
-
 drop_oracle() {
     sudo -u postgres psql <<-EOF
 		DROP DATABASE IF EXISTS ${ORACLEDB};
@@ -24,16 +13,12 @@ drop_oracle() {
 }
 
 drop_tests() {
-    for tester in $(get_test_users); do
+    while read -r tester; do
         sudo -u postgres psql <<-EOF
 			DROP DATABASE IF EXISTS ${tester};
 			DROP ROLE IF EXISTS ${tester};
 		EOF
-    done
-}
-
-get_install_setting() {
-    cat ${INSTALLSETTINGS} | python3 -c "import sys, json; print(json.load(sys.stdin)['$1'])"
+    done < <(echo ${INSTALLSETTINGS} | jq --raw-output '.tests | .[] | .user')
 }
 
 # script starts here
@@ -46,9 +31,8 @@ fi
 THISSCRIPT=$(readlink -f ${BASH_SOURCE})
 TESTERDIR=$(dirname $(dirname ${THISSCRIPT}))
 SPECSDIR=${TESTERDIR}/specs
-INSTALLSETTINGS=${SPECSDIR}/install_settings.json
-ORACLEDB=$(get_install_setting oracle_database)
-TESTUSER=$2
+INSTALLSETTINGS=$(cat ${SPECSDIR}/install_settings.json | jq .)
+ORACLEDB=$(echo ${INSTALLSETTINGS} | jq --raw-output .oracle_database)
 ORACLEUSER=${ORACLEDB}
 
 # main

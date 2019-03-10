@@ -7,6 +7,10 @@ install_packages() {
     sudo apt-get install python3 postgresql
 }
 
+random_pwd() {
+    date +%s%N | sha256sum | base64 | head -c 32
+}
+
 create_db_and_users() {
     echo "[SQL-INSTALL] Creating databases and users"
     echo "[SQL-INSTALL] Creating oracle user '${ORACLEUSER}' with database '${ORACLEDB}'"
@@ -14,9 +18,19 @@ create_db_and_users() {
 		DROP DATABASE IF EXISTS ${ORACLEDB};
 		DROP ROLE IF EXISTS ${ORACLEUSER};
 	EOF
-    echo "[SQL-INSTALL] Create password for oracle user '${ORACLEUSER}'"
-    sudo -u postgres createuser -P ${ORACLEUSER} # secure, password is not logged
+
+    if id -u ${ORACLEUSER} &> /dev/null; then
+        sudo -u "${ORACLEUSER}" -- bash -c "touch ${HOME}/.pgpass && chmod 600 ${HOME}/.pgpass"
+        read -s -p "[SQL-INSTALL] Create password for oracle user '${ORACLEUSER}': " ORACLEPWD
+        echo ''
+        sudo -u "${ORACLEUSER}" -- bash -c "builtin echo '*:*:*:${ORACLEUSER}:${ORACLEPWD}' > ${HOME}/.pgpass"
+    else
+        echo "${ORACLEUSER} must be a valid user on this machine" >&2
+        exit 1    
+    fi
+
     sudo -u postgres psql <<-EOF
+		CREATE USER ${ORACLEUSER} WITH PASSWORD '${ORACLEPWD}';
 		CREATE DATABASE ${ORACLEDB} OWNER ${ORACLEUSER};
 		REVOKE CONNECT ON DATABASE ${ORACLEDB} FROM PUBLIC;
 		\connect ${ORACLEDB}
@@ -25,38 +39,52 @@ create_db_and_users() {
 }
 
 create_test_users() {
-    TESTS="  \"tests\": ["
-    for i in "${!TESTDBS[@]}"; do
-        echo "[SQL-INSTALL] Creating test user '${TESTUSERS[$i]}' with database '${TESTDBS[$i]}'"
-        read -s -p "[SQL-INSTALL] Create password for test user '${TESTUSERS[$i]}': " TESTPWDS[$i]
-        sudo -u postgres psql <<-EOF
-			DROP DATABASE IF EXISTS ${TESTDBS[$i]};
-			DROP ROLE IF EXISTS ${TESTUSERS[$i]};
-			CREATE ROLE ${TESTUSERS[$i]} LOGIN PASSWORD '${TESTPWDS[$i]}';
-			CREATE DATABASE ${TESTDBS[$i]} OWNER ${TESTUSERS[$i]};
-			REVOKE CONNECT ON DATABASE ${TESTDBS[$i]} FROM PUBLIC;
-			GRANT CONNECT ON DATABASE ${ORACLEDB} TO ${TESTUSERS[$i]};
-			\connect ${TESTDBS[$i]}
-			DROP SCHEMA IF EXISTS public CASCADE;
-		EOF
-        if [[ $i -ne 0 ]]; then
-            TESTS="${TESTS},"
+    local i=0
+    while read -r tests_json; do
+        local user=$(echo ${tests_json} | jq --raw-output .user)
+        if [[ "${user}" != "${ORACLEUSER}" ]]; then
+            local database=$(echo ${tests_json} | jq --raw-output .database)
+            echo "[SQL-INSTALL] Creating test user '${user}' with database '${database}'" >&2
+            local test_pwd=$(random_pwd)
+            sudo -u postgres psql >&2 <<-EOF
+					DROP DATABASE IF EXISTS ${database};
+					DROP ROLE IF EXISTS ${user};
+					CREATE ROLE ${user} WITH PASSWORD '${test_pwd}';
+					CREATE DATABASE ${database} OWNER ${user};
+					REVOKE CONNECT ON DATABASE ${database} FROM PUBLIC;
+					GRANT CONNECT ON DATABASE ${ORACLEDB} TO ${user};
+					\connect ${database}
+					DROP SCHEMA IF EXISTS public CASCADE;
+				EOF
+        else
+            local test_pwd=$(grep -Po "(?<=${ORACLEUSER}:)(.*)$" ${HOME}/.pgpass)
         fi
-        TESTS="${TESTS}{\"database\": \"${TESTDBS[$i]}\", \"user\": \"${TESTUSERS[$i]}\", \"password\": \"${TESTPWDS[i]}\"}"
-    done
+        INSTALL_SETTINGS=$(echo ${INSTALL_SETTINGS} | jq ".tests[${i}].password=\"${test_pwd}\"")
+        ((i++))
+    done < <(echo ${INSTALL_SETTINGS} | jq --compact-output '.tests | .[]')
+    echo ${INSTALL_SETTINGS}
 }
 
 update_specs() {
     TESTS="${TESTS}],"
     echo "[SQL-INSTALL] Updating installation settings file"
-    cp ${SPECSDIR}/default_install_settings.json ${SPECSDIR}/install_settings.json
-    sed -i -e "s#oracle_db#${ORACLEDB}#g" ${SPECSDIR}/install_settings.json
-    sed -i -e "\#tests#c\\${TESTS}" ${SPECSDIR}/install_settings.json
+    echo ${INSTALL_SETTINGS} > ${SPECSDIR}/install_settings.json
+}
+
+add_db_user() {
+    local base_username=$1
+    local user_name="${base_username}"
+    local test_str="{\"database\": \"${user_name}\", \"user\": \"${user_name}\"}"
+    INSTALL_SETTINGS=$(echo ${INSTALL_SETTINGS} | jq ".tests += [${test_str}]")
+}
+
+get_config_param() {
+    echo $(cd ${SERVERDIR} && python3 -c "import config; print(config.$1)")
 }
 
 # script starts here
-if [[ $# -lt 2 || $# -gt 3 ]]; then
-    echo "Usage: $0 oracle_user test_user [num_users]"
+if [[ $# -gt 0 ]]; then
+    echo "Usage: $0"
     exit 1
 fi
 
@@ -64,26 +92,31 @@ fi
 THISSCRIPT=$(readlink -f ${BASH_SOURCE})
 TESTERDIR=$(dirname $(dirname ${THISSCRIPT}))
 SPECSDIR=${TESTERDIR}/specs
-ORACLEUSER=$1
-TESTUSER=$2
-ORACLEDB=${ORACLEUSER}
-TESTDBS=()
-TESTUSERS=()
-TESTPWDS=()
-if [[ $# -eq 3 ]]; then
-    NUMUSERS=$3
-    for i in $(seq 0 $((NUMUSERS - 1))); do
-        TESTDBS[$i]="${TESTUSER}$i"
-        TESTUSERS[$i]="${TESTUSER}$i"
-    done
-else
-    TESTDBS[0]=${TESTUSER}
-    TESTUSERS[0]=${TESTUSER}
+SERVERDIR="${THISSCRIPT%/*/*/*/*/*}/server"
+
+ORACLEUSER=$(get_config_param SERVER_USER)
+TESTUSERS=$(get_config_param WORKER_USERS) 
+
+
+if [[ -z ${ORACLEUSER} ]]; then
+    ORACLEUSER=$(whoami)
 fi
 
+ORACLEDB=${ORACLEUSER}
+INSTALL_SETTINGS="{\"oracle_database\": \"${ORACLEDB}\"}"
+
+if [[ -z ${TESTUSERS} ]]; then
+    add_db_user ${ORACLEUSER}
+else
+    i=0
+    for test_user in ${TESTUSERS}; do
+        add_db_user ${test_user}
+        ((i++))
+    done
+fi
 # main
 install_packages
 create_db_and_users
-create_test_users
+INSTALL_SETTINGS=$(create_test_users)
 update_specs
 touch ${SPECSDIR}/.installed

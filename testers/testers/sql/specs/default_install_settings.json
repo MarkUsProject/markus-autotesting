@@ -1,5 +1,0 @@
-{
-	"oracle_database": "oracle_db",
-	"tests": [{"database": "test_db", "user": "test_user", "password": "test_password"}],
-	"path_to_solution": "/path/to/solution"
-}
