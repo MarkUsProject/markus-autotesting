@@ -14,21 +14,36 @@ class MarkusJDBCTest(MarkusSQLTest):
     }
     ERROR_MSGS.update(MarkusSQLTest.ERROR_MSGS)
 
-    def __init__(self, tester, runnable_group, feedback_open=None):
-        self.tables = runnable_group.get('tables')
-        super().__init__(tester, runnable_group, feedback_open)
-        self.java_points = runnable_group.get('points', 1)
-        self.points_total += sum(table.get('points', 1) for table in self.tables)
+    def __init__(self, tester, **kwargs):
+        self.tables = kwargs.get('tables', [])
+        self.order_on = kwargs.get('order_on', False)
+
+        class_file = kwargs['class_file']
+        self.class_name = os.path.splitext(os.path.basename(class_file))[0]
+        self.method = kwargs['method']
+
+        super().__init__(tester, **kwargs)
+        
+        if not self.data_file:
+            self.schema_name = self.tester.schema_name
+
+        self.java_points = 1
+        self.points_total = len(self.tables) + 1
+
+    @property
+    def test_name(self):
+        return f'{self.class_name}.{self.method}'
 
     def check_java(self):
         java_command = ['java', '-cp', self.tester.java_classpath, self.__class__.__name__, self.tester.oracle_database,
                         self.tester.user_name, self.tester.user_password, self.tester.schema_name, self.test_name,
-                        self.data_name, str(self.order_on or False), self.tester.test_database]
+                        self.schema_name, str(self.order_on), self.tester.test_database]
         java = subprocess.run(java_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True,
                               check=True)
 
         return java
 
+    @MarkusTest.run_decorator
     def run(self):
         # drop and recreate test schema + dataset, then fetch and compare java results
         try:
@@ -52,23 +67,21 @@ class MarkusJDBCTest(MarkusSQLTest):
         oracle_solutions = []
         test_solutions = []
         for table in self.tables:
-            table_name = table.get('table_name')
-            table_points = table.get('points', 1)
             try:
-                test_results = self.get_test_results(table_name)
-                oracle_results = self.get_oracle_results(table_name)
+                test_results = self.get_test_results(table)
+                oracle_results = self.get_oracle_results(table)
                 status, message = self.check_results(oracle_results, test_results)
                 if status is MarkusTest.Status.PASS:
-                    points_earned += table_points
+                    points_earned += 1
                 else:
-                    oracle_solution, test_solution = self.get_psql_dump(table_name)
-                    messages.append('(Table {}) {}'.format(table_name, message))
+                    oracle_solution, test_solution = self.get_psql_dump(table)
+                    messages.append('(Table {}) {}'.format(table, message))
                     oracle_solutions.append(oracle_solution)
                     test_solutions.append(test_solution)
             except Exception as e:
                 self.tester.oracle_connection.commit()
                 self.tester.test_connection.commit()
-                messages.append('(Table {}) {}'.format(table_name, str(e)))
+                messages.append('(Table {}) {}'.format(table, str(e)))
         if points_earned == self.points_total:
             return self.passed()
         else:
@@ -79,36 +92,52 @@ class MarkusJDBCTest(MarkusSQLTest):
 
 class MarkusJDBCTester(MarkusSQLTester):
 
-    CLASS_DIR = 'classes'
-
     def __init__(self, specs, test_class=MarkusJDBCTest):
         super().__init__(specs, test_class)
-        class_names = {group['java_method_name'].partition('.')[0] for group in self.specs['runnable_group']}
-        self.java_files = [f'{class_name}.java' for class_name in class_names]
-        solution_path = os.path.join(self.specs['path_to_solution'], self.CLASS_DIR)
-        self.java_classpath = '.:{}:{}'.format(solution_path, self.specs['path_to_jdbc_jar'])
+        java_files = (group.get('class_file') for group in self.specs.get('test_data', 'class_files', default={}))
+        self.java_files = [jf for jf in java_files if jf]
+        solution_path = os.path.join(self.specs['env_loc'], self.SOLUTION_DIR)
+        self.java_classpath = '.:{}:{}'.format(solution_path, self.specs['install_data', 'path_to_jdbc_jar'])
 
     def init_java(self):
         javac_command = ['javac', '-cp', self.java_classpath] + self.java_files
         subprocess.run(javac_command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True,
                        check=True)
 
+    @MarkusTester.run_decorator
     def run(self):
+        # check that the submission exists
+        for java_file in self.java_files:
+            if not os.path.isfile(java_file):
+                msg = MarkusJDBCTest.ERROR_MSGS['no_submission'].format(java_file)
+                raise Exception(msg)
+        # check that the submission compiles
         try:
-            # check that the submission exists
-            for java_file in self.java_files:
-                if not os.path.isfile(java_file):
-                    msg = MarkusJDBCTest.ERROR_MSGS['no_submission'].format(java_file)
-                    print(MarkusTester.error_all(message=msg), flush=True)
-                    return
-            # check that the submission compiles
-            try:
-                self.init_java()
-            except subprocess.CalledProcessError as e:
-                msg = MarkusJDBCTest.ERROR_MSGS['bad_javac'].format(e.stdout)
-                print(MarkusTester.error_all(message=msg), flush=True)
-                return
-        except Exception as e:
-            print(MarkusTester.error_all(message=str(e)), flush=True)
-            return
-        super().run()
+            self.init_java()
+        except subprocess.CalledProcessError as e:
+            msg = MarkusJDBCTest.ERROR_MSGS['bad_javac'].format(e.stdout)
+            raise type(e)(msg) from e
+        feedback_file = self.specs.get('test_data', 'feedback_file_name')
+        with MarkusTester.open_feedback(feedback_file) as feedback_open:
+            class_groups = self.specs.get('test_data', 'class_files', default=[])
+            test_kwargs = []
+            env_name = os.path.basename(self.specs['env_loc'])
+            for group in class_groups:
+                class_file = group['class_file']
+                if group.get('test_connection'):
+                    test_kwargs.append(dict(class_file=class_file, method='CONNECTION'))
+                if group.get('test_disconnection'):
+                    test_kwargs.append(dict(class_file=class_file, method='DISCONNECTION'))
+                for method_group in group.get('class_methods', []):
+                    method = method_group['class_method']
+                    for data_group in method_group.get('data_files', []):
+                        data_file = data_group.get('data_file')
+                        tables = data_group.get('tables', [])
+                        test_kwargs.append(dict(class_file=class_file,
+                                                method=method,
+                                                data_file=data_file,
+                                                schema_prefix=env_name,
+                                                tables=tables))
+            for kwargs in test_kwargs:
+                test = self.test_class(self, **{**kwargs, 'feedback_open': feedback_open})
+                print(test.run())

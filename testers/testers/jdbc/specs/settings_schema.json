@@ -1,0 +1,133 @@
+{
+  "properties": {
+    "tester_type": {
+      "enum": [
+        "jdbc"
+      ]
+    },
+    "env_data": {
+      "type": "object",
+      "properties": {
+        "schema_name": {
+          "type": "string",
+          "default": "autotest"
+        },
+        "schema_file_path": {
+          "$ref": "#/definitions/files_list"
+        }
+      }
+    },
+    "test_data": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "timeout",
+          "environment",
+          "schema_name"
+        ],
+        "properties": {
+          "class_files": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "properties": {
+                "class_file": {
+                  "$ref": "#/definitions/files_list"
+                }
+              },
+              "dependencies": {
+                "class_file": {
+                  "properties": {
+                    "class_methods": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "class_method": {
+                            "type": "string"
+                          }
+                        },
+                        "dependencies": {
+                          "class_method": {
+                            "properties": {
+                              "order_on": {
+                                "type": "boolean"
+                              },
+                              "data_files": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "data_file": {
+                                      "$ref": "#/definitions/files_list"
+                                    }
+                                  },
+                                  "dependencies": {
+                                    "data_file": {
+                                      "properties": {
+                                        "tables": {
+                                          "type": "array",
+                                          "items": {
+                                            "type": "string"
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "test_connection": {
+                      "type": "boolean"
+                    },
+                    "test_disconnection": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            },
+            "uniqueItems": true
+          },
+          "category": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "$ref": "#/definitions/test_data_categories"
+            },
+            "uniqueItems": true
+          },
+          "timeout": {
+            "type": "integer",
+            "default": 30
+          },
+          "feedback_file_name": {
+            "type": "string"
+          }
+        },
+        "dependencies": {
+          "feedback_file_name": {
+            "properties": {
+              "upload_feedback_to_repo": {
+                "type": "boolean",
+                "default": false
+              },
+              "upload_feedback_file": {
+                "type": "boolean",
+                "default": false
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

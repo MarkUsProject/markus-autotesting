@@ -2,121 +2,126 @@
 
 set -e
 
+create_venv() {
+    rm -rf ${VENV_DIR} # clean up existing venv if any
+    python${PY_VERSION} -m venv ${VENV_DIR}
+    source ${VENV_DIR}/bin/activate
+    pip install wheel
+    pip install -r <(echo ${PIP_REQUIREMENTS})
+    local pth_file=${VENV_DIR}/lib/python${PY_VERSION}/site-packages/lib.pth
+    echo ${TESTERS_DIR} >> ${pth_file}
+}
+
 move_files() {
-	rm -rf ${SOLUTIONDIR}
-	mv ${FILESDIR} ${SOLUTIONDIR}
-	cp ${LIBDIR}/* ${SOLUTIONDIR}
+    rm -rf ${SOLUTION_DIR}
+    mv ${FILES_DIR} ${SOLUTION_DIR}
+    cp ${LIB_DIR}/* ${SOLUTION_DIR}
 }
 
 compile_solutions() {
-	javac -Xlint:unchecked -cp ${SOLUTIONDIR}:${JARPATH} ${SOLUTIONDIR}/*.java
-}
-
-get_method_names() {
-python3 - <<EOPY
-import json
-settings = json.loads('${JSONSETTINGS}')
-solution_group = settings['solution_group']
-names = set()
-for group in solution_group:
-	name = group['java_method_name']
-	if 'CONNECTION' not in name and name not in names:
-		print(name)
-	names.add(name)
-EOPY
-}
-
-get_datasets_from_method_name() {
-python3 - <<EOPY
-import json
-settings = json.loads('${JSONSETTINGS}')
-solution_group = settings['solution_group']
-for group in solution_group:
-	if group['java_method_name'] == '$1'
-		print(group['dataset_file_path'])
-EOPY
+    javac -Xlint:unchecked -cp ${SOLUTION_DIR}:${JAR_PATH} ${SOLUTION_DIR}/*.java
 }
 
 get_all_test_users() {
-python3 - <<EOPY
-import json
-with open('${INSTALLSETTINGS}') as f:
-	settings = json.load(f)
-tests = settings['tests']
-print(','.join(test['user'] for test in tests))
-EOPY
+    echo ${SETTINGS_JSON} | jq --raw-output '.install_data | .tests | .[] | .user' | head -c -1 | tr '\n' ','
 }
 
-create_data_set_str() {
-	local schemafile="${SOLUTIONDIR}/$(get_setting schema_file_path)"
-	local schemaname=$1
-	local datafilepath="${SOLUTIONDIR}/$2"
-	local alltestusers=$(get_all_test_users)
-	echo "
-        DROP SCHEMA IF EXISTS ${schemaname} CASCADE;
-        CREATE SCHEMA ${schemaname};
-        GRANT USAGE ON SCHEMA ${schemaname} TO ${alltestusers};
-        SET search_path TO ${schemaname};
-    " | cat - ${schemafile} ${datafilepath} <(echo "GRANT SELECT ON ALL TABLES IN SCHEMA ${schemaname} TO ${alltestusers};")
+create_schema_str() {
+    local schema_name=$1
+    local data_file=${SOLUTION_DIR}/$2
+    local schema_file_path=$(echo ${SETTINGS_JSON} | jq --raw-output .env_data.schema_file_path)
+    local schema_file_abs_path="${SOLUTION_DIR}/${schema_file_path}"
+    local all_test_users=$(get_all_test_users)
+    echo "
+        DROP SCHEMA IF EXISTS ${schema_name} CASCADE;
+        CREATE SCHEMA ${schema_name};
+        GRANT USAGE ON SCHEMA ${schema_name} TO ${all_test_users};
+        SET search_path TO ${schema_name};
+    " | cat - ${schema_file_abs_path} ${data_file} <(echo "GRANT SELECT ON ALL TABLES IN SCHEMA ${schema_name} TO ${all_test_users};")
 }
 
 create_solution_str() {
-	local schemaname=$1
-	local testnamedb=$2
-	local alltestusers=$(get_all_test_users)
-	echo "
-            CREATE TABLE ${schemaname}.${testnamedb} (
+    local schema_name=$1
+    local testname_db=$2
+    local all_test_users=$(get_all_test_users)
+    echo "
+            CREATE TABLE ${schema_name}.${testname_db} (
                 id serial PRIMARY KEY,
                 java_output bytea
             );
-            GRANT SELECT ON ${schemaname}.${testnamedb} TO ${alltestusers};
+            GRANT SELECT ON ${schema_name}.${testname_db} TO ${all_test_users};
         "
 }
 
-load_solutions_to_db() {
-	local schemas=""
-	local oracledb=$(get_install_setting oracle_database)
-	local oracleuser=${oracledb}
-	echo "$(get_method_names)" | while read -r testname; do 
-		local testnamedb=${testname/./_} # convert . to _
-    	local testnamedb=${testnamedb,,} # convert classes and methods to lowercase
-    	echo "$(get_datasets_from_method_name ${testname})" | while read -r datafile; do
-    		schemaname="${TESTERNAME}_$(basename -s .sql ${datafile})"
-    		if [[ "${schemas}" != *" ${schemaname} "* ]]; then # first time using this dataset, create a schema for it
-    			local schemastring=$(create_data_set_str ${schemaname} ${datafile})
-    			schemas="${schemas} ${schemaname} "
-    		else
-    			local schemastring=''
-    		fi
-    		local solutionstring=$(create_solution_str ${schemaname} ${testnamedb})
-    		psql -U ${oracleuser} -d ${oracledb} -h localhost -f <(echo "${schemastring} ${solutionstring}")
-    		java -cp ${SOLUTIONDIR}:${JARPATH} MarkusJDBCTest ${oracledb} ${oracleuser} placeholder placeholder ${testname} ${schemaname} false
-    	done
-	done
+get_test_data() {
+    echo ${SETTINGS_JSON} | 
+        jq --compact-output '
+            .test_data |
+            .[] |
+            .class_files |
+            .[]'
 }
 
-get_files_to_remove() {
-python3 - <<EOPY
-import json, os, glob
-settings = json.loads('${JSONSETTINGS}')
-java_class_files = settings['java_class_files']
-to_keep = {'MarkusJDBCTest.class'}
-for group in java_class_files:
-	if group['available_for_tests']:
-		to_keep.add(f'{os.path.splitext(group['dataset_file_path'])[0]}.class')
-for file_path in glob.glob('${SOLUTIONDIR}/*'):
-	if os.path.relpath(file_path, '${SOLUTIONDIR}') in to_keep:
-		continue
-	if os.path.splitext(file_path)[0] in ['.ddl', '.sql']:
-		continue
-	print(file_path)
-EOPY
+create_db_load_str() {
+    local oracle_db=$1
+    local oracle_user=$2
+    local oracle_pwd=$(grep -Po "(?<=${oracle_user}:)(.*)$" ${HOME}/.pgpass)
+    local schemas=""
+    local tester_name=$(basename ${ENV_DIR})
+    while read -r files_json; do
+        local class_file=$(echo ${files_json} | jq --raw-output .class_file)
+        local class_methods=$(echo ${files_json} | jq --compact-output '.class_methods[]?')
+        while read -r method_json; do
+            local method_name=$(echo ${method_json} | jq --raw-output '.class_method')
+            local data_files=$(echo ${method_json} | jq --raw-output '.data_files[]? | .data_file')
+            local test_name="$(basename -s .java ${class_file}).${method_name}"
+            local testname_db=$(echo ${test_name} | tr '.' '_' | tr '[:upper:]' '[:lower:]')
+            while read -r data_file; do
+                local data_name=$(basename -s .sql ${data_file})
+                schema_name="${tester_name}_${data_name}"
+                if [[ ${schemas} != *" ${schema_name} "* ]]; then # first time using this dataset, create a schema for it
+                    local schema_string=$(create_schema_str ${schema_name} ${data_file})
+                    schemas="${schemas} ${schema_name} "
+                else
+                    local schema_string=''
+                fi
+                local solution_string=$(create_solution_str ${schema_name} ${testname_db})
+                echo "${schema_string} ${solution_string}"
+                local java_out=$(PGPASSWORD=${oracle_pwd} java -cp ${SOLUTION_DIR}:${JAR_PATH} MarkusJDBCTest ${oracle_db} ${oracle_user} placeholder ${schema_name} ${test_name} ${data_name} false)
+            done < <(echo "${data_files}")
+        done < <(echo "${class_methods}")
+    done < <(get_test_data)
+}
+
+load_solutions_to_db() {
+    local oracle_db=$(echo ${SETTINGS_JSON} | jq --raw-output .install_data.oracle_database)
+    local oracle_user=$(whoami)
+    psql -U ${oracle_user} -d ${oracle_db} -h localhost -f <(create_db_load_str ${oracle_db} ${oracle_user})
+}
+
+get_data_files() {
+    echo ${SETTINGS_JSON} | 
+        jq --raw-output '
+            [.test_data[] |
+             .class_files[] |
+             .class_methods[]? |
+             .data_files[]? |
+             .data_file
+            ] |
+            unique[]'
 }
 
 clean_solutions_dir() {
-	echo "$(get_files_to_remove)" | while read -r filename; do
-		rm -f ${filename}
-	done
+    local tmp_solutions="$(dirname ${SOLUTION_DIR})/.tmp_solutions"
+    mkdir ${tmp_solutions}
+    local schema_file=$(echo ${SETTINGS_JSON} | jq --raw-output .env_data.schema_file_path )
+    cp ${SOLUTION_DIR}/{MarkusJDBCTest*.class,JDBCSubmission*.class} ${tmp_solutions}
+    cp ${SOLUTION_DIR}/${schema_file} ${tmp_solutions}
+    while read -r data_file; do
+        cp ${SOLUTION_DIR}/${data_file} ${tmp_solutions}
+    done < <(get_data_files)
+    rm -rf "${SOLUTION_DIR}"
+    mv ${tmp_solutions} ${SOLUTION_DIR}
 }
 
 get_setting() {
@@ -124,32 +129,33 @@ get_setting() {
 }
 
 get_install_setting() {
-	cat ${INSTALLSETTINGS} | python3 -c "import sys, json; print(json.load(sys.stdin)['$1'])"
+    cat ${INSTALLSETTINGS} | python3 -c "import sys, json; print(json.load(sys.stdin)['$1'])"
 }
 
 # script starts here
-if [[ $# -lt 4 ]]; then
-    echo "Usage: $0 working_specs_dir tester_name settings_json files_dir"
+if [[ $# -lt 2 ]]; then
+    echo "Usage: $0 settings_json files_dir"
     exit 1
 fi
 
 # vars
-WORKINGSPECSDIR=$(readlink -f $1)
-TESTERNAME=$2
-JSONSETTINGS=$3
-FILESDIR=$(readlink -f $4)
+SETTINGS_JSON=$1
+FILES_DIR=$(readlink -f $2)
 
-THISSCRIPT=$(readlink -f ${BASH_SOURCE})
-BINDIR=$(dirname ${THISSCRIPT})
-SPECSDIR=$(dirname ${BINDIR})/specs
-LIBDIR=$(dirname ${BINDIR})/lib
-INSTALLSETTINGS=${SPECSDIR}/install_settings.json
+ENV_DIR=$(echo ${SETTINGS_JSON} | jq --raw-output .env_loc)
 
-SOLUTIONDIR=${WORKINGSPECSDIR}/${TESTERNAME}/solutions
-JARPATH=$(get_install_setting path_to_jdbc_jar)
+VENV_DIR=${ENV_DIR}/venv
+PY_VERSION=3.7
+PIP_REQUIREMENTS='psycopg2-binary'
+JAR_PATH=$(echo ${SETTINGS_JSON} | jq --raw-output '.install_data.path_to_jdbc_jar')
 
+SOLUTION_DIR=${ENV_DIR}/solution
+THIS_SCRIPT=$(readlink -f ${BASH_SOURCE})
+LIB_DIR=${THIS_SCRIPT%/*/*}/lib
+TESTERS_DIR=${THIS_SCRIPT%/*/*/*/*}
+
+create_venv
 move_files
 compile_solutions
 load_solutions_to_db
-clean_solutions_dir
-
+# clean_solutions_dir
