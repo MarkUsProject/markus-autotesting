@@ -1,24 +1,26 @@
 #!/usr/bin/env bash
 
-reset_specs() {
-    echo "[SQL-UNINSTALL] Resetting specs"
-    rm -f ${SPECSDIR}/install_settings.json
-}
-
-drop_oracle() {
+drop_oracle_db() {
+    echo "[SQL-UNINSTALL] Removing oracle user '${ORACLEUSER}' with database '${ORACLEDB}'"
     sudo -u postgres psql <<-EOF
 		DROP DATABASE IF EXISTS ${ORACLEDB};
 		DROP ROLE IF EXISTS ${ORACLEUSER};
 	EOF
 }
 
-drop_tests() {
+drop_test_dbs() {
     while read -r tester; do
+        echo "[SQL-UNINSTALL] Removing test user '${tester}' with database '${tester}'"
         sudo -u postgres psql <<-EOF
 			DROP DATABASE IF EXISTS ${tester};
 			DROP ROLE IF EXISTS ${tester};
 		EOF
     done < <(echo ${INSTALLSETTINGS} | jq --raw-output '.tests | .[] | .user')
+}
+
+reset_specs() {
+    echo "[SQL-UNINSTALL] Resetting specs"
+    rm -f ${SPECSDIR}/install_settings.json
 }
 
 # script starts here
@@ -36,8 +38,8 @@ ORACLEDB=$(echo ${INSTALLSETTINGS} | jq --raw-output .oracle_database)
 ORACLEUSER=${ORACLEDB}
 
 # main
-drop_oracle
-drop_tests
+drop_oracle_db
+drop_test_dbs
 reset_specs
-echo "[SQL-UNINSTALL] The following system packages have not been uninstalled: python3 postgresql. You may uninstall them if you wish."
+echo "[SQL-UNINSTALL] The following system packages have not been uninstalled: python3 postgresql jq. You may uninstall them if you wish."
 rm -f ${SPECSDIR}/.installed
