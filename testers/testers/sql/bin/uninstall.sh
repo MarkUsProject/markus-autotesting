@@ -6,16 +6,18 @@ drop_oracle_db() {
 		DROP DATABASE IF EXISTS ${ORACLEDB};
 		DROP ROLE IF EXISTS ${ORACLEUSER};
 	EOF
+    sudo -u ${ORACLEUSER} -- bash -c 'rm -f ${HOME}/.pgpass'
 }
 
 drop_test_dbs() {
-    while read -r tester; do
-        echo "[SQL-UNINSTALL] Removing test user '${tester}' with database '${tester}'"
+    for test_user in ${TESTUSERS}; do
+        local test_db=${test_user}
+        echo "[SQL-UNINSTALL] Removing test user '${test_user}' with database '${test_db}'"
         sudo -u postgres psql <<-EOF
-			DROP DATABASE IF EXISTS ${tester};
-			DROP ROLE IF EXISTS ${tester};
+			DROP DATABASE IF EXISTS ${test_db};
+			DROP ROLE IF EXISTS ${test_user};
 		EOF
-    done < <(echo ${INSTALLSETTINGS} | jq --raw-output '.tests | .[] | .user')
+    done
 }
 
 reset_specs() {
@@ -33,9 +35,10 @@ fi
 THISSCRIPT=$(readlink -f ${BASH_SOURCE})
 TESTERDIR=$(dirname $(dirname ${THISSCRIPT}))
 SPECSDIR=${TESTERDIR}/specs
-INSTALLSETTINGS=$(cat ${SPECSDIR}/install_settings.json | jq .)
+INSTALLSETTINGS=$(cat ${SPECSDIR}/install_settings.json)
 ORACLEDB=$(echo ${INSTALLSETTINGS} | jq --raw-output .oracle_database)
 ORACLEUSER=${ORACLEDB}
+TESTUSERS=$(echo ${INSTALLSETTINGS} | jq --raw-output '.tests | .[] | .user')
 
 # main
 drop_oracle_db
