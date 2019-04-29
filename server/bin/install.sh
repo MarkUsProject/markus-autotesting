@@ -45,11 +45,10 @@ create_worker_dir() {
     sudo mkdir -p ${workerdir}
     sudo chown ${SERVERUSEREFFECTIVE}:${workeruser} ${workerdir}
     sudo chmod ug=rwx,o=,+t ${workerdir}
-    redis-cli RPUSH ${REDISWORKERS} "{\"username\":\"${workeruser}\",\"worker_dir\":\"${workerdir}\"}" > /dev/null
+    redis-cli HSET ${REDISWORKERS} ${workeruser} ${workerdir}
 }
 
 create_worker_and_reaper_users() {
-    # TODO: Make a better distinction between users and parallelism
     redis-cli DEL ${REDISWORKERS} > /dev/null
     if [[ -z ${WORKERUSERS} ]]; then
         echo "[AUTOTEST-INSTALL] No dedicated worker user, using '${SERVERUSEREFFECTIVE}'"
@@ -108,10 +107,15 @@ install_default_tester_venv() {
 start_workers() {
     local servervenv=${SERVERDIR}/venv/bin/activate
     local supervisorconf=${LOGSDIR}/supervisord.conf
+    if [[ -z ${WORKERUSERS} ]]; then
+        local worker_users=${SERVERUSEREFFECTIVE}
+    else
+        local worker_users=${WORKERUSERS}
+    fi
 
     echo "[AUTOTEST-INSTALL] Generating supervisor config at '${supervisorconf}' and starting rq workers"
     sudo -u ${SERVERUSEREFFECTIVE} -- bash -c "source ${servervenv} &&
-                                               ${SERVERDIR}/generate_supervisord_conf.py ${supervisorconf} &&
+                                               ${SERVERDIR}/generate_supervisord_conf.py ${supervisorconf} ${worker_users} &&
                                                cd ${LOGSDIR} &&
                                                supervisord -c ${supervisorconf} &&
                                                deactivate"
@@ -204,7 +208,7 @@ SCRIPTSDIR=${WORKSPACEDIR}/$(get_config_param SCRIPTS_DIR_NAME)
 WORKERSSDIR=${WORKSPACEDIR}/$(get_config_param WORKERS_DIR_NAME)
 LOGSDIR=${WORKSPACEDIR}/$(get_config_param LOGS_DIR_NAME)
 REDISPREFIX=$(get_config_param REDIS_PREFIX)
-REDISWORKERS=${REDISPREFIX}:$(get_config_param REDIS_WORKERS_LIST)
+REDISWORKERS=${REDISPREFIX}:$(get_config_param REDIS_WORKERS_HASH)
 REAPERPREFIX=$(get_config_param REAPER_USER_PREFIX)
 
 # main

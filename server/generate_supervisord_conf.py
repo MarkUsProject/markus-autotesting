@@ -4,8 +4,9 @@ import config
 import sys
 import os
 import shutil
+import argparse
 
-header = """[supervisord]
+HEADER = """[supervisord]
 
 [supervisorctl]
 
@@ -17,9 +18,10 @@ supervisor.rpcinterface_factory = supervisor.rpcinterface:make_main_rpcinterface
 
 """
 
-content = """[program:rq_worker_type{type_ind}]
+CONTENT = """[program:rq_worker_{worker_user}]
+environment=MARKUSWORKERUSER={worker_user}
 command={rq} worker {worker_args} {queues}
-process_name=%(program_name)s-%(process_num)02d
+process_name=rq_worker_{worker_user}
 numprocs={numprocs}
 directory={directory}
 stopsignal=TERM
@@ -32,20 +34,40 @@ killasgroup=true
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
-try:
-    rkw = config.REDIS_CONNECTION_KWARGS
-    redis_url = '--url redis://{}:{}/{}'.format(rkw['host'], rkw['port'], rkw['db'])
-except KeyError:
-    redis_url = ''
+def write_conf_file(conf_filename, user_names):
+    try:
+        rkw = config.REDIS_CONNECTION_KWARGS
+        redis_url = '--url redis://{}:{}/{}'.format(rkw['host'], rkw['port'], rkw['db'])
+    except KeyError:
+        redis_url = ''
 
-with open(sys.argv[1], 'w') as f:
-    f.write(header)
-    for i, (numprocs, queues) in enumerate(config.WORKERS):
-        queue_str = ' '.join(queues)
-        c = content.format(rq=shutil.which('rq'),
-                           type_ind=i,
-                           worker_args=redis_url,
-                           queues=queue_str,
-                           numprocs=numprocs,
-                           directory=THIS_DIR)
-        f.write(c)
+    with open(conf_filename, 'w') as f:
+        f.write(HEADER)
+        user_name_set = set(user_names)
+        enough_users = True
+        for numprocs, queues in config.WORKERS:
+            if enough_users:
+                for _ in range(numprocs):
+                    try:
+                        worker_user = user_name_set.pop()
+                    except KeyError:
+                        msg = f'[AUTOTEST] Not enough worker users to create all rq workers.'
+                        sys.stderr.write(f'{msg}\n')
+                        enough_users = False
+                        break
+                    queue_str = ' '.join(queues)
+                    c = CONTENT.format(worker_user=worker_user,
+                                       rq=shutil.which('rq'),
+                                       worker_args=redis_url,
+                                       queues=queue_str,
+                                       numprocs=1,
+                                       directory=THIS_DIR)
+                    f.write(c)
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('conf_filename')
+    parser.add_argument('user_names', nargs='+')
+    args = parser.parse_args()
+
+    write_conf_file(args.conf_filename, args.user_names)

@@ -8,8 +8,8 @@
 REDIS_CURRENT_TEST_SCRIPT_HASH = 'curr_test_scripts'
 # name of redis hash used to store pop interval data for each worker queue 
 REDIS_POP_HASH = 'pop_intervals'
-# name of redis list used to store workers data (username and worker directory)
-REDIS_WORKERS_LIST = 'workers'
+# name of redis hash used to store workers data (username and worker directory)
+REDIS_WORKERS_HASH = 'workers'
 # dictionary containing keyword arguments to pass to rq.use_connection 
 # when connecting to a redis database (empty dictionary is default)
 REDIS_CONNECTION_KWARGS = {}

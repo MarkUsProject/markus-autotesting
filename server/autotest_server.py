@@ -29,7 +29,7 @@ TEST_SCRIPT_DIR = os.path.join(config.WORKSPACE_DIR, config.SCRIPTS_DIR_NAME)
 TEST_RESULT_DIR = os.path.join(config.WORKSPACE_DIR, config.RESULTS_DIR_NAME)
 TEST_SPECS_DIR = os.path.join(config.WORKSPACE_DIR, config.SPECS_DIR_NAME)
 REDIS_CURRENT_TEST_SCRIPT_HASH = '{}:{}'.format(config.REDIS_PREFIX, config.REDIS_CURRENT_TEST_SCRIPT_HASH)
-REDIS_WORKERS_LIST = '{}:{}'.format(config.REDIS_PREFIX, config.REDIS_WORKERS_LIST)
+REDIS_WORKERS_HASH = '{}:{}'.format(config.REDIS_PREFIX, config.REDIS_WORKERS_HASH)
 REDIS_POP_HASH = '{}:{}'.format(config.REDIS_PREFIX, config.REDIS_POP_HASH)
 DEFAULT_ENV_DIR = os.path.join(TEST_SPECS_DIR, config.DEFAULT_ENV_NAME)
 
@@ -222,22 +222,25 @@ def fd_lock(file_descriptor, exclusive=True):
     finally:
         fcntl.flock(file_descriptor, fcntl.LOCK_UN)
 
-@contextmanager
 def tester_user():
     """
-    Pop the next available user from the array named REDIS_WORKERS_LIST in redis, 
-    yield the user information and pop it back in the queue when finished.
-    This will block until a user is available if the queue is empty. 
+    Get the workspace for the tester user specified by the MARKUSWORKERUSER
+    environment variable, return the user_name and path to that user's workspace.
+
+    Raises an AutotestError if a tester user is not specified or if a workspace
+    has not been setup for that user.
     """
     r = redis_connection()
-    try:
-        _, user_data = r.blpop(REDIS_WORKERS_LIST)
-    except rq.timeouts.JobTimeoutException:
+
+    user_name = os.environ.get('MARKUSWORKERUSER')
+    if user_name is None:
         raise AutotestError('No worker users available to run this job')
-    try:
-        yield json.loads(decode_if_bytes(user_data))
-    finally:
-        r.rpush(REDIS_WORKERS_LIST, user_data)
+
+    user_workspace = r.hget(REDIS_WORKERS_HASH, username)
+    if user_workspace is None:
+        raise AutotestError(f'No workspace directory for user: {user_name}')
+
+    return user_name, user_workspace
 
 ### MAINTENANCE FUNCTIONS ###
 
@@ -611,27 +614,25 @@ def run_test(markus_address, server_api_key, test_categories, files_path, assign
     try:
         job = rq.get_current_job()
         update_pop_interval_stat(job.origin)
-        with tester_user() as user_data:
-            test_username = user_data.get('username')
-            tests_path = user_data['worker_dir']
-            hooks_kwargs = {'api': api,
-                            'assignment_id': assignment_id,
-                            'group_id': group_id,
-                            'group_repo_name' : group_repo_name}
-            testers = {settings['tester_type'] for settings in test_specs['testers']}
-            hooks = Hooks(hooks_script_path, testers, cwd=tests_path, kwargs=hooks_kwargs)
-            try:
-                setup_files(files_path, tests_path, markus_address, assignment_id)
-                cmd = test_run_command(test_username=test_username)
-                results, hooks_error = run_test_specs(cmd,
-                                                      test_specs,
-                                                      test_categories,
-                                                      tests_path,
-                                                      test_username,
-                                                      hooks)
-            finally:
-                stop_tester_processes(test_username)
-                clear_working_directory(tests_path, test_username)
+        test_username, tests_path = tester_user()
+        hooks_kwargs = {'api': api,
+                        'assignment_id': assignment_id,
+                        'group_id': group_id,
+                        'group_repo_name' : group_repo_name}
+        testers = {settings['tester_type'] for settings in test_specs['testers']}
+        hooks = Hooks(hooks_script_path, testers, cwd=tests_path, kwargs=hooks_kwargs)
+        try:
+            setup_files(files_path, tests_path, markus_address, assignment_id)
+            cmd = test_run_command(test_username=test_username)
+            results, hooks_error = run_test_specs(cmd,
+                                                  test_specs,
+                                                  test_categories,
+                                                  tests_path,
+                                                  test_username,
+                                                  hooks)
+        finally:
+            stop_tester_processes(test_username)
+            clear_working_directory(tests_path, test_username)
     except Exception as e:
         error = str(e)
     finally:
