@@ -4,3 +4,4 @@ rq
 supervisor
 pyyaml
 git+https://github.com/MarkusProject/markus-api.git@master
+jsonschema

@@ -13,6 +13,7 @@ import config
 import shutil
 import copy
 from functools import wraps
+import form_validation
 
 ### HELPER FUNCTIONS ###
 
@@ -115,13 +116,17 @@ def run_test(user_type, batch_id, **kw):
     queue.enqueue_call(ats.run_test, kwargs=kw, job_id=format_job_id(**kw), timeout=timeout)
 
 @clean_on_error
-def update_specs(**kw):
+def update_specs(test_specs, schema=None, **kw):
     """
     Enqueue a test specs update job with keyword arguments specified in **kw
     """
     queue = rq.Queue(config.SERVICE_QUEUE, connection=ats.redis_connection())
-    check_args(ats.update_test_specs, kwargs=kw)
-    queue.enqueue_call(ats.update_test_specs, kwargs=kw)
+    check_args(ats.update_test_specs, kwargs={'test_specs': test_specs, **kw})
+    if schema is not None:
+        errors = list(form_validation.validate_with_defaults(schema, test_specs))
+        if errors:
+            raise form_validation.best_match(errors)
+    queue.enqueue_call(ats.update_test_specs, kwargs={'test_specs': test_specs, **kw})
  
 def cancel_test(markus_address, run_ids, **kw):
     """
