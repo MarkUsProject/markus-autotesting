@@ -18,14 +18,20 @@
       "oneOf": []
     }
   },
-  "title": "Test Data",
   "type": "object",
+  "required": [
+    "testers"
+  ],
   "properties": {
     "testers": {
       "type": "array",
       "minItems": 1,
       "items": {
         "type": "object",
+        "required": [
+          "tester_type",
+          "test_data"
+        ],
         "properties": {
           "tester_type": {
             "$ref": "#/definitions/installed_testers"

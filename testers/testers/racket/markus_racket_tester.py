@@ -41,7 +41,7 @@ class MarkusRacketTester(MarkusTester):
         """
         results = {}
         markus_rkt = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'lib', 'markus.rkt')
-        for group in self.specs.get('test_data', 'script_files', default=[]):
+        for group in self.specs['test_data', 'script_files']:
             test_file = group.get('script_file')
             if test_file:
                 suite_name = group.get('test_suite_name', 'all-tests')

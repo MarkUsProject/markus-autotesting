@@ -127,7 +127,7 @@ class MarkusPythonTester(MarkusTester):
         test_suite = self._load_unittest_tests(test_file)
         with open(os.devnull, 'w') as nullstream:    
             test_runner = unittest.TextTestRunner(
-                verbosity=self.specs.get('test_data', 'output_verbosity', default=2),
+                verbosity=self.specs['test_data', 'output_verbosity'],
                 stream=nullstream,
                 resultclass=MarkusTextTestResults)
             test_result = test_runner.run(test_suite)
@@ -143,7 +143,7 @@ class MarkusPythonTester(MarkusTester):
         with open(os.devnull, 'w') as null_out:
             try:
                 sys.stdout = null_out
-                verbosity = self.specs.get('test_data', 'output_verbosity', default='short')
+                verbosity = self.specs['test_data', 'output_verbosity']
                 with tempfile.NamedTemporaryFile(mode="w+", dir=this_dir) as sf:
                     pytest.main([test_file, f'--junitxml={sf.name}', f'--tb={verbosity}'],
                                 plugins=[AddDocstringToJunitXMLPlugin()])
@@ -157,8 +157,8 @@ class MarkusPythonTester(MarkusTester):
         Return a dict mapping each filename to its results
         """
         results = {}
-        for test_file in self.specs.get('test_data', 'script_files', default=[]):
-            if self.specs.get('test_data', 'tester') == 'unittest':
+        for test_file in self.specs['test_data', 'script_files']:
+            if self.specs['test_data', 'tester'] == 'unittest':
                 result = self._run_unittest_tests(test_file)
             else:
                 result = self._run_pytest_tests(test_file)

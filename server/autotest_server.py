@@ -375,7 +375,7 @@ def test_run_command(test_username=None):
 
     return cmd
 
-def create_test_group_result(stdout, stderr, run_time, extra_data, timeout=None):
+def create_test_group_result(stdout, stderr, run_time, extra_info, timeout=None):
     """
     Return the arguments passed to this function in a dictionary. If stderr is 
     falsy, change it to None. Load the json string in stdout as a dictionary.
@@ -386,7 +386,7 @@ def create_test_group_result(stdout, stderr, run_time, extra_data, timeout=None)
             'tests' : test_results, 
             'stderr' : stderr or None,
             'malformed' :  stdout if malformed else None,
-            'extra_data': extra_data or {}}
+            'extra_info': extra_info or {}}
 
 def get_test_preexec_fn():
     """
@@ -510,7 +510,7 @@ def run_test_specs(cmd, test_specs, test_categories, tests_path, test_username, 
                             start = time.time()
                             out, err = '', ''
                             timeout_expired = None
-                            timeout = test_data.get('timeout', 30) #TODO: don't hardcode default timeout
+                            timeout = test_data.get('timeout')
                             try:
                                 proc = subprocess.Popen(args, start_new_session=True, cwd=tests_path, shell=True, 
                                                         stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE,
@@ -533,8 +533,8 @@ def run_test_specs(cmd, test_specs, test_categories, tests_path, test_username, 
                                 out = decode_if_bytes(out)
                                 err = decode_if_bytes(err)
                                 duration = int(round(time.time()-start, 3) * 1000)
-                                extra_data = test_data.get('extra_data', {})
-                                results.append(create_test_group_result(out, err, duration, extra_data, timeout_expired))
+                                extra_info = test_data.get('extra_info', {})
+                                results.append(create_test_group_result(out, err, duration, extra_info, timeout_expired))
     return results, hooks.format_errors()
 
 def store_results(results_data, markus_address, assignment_id, group_id, submission_id):

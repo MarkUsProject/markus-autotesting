@@ -118,8 +118,7 @@ class MarkusPyTATester(MarkusTester):
 
     @MarkusTester.run_decorator
     def run(self):
-        feedback_file = self.specs.get('test_data', 'feedback_file_name')
-        with MarkusTester.open_feedback(feedback_file) as feedback_open:
+        with MarkusTester.open_feedback(self.feedback_file) as feedback_open:
             for test_data in self.specs.get('test_data', 'student_files', default=[]):
                 student_file_path = test_data['file_path']
                 max_points = test_data.get('max_points', 10)

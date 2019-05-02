@@ -8,6 +8,6 @@ class MarkusCustomTester(MarkusTester):
         super().__init__(specs, test_class=None)
 
     def run(self):
-        file_paths = self.specs.get('test_data', 'script_files', default=[])
+        file_paths = self.specs['test_data', 'script_files']
         for file_path in file_paths:
             subprocess.run(f'./{file_path}')

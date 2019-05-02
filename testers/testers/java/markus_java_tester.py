@@ -51,14 +51,14 @@ class MarkusJavaTester(MarkusTester):
 
     def compile(self):
         javac_command = ['javac', '-cp', self.java_classpath]
-        javac_command.extend(self.specs.get('test_data', 'script_files', default=[]))
+        javac_command.extend(self.specs['test_data', 'script_files'])
         # student files imported by tests will be compiled on cascade
         subprocess.run(javac_command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True,
                        check=True)
 
     def run_junit(self):
         java_command = ['java', '-cp', self.java_classpath, MarkusJavaTester.JAVA_TESTER_CLASS]
-        java_command.extend(self.specs.get('test_data', 'script_files', default=[]))
+        java_command.extend(self.specs.get['test_data', 'script_files'])
         java = subprocess.run(java_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True,
                               check=True)
         return java

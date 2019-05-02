@@ -11,8 +11,7 @@
       "items": {
         "type": "object",
         "required": [
-          "script_file",
-          "name",
+          "script_files",
           "timeout",
           "test_timeout",
           "test_cases"
@@ -28,7 +27,6 @@
           },
           "category": {
             "type": "array",
-            "minItems": 1,
             "items": {
               "$ref": "#/definitions/test_data_categories"
             },
@@ -69,10 +67,5 @@
         }
       }
     }
-  },
-  "required": [
-    "test_data",
-    "tester_type",
-    "tester_name"
-  ]
+  }
 }

@@ -1,4 +1,7 @@
 {
+  "required": [
+    "env_data"
+  ],
   "properties": {
     "tester_type": {
       "enum": [
@@ -7,6 +10,9 @@
     },
     "env_data": {
       "type": "object",
+      "required": [
+        "python_version"
+      ],
       "properties": {
         "python_version": {
           "type": "string",
@@ -27,8 +33,7 @@
       "items": {
         "type": "object",
         "required": [
-          "student_file",
-          "name",
+          "student_files",
           "timeout"
         ],
         "properties": {
@@ -90,10 +95,5 @@
         }
       }
     }
-  },
-  "required": [
-    "test_data",
-    "tester_type",
-    "tester_name"
-  ]
+  }
 }

@@ -11,8 +11,7 @@
       "items": {
         "type": "object",
         "required": [
-          "student_file",
-          "name",
+          "script_files",
           "timeout"
         ],
         "properties": {
@@ -67,10 +66,5 @@
         }
       }
     }
-  },
-  "required": [
-    "test_data",
-    "tester_type",
-    "tester_name"
-  ]
+  }
 }

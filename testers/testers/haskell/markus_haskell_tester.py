@@ -47,8 +47,8 @@ class MarkusHaskellTester(MarkusTester):
         stats_flag = "--ingredient=Test.Tasty.Stats.consoleStatsReporter"
         flags = [module_flag,
                  stats_flag,
-                 f"--timeout={self.specs.get('test_data', 'test_timeout', default=10)}s",
-                 f"--quickcheck-tests={self.specs.get('test_data', 'test_cases', default=100)}"]
+                 f"--timeout={self.specs['test_data', 'test_timeout']}s",
+                 f"--quickcheck-tests={self.specs['test_data', 'test_cases']}"]
         return flags
 
     def _parse_test_results(self, reader):
@@ -76,7 +76,7 @@ class MarkusHaskellTester(MarkusTester):
         """
         results = {}
         this_dir = os.getcwd()
-        for test_file in self.specs.get('test_data', 'script_files', default=[]):
+        for test_file in self.specs['test_data', 'script_files']:
             with tempfile.NamedTemporaryFile(dir=this_dir) as f:
                 cmd = ['tasty-discover', '.', '_', f.name] + self._test_run_flags(test_file)
                 subprocess.run(cmd, stdout=subprocess.DEVNULL, universal_newlines=True)
