@@ -15,6 +15,7 @@
       "enum": []
     },
     "tester_schemas": {
+      "type": "object",
       "oneOf": []
     }
   },

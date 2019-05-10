@@ -4,6 +4,7 @@
   ],
   "properties": {
     "tester_type": {
+      "type": "string",
       "enum": [
         "py"
       ]
@@ -91,6 +92,7 @@
               {
                 "properties": {
                   "tester": {
+                    "type": "string",
                     "enum": [
                       "pytest"
                     ]
@@ -112,6 +114,7 @@
               {
                 "properties": {
                   "tester": {
+                    "type": "string",
                     "enum": [
                       "unittest"
                     ]

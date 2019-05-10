@@ -1,6 +1,7 @@
 {
   "properties": {
     "tester_type": {
+      "type": "string",
       "enum": [
         "racket"
       ]
