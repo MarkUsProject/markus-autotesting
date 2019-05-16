@@ -23,7 +23,7 @@ SETTINGS_JSON=$1
 
 ENV_DIR=$(echo ${SETTINGS_JSON} | jq --raw-output .env_loc)
 PY_VERSION=$(echo ${SETTINGS_JSON} | jq --raw-output .env_data.python_version)
-PIP_REQUIREMENTS="pytest $(echo ${SETTINGS_JSON} | jq --raw-output .env_data.pip_requirements)"
+PIP_REQUIREMENTS="pytest psycopg2-binary $(echo ${SETTINGS_JSON} | jq --raw-output .env_data.pip_requirements)"
 
 VENV_DIR=${ENV_DIR}/venv
 THIS_SCRIPT=$(readlink -f ${BASH_SOURCE})
