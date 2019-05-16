@@ -4,7 +4,7 @@ set -e
 
 install_packages() {
     echo "[AUTOTEST-INSTALL] Installing system packages"
-    sudo apt-get install "python${PYTHONVERSION}" "python${PYTHONVERSION}-venv" redis-server jq
+    sudo apt-get install "python${PYTHONVERSION}" "python${PYTHONVERSION}-venv" redis-server jq postgresql
 }
 
 create_server_user() {
@@ -121,6 +121,31 @@ start_workers() {
                                                deactivate"
 }
 
+create_worker_dbs() {
+    echo "[AUTOTEST-INSTALL] Creating databases for worker users"
+    local conf_string=''
+    if [[ -z ${WORKERUSERS} ]]; then
+        local workerusers=${SERVERUSEREFFECTIVE}
+    else
+        local workerusers=${WORKERUSERS}
+    fi
+    for workeruser in ${workerusers}; do
+        local database="${POSTGRESPREFIX}${workeruser}"
+        sudo -u postgres psql <<-EOF
+			DROP DATABASE IF EXISTS ${database};
+			DROP ROLE IF EXISTS ${workeruser};
+			CREATE ROLE ${workeruser} LOGIN PASSWORD null;
+			CREATE DATABASE ${database} OWNER ${workeruser};
+			REVOKE CONNECT ON DATABASE ${database} FROM PUBLIC;
+			\connect ${database}
+		EOF
+        conf_string="${conf_string}\nlocal\t${database}\t${workeruser}\t\tpeer"
+    done
+    local pb_hba_conf=$(sudo -u postgres psql -t -P format=unaligned -c 'show hba_file';)
+    echo -e ${conf_string} | sudo -u postgres tee -a ${pb_hba_conf} > /dev/null
+    sudo -u postgres psql -c 'SELECT pg_reload_conf();' > /dev/null  
+}
+
 compile_reaper_script() {
     local reaperexe="${BINDIR}/kill_worker_procs"
 
@@ -139,7 +164,7 @@ create_enqueuer_wrapper() {
 
 		source ${SERVERDIR}/venv/bin/activate
 		${SERVERDIR}/autotest_enqueuer.py "\$@"
-	EOF
+		EOF
     sudo chown ${SERVERUSEREFFECTIVE}:${SERVERUSEREFFECTIVE} ${enqueuer}
     sudo chmod u=rwx,go=r ${enqueuer}
 }
@@ -210,11 +235,13 @@ LOGSDIR=${WORKSPACEDIR}/$(get_config_param LOGS_DIR_NAME)
 REDISPREFIX=$(get_config_param REDIS_PREFIX)
 REDISWORKERS=${REDISPREFIX}:$(get_config_param REDIS_WORKERS_HASH)
 REAPERPREFIX=$(get_config_param REAPER_USER_PREFIX)
+POSTGRESPREFIX=$(get_config_param POSTGRES_PREFIX)
 
 # main
 create_server_user
 create_worker_and_reaper_users
 create_workspace_dirs
+create_worker_dbs
 install_venv
 install_default_tester_venv
 start_workers

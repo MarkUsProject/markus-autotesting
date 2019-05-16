@@ -516,8 +516,9 @@ def run_test_specs(cmd, test_specs, test_categories, tests_path, test_username, 
                             timeout = test_data.get('timeout')
                             try:
                                 proc = subprocess.Popen(args, start_new_session=True, cwd=tests_path, shell=True, 
-                                                        stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE,
-                                                        preexec_fn=preexec_fn)
+                                                        stdout=subprocess.PIPE, stderr=subprocess.PIPE, 
+                                                        stdin=subprocess.PIPE, preexec_fn=preexec_fn, 
+                                                        env={**os.environ, 'POSTGRESPREFIX': config.POSTGRES_PREFIX})
                                 try:
                                     settings_json = json.dumps({**settings, 'test_data': test_data}).encode('utf-8')
                                     out, err = proc.communicate(input=settings_json, timeout=timeout)
