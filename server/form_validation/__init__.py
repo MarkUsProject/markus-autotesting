@@ -16,12 +16,12 @@ def extend_with_default(validator_class=Draft7Validator):
         if not validator.is_type(instance, "object"):
             return
         for prop, subschema in properties.items():
-            if instance.get(prop) == None:
+            if instance.get(prop) is None:
                 if "default" in subschema:
                     default_val = subschema["default"]
-                elif subschema.get('type') == 'array':
+                elif subschema.get("type") == "array":
                     default_val = []
-                elif subschema.get('type') == 'object':
+                elif subschema.get("type") == "object":
                     default_val = {}
                 else:
                     continue
@@ -39,9 +39,9 @@ def extend_with_default(validator_class=Draft7Validator):
             default_val = None
             if "default" in properties:
                 default_val = properties['default']
-            elif properties.get('type') == 'array':
+            elif properties.get("type") == "array":
                 default_val = []
-            elif properties.get('type') == 'object':
+            elif properties.get("type") == "object":
                 default_val = {}
             if default_val is not None:
                 instance.append(default_val)
@@ -84,7 +84,7 @@ def extend_with_default(validator_class=Draft7Validator):
             instance.clear()
             instance.update(good_instance)
 
-    custom_validators = {"properties" : set_defaults,
+    custom_validators = {"properties": set_defaults,
                          "items": set_array_defaults,
                          "oneOf": set_oneOf_defaults}
 
@@ -100,5 +100,4 @@ def validate_with_defaults(schema, obj, validator_class=Draft7Validator):
     # etc. can't be done until the instance has been properly filled with defaults.
     list(validator.iter_errors(obj))
     return validator.iter_errors(obj)
-
     
