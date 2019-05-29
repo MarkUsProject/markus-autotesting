@@ -47,7 +47,7 @@ class MarkusSQLTest(MarkusTest):
         query = 'SELECT * FROM %(schema)s.%(table)s'
         query_vars = {'schema': psycopg2.extensions.AsIs(schema_name),
                       'table': psycopg2.extensions.AsIs(table_name)}
-        if self.order_by is not None:
+        if self.order_by:
             query += ' ORDER BY %(order)s'
             query_vars['order'] = psycopg2.extensions.AsIs(self.order_by)
 
@@ -131,7 +131,7 @@ class MarkusSQLTest(MarkusTest):
                     self.ERROR_MSGS['bad_row_count'].format(oracle_num_results, test_num_results))
 
         for i, oracle_row in enumerate(oracle_results):
-            if self.order_by is not None:
+            if self.order_by:
                 test_row = test_results[i]
             else:
                 # check 5, unordered variant: row contents
@@ -157,7 +157,7 @@ class MarkusSQLTest(MarkusTest):
                 checked_column_types.append(j)
             check_column_types = [j for j in check_column_types if j not in checked_column_types]
             # check 5, ordered variant: row contents + order
-            if self.order_by is not None and oracle_row != test_row:
+            if self.order_by and oracle_row != test_row:
                 return (MarkusTest.Status.FAIL,
                         self.ERROR_MSGS['bad_row_content_order'].format(i, oracle_row, test_results[i]))
         # check 3: column types compatibility deferred trigger
@@ -199,7 +199,7 @@ class MarkusSQLTest(MarkusTest):
             return self.error(message)
         # check if ordering is required
         test_order_file = None
-        if self.order_by is not None:
+        if self.order_by:
             test_order_file = '{}_order{}'.format(self.query_name, os.path.splitext(self.query_file)[1])
             if not os.path.isfile(test_order_file):
                 message = self.ERROR_MSGS['no_submission_order'].format(test_order_file)

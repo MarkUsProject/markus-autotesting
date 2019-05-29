@@ -30,6 +30,9 @@ get_all_test_users() {
 create_schema_sql() {
     local schema_name=$1
     local data_file=${SOLUTION_DIR}/$2
+    if [[ ! -f ${data_file} ]]; then
+        local data_file=""
+    fi
     local schema_file_path=$(echo ${SETTINGS_JSON} | jq --raw-output .env_data.schema_file_path)
     local schema_file_abs_path="${SOLUTION_DIR}/${schema_file_path}"
     local all_test_users=$(get_all_test_users)

@@ -19,7 +19,7 @@ class MarkusJDBCTest(MarkusSQLTest):
 
         class_file = kwargs['class_file']
         self.class_name = os.path.splitext(os.path.basename(class_file))[0]
-        self.method = kwargs['method']
+        self.method = kwargs.get('method', '')
 
         super().__init__(tester, **kwargs)
         
@@ -96,7 +96,7 @@ class MarkusJDBCTester(MarkusSQLTester):
 
     def __init__(self, specs, test_class=MarkusJDBCTest):
         super().__init__(specs, test_class)
-        java_files = (group.get('class_file') for group in self.specs.get('test_data', 'class_files', default={}))
+        java_files = (group.get('class_file') for group in self.specs['test_data', 'class_files'])
         self.java_files = [jf for jf in java_files if jf]
         solution_path = os.path.join(self.specs['env_loc'], self.SOLUTION_DIR)
         self.java_classpath = '.:{}:{}'.format(solution_path, self.specs['install_data', 'path_to_jdbc_jar'])
@@ -121,7 +121,7 @@ class MarkusJDBCTester(MarkusSQLTester):
             raise type(e)(msg) from e
         feedback_file = self.specs.get('test_data', 'feedback_file_name')
         with MarkusTester.open_feedback(feedback_file) as feedback_open:
-            class_groups = self.specs.get('test_data', 'class_files', default=[])
+            class_groups = self.specs['test_data', 'class_files']
             test_kwargs = []
             env_name = os.path.basename(self.specs['env_loc'])
             for group in class_groups:
@@ -130,10 +130,10 @@ class MarkusJDBCTester(MarkusSQLTester):
                     test_kwargs.append(dict(class_file=class_file, method='CONNECTION'))
                 if group.get('test_disconnection'):
                     test_kwargs.append(dict(class_file=class_file, method='DISCONNECTION'))
-                for method_group in group.get('class_methods', []):
-                    method = method_group['class_method']
+                for method_group in group.get('class_methods'):
+                    method = method_group.get('class_method', '')
                     for data_group in method_group.get('data_files', []):
-                        data_file = data_group.get('data_file')
+                        data_file = data_group.get('data_file', '')
                         tables = data_group.get('tables', [])
                         test_kwargs.append(dict(class_file=class_file,
                                                 method=method,

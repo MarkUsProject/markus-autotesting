@@ -7,6 +7,10 @@
     },
     "env_data": {
       "type": "object",
+      "required": [
+        "schema_name",
+        "schema_file_path"
+      ],
       "properties": {
         "schema_name": {
           "type": "string",
@@ -23,10 +27,9 @@
       "items": {
         "type": "object",
         "required": [
-          "name",
           "timeout",
-          "environment",
-          "schema_name"
+          "category",
+          "class_files"
         ],
         "properties": {
           "class_files": {
@@ -34,6 +37,9 @@
             "minItems": 1,
             "items": {
               "type": "object",
+              "required": [
+                "class_file"
+              ],
               "properties": {
                 "class_file": {
                   "$ref": "#/definitions/files_list"
@@ -55,7 +61,8 @@
                           "class_method": {
                             "properties": {
                               "order_on": {
-                                "type": "boolean"
+                                "type": "boolean",
+                                "default": false
                               },
                               "data_files": {
                                 "type": "array",
@@ -86,10 +93,12 @@
                       }
                     },
                     "test_connection": {
-                      "type": "boolean"
+                      "type": "boolean",
+                      "default": false
                     },
                     "test_disconnection": {
-                      "type": "boolean"
+                      "type": "boolean",
+                      "default": false
                     }
                   }
                 }

@@ -7,6 +7,10 @@
     },
     "env_data": {
       "type": "object",
+      "required": [
+        "schema_name",
+        "schema_file_path"
+      ],
       "properties": {
         "schema_name": {
           "type": "string",
@@ -23,10 +27,9 @@
       "items": {
         "type": "object",
         "required": [
-          "name",
-          "timeout",
-          "environment",
-          "schema_name"
+          "query_files",
+          "category",
+          "timeout"
         ],
         "properties": {
           "query_files": {
@@ -34,6 +37,10 @@
             "minItems": 1,
             "items": {
               "type": "object",
+              "required": [
+                "query_file",
+                "data_files"
+              ],
               "properties": {
                 "query_file": {
                   "$ref": "#/definitions/files_list"
