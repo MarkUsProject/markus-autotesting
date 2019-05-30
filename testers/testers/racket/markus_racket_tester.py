@@ -2,7 +2,7 @@ import json
 import subprocess
 import os
 
-from testers.markus_tester import MarkusTester, MarkusTest
+from testers.markus_tester import MarkusTester, MarkusTest, MarkusTestError
 
 
 class MarkusRacketTest(MarkusTest):
@@ -56,7 +56,7 @@ class MarkusRacketTester(MarkusTester):
             results = self.run_racket_test()
         except subprocess.CalledProcessError as e:
             msg = e.stdout + e.stderr
-            raise type(e)(msg) from e
+            raise MarkusTestError(msg) from e
         with self.open_feedback() as feedback_open:
             for test_file, result in results.items():
                 if result.strip():
@@ -64,7 +64,7 @@ class MarkusRacketTester(MarkusTester):
                         test_results = json.loads(result)
                     except json.JSONDecodeError as e:
                         msg = MarkusRacketTester.ERROR_MSGS['bad_json'].format(result)
-                        raise type(e)(msg) from e
+                        raise MarkusTestError(msg) from e
                     for t_result in test_results:
                         test = self.test_class(self, feedback_open, t_result)
                         print(test.run(), flush=True)

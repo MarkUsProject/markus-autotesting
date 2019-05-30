@@ -215,11 +215,9 @@ class MarkusSQLTest(MarkusTest):
             else:
                 oracle_solution, test_solution = self.get_psql_dump(self.query_name, test_order_file)
                 return self.failed(message, oracle_solution, test_solution)
-        except Exception as e:
+        finally:
             self.tester.oracle_connection.commit()
             self.tester.test_connection.commit()
-            import traceback
-            return self.error(message=str(traceback.format_tb(e.__traceback__)+[str(e)]))
 
 
 class MarkusSQLTester(MarkusTester):

@@ -3,7 +3,7 @@ import os
 import tempfile
 import csv
 
-from testers.markus_tester import MarkusTester, MarkusTest
+from testers.markus_tester import MarkusTester, MarkusTest, MarkusTestError
 
 class MarkusHaskellTest(MarkusTest):
 
@@ -92,11 +92,11 @@ class MarkusHaskellTester(MarkusTester):
             results = self.run_haskell_tests()
         except subprocess.CalledProcessError as e:
             msg = (e.stdout or '' + e.stderr or '') or str(e)
-            raise type(e)(msg) from e
+            raise MarkusTestError(msg) from e
         with self.open_feedback() as feedback_open:
             for test_file, result in results.items():
                 if result['stderr']:
-                    raise Exception(result['stderr'])
+                    raise MarkusTestError(result['stderr'])
                 for res in result['results']:
                     test = self.test_class(self, test_file, res, feedback_open)
                     print(test.run(), flush=True)

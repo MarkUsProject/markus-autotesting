@@ -2,7 +2,7 @@ import enum
 import json
 import subprocess
 
-from testers.markus_tester import MarkusTester, MarkusTest
+from testers.markus_tester import MarkusTester, MarkusTest, MarkusTestError
 
 
 class MarkusJavaTest(MarkusTest):
@@ -70,15 +70,15 @@ class MarkusJavaTester(MarkusTester):
             self.compile()
         except subprocess.CalledProcessError as e:
             msg = MarkusJavaTest.ERRORS['bad_javac'].format(e.stdout)
-            raise type(e)(msg) from e
+            raise MarkusTestError(msg) from e
         # run the tests with junit
         try:
             results = self.run_junit()
             if results.stderr:
-                raise Exception(results.stderr)
+                raise MarkusTestError(results.stderr)
         except subprocess.CalledProcessError as e:
             msg = MarkusJavaTest.ERRORS['bad_java'].format(e.stdout + e.stderr)
-            raise type(e)(msg) from e
+            raise MarkusTestError(msg) from e
         with self.open_feedback() as feedback_open:
             for result in json.loads(results.stdout):
                 test = self.test_class(self, result, feedback_open)

@@ -6,6 +6,8 @@ from functools import wraps
 import traceback
 
 
+class MarkusTestError(Exception): pass
+
 class MarkusTest(ABC):
 
     class Status(enum.Enum):
@@ -205,6 +207,12 @@ class MarkusTest(ABC):
 
     @staticmethod
     def run_decorator(run_func):
+        """
+        Wrapper around a test.run method. Used to print error messages
+        in the correct json format. If it catches a MarkusTestError then
+        only the error message is sent in the description, otherwise the
+        whole traceback is sent. 
+        """
         @wraps(run_func)
         def run_func_wrapper(self, *args, **kwargs):
             try:
@@ -213,6 +221,8 @@ class MarkusTest(ABC):
                 self.before_test_run()
                 result_json = run_func(self, *args, **kwargs)
                 self.after_successful_test_run()
+            except MarkusTestError as e:
+                result_json = self.error(message=str(e))
             except Exception:
                 result_json = self.error(message=traceback.format_exc())
             return result_json
@@ -261,11 +271,19 @@ class MarkusTester(ABC):
 
     @staticmethod
     def run_decorator(run_func):
+        """
+        Wrapper around a tester.run method. Used to print error messages
+        in the correct json format. If it catches a MarkusTestError then
+        only the error message is sent in the description, otherwise the
+        whole traceback is sent.
+        """
         @wraps(run_func)
         def run_func_wrapper(self, *args, **kwargs):
             try:
                 self.before_tester_run()
                 return run_func(self, *args, **kwargs)
+            except MarkusTestError as e:
+                print(MarkusTester.error_all(message=str(e)), flush=True)
             except Exception:
                 print(MarkusTester.error_all(message=traceback.format_exc()), flush=True)
             finally:

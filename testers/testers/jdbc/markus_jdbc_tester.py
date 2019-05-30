@@ -2,7 +2,7 @@ import os
 import subprocess
 
 from testers.sql.markus_sql_tester import MarkusSQLTester, MarkusSQLTest
-from testers.markus_tester import MarkusTester, MarkusTest
+from testers.markus_tester import MarkusTester, MarkusTest, MarkusTestError
 
 
 class MarkusJDBCTest(MarkusSQLTest):
@@ -55,14 +55,12 @@ class MarkusJDBCTest(MarkusSQLTest):
                 return self.failed(message=java.stderr)
             if java.stdout == MarkusTest.Status.ERROR.value:
                 return self.error(message=java.stderr)
-        except Exception as e:
+        except subprocess.CalledProcessError as e:
+            msg = self.ERROR_MSGS['bad_java'].format(e.stdout + e.stderr)
+            raise MarkusTestError(msg)            
+        finally:
             self.tester.oracle_connection.commit()
             self.tester.test_connection.commit()
-            if isinstance(e, subprocess.CalledProcessError):
-                msg = self.ERROR_MSGS['bad_java'].format(e.stdout + e.stderr)
-            else:
-                msg = str(e)
-            return self.error(message=msg)
         points_earned = self.java_points
         # fetch and compare sql table results
         messages = []
@@ -112,13 +110,13 @@ class MarkusJDBCTester(MarkusSQLTester):
         for java_file in self.java_files:
             if not os.path.isfile(java_file):
                 msg = MarkusJDBCTest.ERROR_MSGS['no_submission'].format(java_file)
-                raise Exception(msg)
+                raise MarkusTestError(msg)
         # check that the submission compiles
         try:
             self.init_java()
         except subprocess.CalledProcessError as e:
             msg = MarkusJDBCTest.ERROR_MSGS['bad_javac'].format(e.stdout)
-            raise type(e)(msg) from e
+            raise MarkusTestError(msg) from e
         with self.open_feedback() as feedback_open:
             class_groups = self.specs['test_data', 'class_files']
             test_kwargs = []
