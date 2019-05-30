@@ -263,8 +263,7 @@ class MarkusSQLTester(MarkusTester):
 
     @MarkusTester.run_decorator
     def run(self):
-        feedback_file = self.specs.get('test_data', 'feedback_file_name')
-        with MarkusTester.open_feedback(feedback_file) as feedback_open:
+        with self.open_feedback() as feedback_open:
             query_groups = self.specs.get('test_data', 'query_files', default=[])
             env_name = os.path.basename(self.specs['env_loc'])
             for group in query_groups:

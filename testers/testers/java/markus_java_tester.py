@@ -79,8 +79,7 @@ class MarkusJavaTester(MarkusTester):
         except subprocess.CalledProcessError as e:
             msg = MarkusJavaTest.ERRORS['bad_java'].format(e.stdout + e.stderr)
             raise type(e)(msg) from e
-        feedback_file = self.specs.get('test_data', 'feedback_file_name')
-        with MarkusTester.open_feedback(feedback_file) as feedback_open:
+        with self.open_feedback() as feedback_open:
             for result in json.loads(results.stdout):
                 test = self.test_class(self, result, feedback_open)
                 result_json = test.run()

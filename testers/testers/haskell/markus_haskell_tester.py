@@ -93,8 +93,7 @@ class MarkusHaskellTester(MarkusTester):
         except subprocess.CalledProcessError as e:
             msg = (e.stdout or '' + e.stderr or '') or str(e)
             raise type(e)(msg) from e
-        feedback_file = self.specs.get('test_data', 'feedback_file_name')
-        with MarkusTester.open_feedback(feedback_file) as feedback_open:
+        with self.open_feedback() as feedback_open:
             for test_file, result in results.items():
                 if result['stderr']:
                     raise Exception(result['stderr'])

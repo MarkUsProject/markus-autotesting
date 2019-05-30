@@ -119,8 +119,7 @@ class MarkusJDBCTester(MarkusSQLTester):
         except subprocess.CalledProcessError as e:
             msg = MarkusJDBCTest.ERROR_MSGS['bad_javac'].format(e.stdout)
             raise type(e)(msg) from e
-        feedback_file = self.specs.get('test_data', 'feedback_file_name')
-        with MarkusTester.open_feedback(feedback_file) as feedback_open:
+        with self.open_feedback() as feedback_open:
             class_groups = self.specs['test_data', 'class_files']
             test_kwargs = []
             env_name = os.path.basename(self.specs['env_loc'])

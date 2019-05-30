@@ -272,9 +272,20 @@ class MarkusTester(ABC):
                 self.after_tester_run()
         return run_func_wrapper
 
-    @staticmethod
     @contextmanager
-    def open_feedback(filename, mode='w'):
+    def open_feedback(self, filename=None, no_feedback=False, mode='w'):
+        """
+        Yields an open file object, opened in <mode> mode if it exists,
+        otherwise it yields None.
+
+        If <filename> is None, the feedback_file_name from self.specs is
+        used unless <no_feedback> is True in which case this method yields
+        None.
+        """
+        if no_feedback:
+            yield None
+        if filename is None:
+            filename = self.specs.get('test_data', 'feedback_file_name')
         if filename:
             feedback_open = open(filename, mode)
             try:

@@ -168,8 +168,7 @@ class MarkusPythonTester(MarkusTester):
     @MarkusTester.run_decorator
     def run(self):
         results = self.run_python_tests()
-        feedback_file = self.specs.get('test_data', 'feedback_file_name')
-        with MarkusTester.open_feedback(feedback_file) as feedback_open:
+        with self.open_feedback() as feedback_open:
             for test_file, result in results.items():
                 for res in result:
                     test = self.test_class(self, test_file, res, feedback_open)
