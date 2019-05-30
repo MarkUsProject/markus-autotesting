@@ -273,7 +273,7 @@ class MarkusTester(ABC):
         return run_func_wrapper
 
     @contextmanager
-    def open_feedback(self, filename=None, no_feedback=False, mode='w'):
+    def open_feedback(self, filename=None, mode='w'):
         """
         Yields an open file object, opened in <mode> mode if it exists,
         otherwise it yields None.
