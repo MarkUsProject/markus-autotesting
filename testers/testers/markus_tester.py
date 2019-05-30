@@ -279,11 +279,8 @@ class MarkusTester(ABC):
         otherwise it yields None.
 
         If <filename> is None, the feedback_file_name from self.specs is
-        used unless <no_feedback> is True in which case this method yields
-        None.
+        used.
         """
-        if no_feedback:
-            yield None
         if filename is None:
             filename = self.specs.get('test_data', 'feedback_file_name')
         if filename:
