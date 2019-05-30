@@ -6,7 +6,8 @@ from functools import wraps
 import traceback
 
 
-class MarkusTestError(Exception): pass
+class MarkusTestError(Exception):
+    pass
 
 class MarkusTest(ABC):
 
@@ -211,7 +212,7 @@ class MarkusTest(ABC):
         Wrapper around a test.run method. Used to print error messages
         in the correct json format. If it catches a MarkusTestError then
         only the error message is sent in the description, otherwise the
-        whole traceback is sent. 
+        whole traceback is sent.
         """
         @wraps(run_func)
         def run_func_wrapper(self, *args, **kwargs):

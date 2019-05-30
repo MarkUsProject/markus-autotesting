@@ -57,7 +57,7 @@ class MarkusJDBCTest(MarkusSQLTest):
                 return self.error(message=java.stderr)
         except subprocess.CalledProcessError as e:
             msg = self.ERROR_MSGS['bad_java'].format(e.stdout + e.stderr)
-            raise MarkusTestError(msg)            
+            raise MarkusTestError(msg)
         finally:
             self.tester.oracle_connection.commit()
             self.tester.test_connection.commit()
