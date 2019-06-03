@@ -4,7 +4,7 @@ set -e
 
 install_packages() {
     echo "[JDBC-INSTALL] Installing system packages"
-    sudo apt-get install python3 openjdk-12-jdk jq
+    sudo apt-get install python3 openjdk-8-jdk jq
 }
 
 install_sql_tester() {
