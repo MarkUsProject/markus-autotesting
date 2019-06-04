@@ -15,7 +15,6 @@
       "enum": []
     },
     "tester_schemas": {
-      "type": "object",
       "oneOf": []
     }
   },
@@ -25,6 +24,7 @@
   ],
   "properties": {
     "testers": {
+      "title": "Testers",
       "type": "array",
       "minItems": 1,
       "items": {
@@ -35,7 +35,8 @@
         ],
         "properties": {
           "tester_type": {
-            "$ref": "#/definitions/installed_testers"
+            "$ref": "#/definitions/installed_testers",
+            "title": "Tester type"
           }
         },
         "dependencies": {
@@ -46,7 +47,8 @@
       }
     },
     "hooks_file": {
-      "$ref": "#/definitions/files_list"
+      "$ref": "#/definitions/files_list",
+      "title": "Custom hooks file"
     }
   }
 }

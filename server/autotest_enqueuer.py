@@ -161,7 +161,7 @@ def get_schema(**kw):
         schema_skeleton = json.load(f)
 
     glob_pattern = os.path.join(root_dir, 'testers', 'testers', '*', 'specs', '.installed')
-    for path in glob.glob(glob_pattern):
+    for path in sorted(glob.glob(glob_pattern)):
         tester_type = os.path.basename(os.path.dirname(os.path.dirname(path)))
         specs_dir = os.path.dirname(path)
         with open(os.path.join(specs_dir, 'settings_schema.json')) as f:
