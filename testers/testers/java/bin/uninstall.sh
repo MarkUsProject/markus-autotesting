@@ -26,5 +26,5 @@ JAVADIR=${TESTERDIR}/lib
 # main
 remove_tester
 reset_specs
-echo "[JAVA-UNINSTALL] The following system packages have not been uninstalled: python3 openjdk-11-jdk jq. You may uninstall them if you wish."
+echo "[JAVA-UNINSTALL] The following system packages have not been uninstalled: python3 openjdk-12-jdk jq. You may uninstall them if you wish."
 rm -f ${SPECSDIR}/.installed
