@@ -3,7 +3,7 @@ apply plugin: 'application'
 
 group = 'edu.toronto.cs.teach'
 version = '1.7.1'
-sourceCompatibility = 12
+sourceCompatibility = 1.8
 mainClassName = 'edu.toronto.cs.teach.MarkusJavaTester'
 
 repositories {
