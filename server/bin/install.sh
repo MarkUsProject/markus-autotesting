@@ -127,6 +127,11 @@ create_worker_dbs() {
     if [[ -z ${WORKERUSERS} ]]; then
         local workerusers=${SERVERUSEREFFECTIVE}
     else
+        sudo -u postgres psql <<-EOF
+			DROP ROLE IF EXISTS ${SERVERUSEREFFECTIVE};
+			CREATE ROLE ${SERVERUSEREFFECTIVE} LOGIN PASSWORD null;
+			ALTER ROLE ${SERVERUSEREFFECTIVE} CREATEROLE;
+		EOF
         local workerusers=${WORKERUSERS}
     fi
     for workeruser in ${workerusers}; do
@@ -135,12 +140,13 @@ create_worker_dbs() {
 			DROP DATABASE IF EXISTS ${database};
 			DROP ROLE IF EXISTS ${workeruser};
 			CREATE ROLE ${workeruser} LOGIN PASSWORD null;
-			CREATE DATABASE ${database} OWNER ${workeruser};
+			CREATE DATABASE ${database} OWNER ${SERVERUSEREFFECTIVE};
 			REVOKE CONNECT ON DATABASE ${database} FROM PUBLIC;
-			\connect ${database}
+			GRANT CONNECT ON DATABASE ${database} TO ${workeruser};
 		EOF
-        conf_string="${conf_string}\nlocal\t${database}\t${workeruser}\t\tpeer"
+        conf_string="${conf_string}\nlocal\t${database}\t${workeruser}\t\tmd5"
     done
+    conf_string="local\tall\t${SERVERUSEREFFECTIVE}\t\peer\n${conf_string}"
     local pb_hba_conf=$(sudo -u postgres psql -t -P format=unaligned -c 'show hba_file';)
     echo -e ${conf_string} | sudo -u postgres tee -a ${pb_hba_conf} > /dev/null
     sudo -u postgres psql -c 'SELECT pg_reload_conf();' > /dev/null  

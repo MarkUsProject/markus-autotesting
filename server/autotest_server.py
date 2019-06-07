@@ -508,7 +508,7 @@ def run_test_specs(cmd, test_specs, test_categories, tests_path, test_username, 
                 for test_data in settings['test_data']:
                     test_category = test_data.get('category', [])  
                     if set(test_category) & set(test_categories): #TODO: make sure test_categories is non-string collection type
-                        extra_hook_kwargs={'test_data': test_data}
+                        extra_hook_kwargs={'test_data': test_data, 'test_username': test_username, 'prefix': config.POSTGRESPREFIX}
                         with hooks.around('each', builtin_selector=test_data, extra_kwargs=extra_hook_kwargs):
                             start = time.time()
                             out, err = '', ''
@@ -517,8 +517,7 @@ def run_test_specs(cmd, test_specs, test_categories, tests_path, test_username, 
                             try:
                                 proc = subprocess.Popen(args, start_new_session=True, cwd=tests_path, shell=True, 
                                                         stdout=subprocess.PIPE, stderr=subprocess.PIPE, 
-                                                        stdin=subprocess.PIPE, preexec_fn=preexec_fn, 
-                                                        env={**os.environ, 'POSTGRESPREFIX': config.POSTGRES_PREFIX})
+                                                        stdin=subprocess.PIPE, preexec_fn=preexec_fn)
                                 try:
                                     settings_json = json.dumps({**settings, 'test_data': test_data}).encode('utf-8')
                                     out, err = proc.communicate(input=settings_json, timeout=timeout)

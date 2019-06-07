@@ -6,6 +6,10 @@ import os
 import sys
 import json
 import glob
+import psycopg2
+import getpass
+import secrets
+import string
 from pathlib import Path
 from hooks_context.utils import add_path
 
@@ -13,7 +17,8 @@ HOOKS = {'upload_feedback_file'    : {'context': 'after_each'},
          'upload_feedback_to_repo' : {'requires': ['clear_feedback_file'], 
                                       'context': 'after_each'},
          'upload_annotations'      : {'context': 'after_each'},
-         'clear_feedback_file'     : {'context': 'before_each'}}
+         'clear_feedback_file'     : {'context': 'before_each'},
+         'setup_database'          : {'context': 'before_each'}}
 
 def clear_feedback_file(feedback_file, test_data, **kwargs):
     """
@@ -47,6 +52,17 @@ def upload_annotations(api, assignment_id, group_id, test_data, **kwargs):
     if os.path.isfile(annotations_name):
         with open(annotations_name) as annotations_open:
             api.upload_annotations(assignment_id, group_id, json.load(annotations_open))
+
+def setup_database(test_username, prefix, **kwargs):
+    user = getpass.getuser()
+    database = f'{prefix}{test_username}'
+    password = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(20))
+    with psycopg2.connect(database=database, user=user) as conn:
+        with conn.cursor() as cursor:
+            cursor.execute("DROP OWNED BY CURRENT_USER; ALTER ROLE %s LOGIN PASSWORD '%s';", (test_username, password))
+    os.environ['AUTOTEST_DATABASE'] = database
+    os.environ['AUTOTEST_PWD'] = password
+
 
 ## DEFAULT TESTER HOOKS ##
 
