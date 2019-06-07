@@ -43,6 +43,20 @@ remove_workspace_dirs() {
     sudo rm -rf ${WORKSPACEDIR}
 }
 
+remove_worker_dbs() {
+    echo "[AUTOTEST-UNINSTALL] Removing all databases for worker users"
+    if [[ -z ${WORKERUSERS} ]]; then
+        local database="${POSTGRESPREFIX}${SERVERUSEREFFECTIVE}"
+        sudo -u postgres psql -c "DROP DATABASE IF EXISTS ${database};"
+    else
+        for workeruser in ${WORKERUSERS}; do
+            local database="${POSTGRESPREFIX}${workeruser}"
+            sudo -u postgres psql -c "DROP DATABASE IF EXISTS ${database}; DROP ROLE IF EXISTS ${workeruser};"
+        done
+    fi
+    sudo rm "${LOGSDIR}/.pgpass"
+}
+
 remove_unprivileged_user() {
     local username=$1
     local usertype=$2
@@ -136,11 +150,13 @@ SPECSDIR=${WORKSPACEDIR}/$(get_config_param SPECS_DIR_NAME)
 
 REDISPREFIX=$(get_config_param REDIS_PREFIX)
 REAPERPREFIX=$(get_config_param REAPER_USER_PREFIX)
+POSTGRESPREFIX=$(get_config_param POSTGRES_PREFIX)
 
 remove_enqueuer_wrapper
 remove_reaper_script
 stop_workers
 remove_default_tester_venv
+remove_worker_dbs
 remove_venv
 remove_workspace_dirs
 remove_worker_and_reaper_users

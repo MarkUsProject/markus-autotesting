@@ -508,7 +508,7 @@ def run_test_specs(cmd, test_specs, test_categories, tests_path, test_username, 
                 for test_data in settings['test_data']:
                     test_category = test_data.get('category', [])  
                     if set(test_category) & set(test_categories): #TODO: make sure test_categories is non-string collection type
-                        extra_hook_kwargs={'test_data': test_data, 'test_username': test_username, 'prefix': config.POSTGRESPREFIX}
+                        extra_hook_kwargs={'test_data': test_data, 'test_username': test_username, 'prefix': config.POSTGRES_PREFIX}
                         with hooks.around('each', builtin_selector=test_data, extra_kwargs=extra_hook_kwargs):
                             start = time.time()
                             out, err = '', ''
