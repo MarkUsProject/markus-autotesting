@@ -236,11 +236,11 @@ def tester_user():
     if user_name is None:
         raise AutotestError('No worker users available to run this job')
 
-    user_workspace = r.hget(REDIS_WORKERS_HASH, username)
+    user_workspace = r.hget(REDIS_WORKERS_HASH, user_name)
     if user_workspace is None:
         raise AutotestError(f'No workspace directory for user: {user_name}')
 
-    return user_name, user_workspace
+    return user_name, decode_if_bytes(user_workspace)
 
 ### MAINTENANCE FUNCTIONS ###
 
