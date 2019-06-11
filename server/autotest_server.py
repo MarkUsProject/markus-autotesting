@@ -379,7 +379,7 @@ def test_run_command(test_username=None):
     """
     cmd = '{}'
     if test_username is not None:
-        cmd = ' '.join(('sudo', '-Eu', test_username, '--', 'bash', '-c', 
+        cmd = ' '.join(('sudo', '-Eu', test_username, '--', 'bash', '-c',
                         "'{}'".format(cmd)))
 
     return cmd
@@ -497,8 +497,6 @@ def setup_database(test_username):
     user = getpass.getuser()
     database = f'{config.POSTGRES_PREFIX}{test_username}'
 
-    is_server_user = not config.SERVER_USER or config.SERVER_USER == user 
-
     with open(PGPASSFILE) as f:
         password = f.read().strip()
 
@@ -532,7 +530,7 @@ def run_test_specs(cmd, test_specs, test_categories, tests_path, test_username, 
                 for test_data in settings['test_data']:
                     test_category = test_data.get('category', [])  
                     if set(test_category) & set(test_categories): #TODO: make sure test_categories is non-string collection type
-                        extra_hook_kwargs={'test_data': test_data}
+                        extra_hook_kwargs = {'test_data': test_data}
                         with hooks.around('each', builtin_selector=test_data, extra_kwargs=extra_hook_kwargs):
                             start = time.time()
                             out, err = '', ''
