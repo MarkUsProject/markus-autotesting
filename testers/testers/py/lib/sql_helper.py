@@ -1,5 +1,6 @@
 import psycopg2
 import os
+import getpass
 
 def connection(*args, **kwargs):
     """
@@ -10,6 +11,9 @@ def connection(*args, **kwargs):
     """
     database = os.environ.get('AUTOTEST_DATABASE')
     password = os.environ.get('AUTOTEST_PWD')
-    if database is not None and password is not None:
-        return psycopg2.connection(database=database, user=database, password=password)
-    return psycopg2.connection(*args, **kwargs)
+    user = getpass.getuser()
+
+    if database is None or password is None:
+        return psycopg2.connect(*args, **kwargs)
+    return psycopg2.connect(database=database, user=user, password=password)
+    

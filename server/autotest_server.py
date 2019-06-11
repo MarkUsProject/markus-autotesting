@@ -20,6 +20,11 @@ import uuid
 import tempfile
 import hashlib
 import yaml
+import getpass
+import secrets
+import string
+import psycopg2
+from psycopg2.extensions import AsIs
 from markusapi import Markus
 import config
 
@@ -32,6 +37,7 @@ REDIS_CURRENT_TEST_SCRIPT_HASH = '{}:{}'.format(config.REDIS_PREFIX, config.REDI
 REDIS_WORKERS_HASH = '{}:{}'.format(config.REDIS_PREFIX, config.REDIS_WORKERS_HASH)
 REDIS_POP_HASH = '{}:{}'.format(config.REDIS_PREFIX, config.REDIS_POP_HASH)
 DEFAULT_ENV_DIR = os.path.join(TEST_SPECS_DIR, config.DEFAULT_ENV_NAME)
+PGPASSFILE = os.path.join(config.WORKSPACE_DIR, config.LOGS_DIR_NAME, '.pgpass')
 
 TEST_SCRIPTS_SETTINGS_FILENAME = 'settings.json'
 TEST_SCRIPTS_FILES_DIRNAME = 'files'
@@ -373,7 +379,7 @@ def test_run_command(test_username=None):
     """
     cmd = '{}'
     if test_username is not None:
-        cmd = ' '.join(('sudo', '-u', test_username, '--', 'bash', '-c', 
+        cmd = ' '.join(('sudo', '-Eu', test_username, '--', 'bash', '-c', 
                         "'{}'".format(cmd)))
 
     return cmd
@@ -487,6 +493,24 @@ def create_test_script_command(env_dir, tester_type):
     venv_str = f'source {venv_activate}'
     return ' && '.join([venv_str, f'python -c "{python_str}"'])
 
+def setup_database(test_username):
+    user = getpass.getuser()
+    database = f'{config.POSTGRES_PREFIX}{test_username}'
+
+    is_server_user = not config.SERVER_USER or config.SERVER_USER == user 
+
+    with open(PGPASSFILE) as f:
+        password = f.read().strip()
+
+    with psycopg2.connect(database=database, user=user, password=password) as conn:
+        with conn.cursor() as cursor:
+            cursor.execute("DROP OWNED BY CURRENT_USER;")
+            if config.SERVER_USER and config.SERVER_USER != user:
+                password = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(20))
+                cursor.execute("ALTER USER %s WITH PASSWORD %s;", (AsIs(test_username), password))
+    
+    return {'AUTOTEST_DATABASE': database, 'AUTOTEST_PWD': password}
+
 def run_test_specs(cmd, test_specs, test_categories, tests_path, test_username, hooks):
     """
     Run each test script in test_scripts in the tests_path directory using the 
@@ -508,16 +532,18 @@ def run_test_specs(cmd, test_specs, test_categories, tests_path, test_username, 
                 for test_data in settings['test_data']:
                     test_category = test_data.get('category', [])  
                     if set(test_category) & set(test_categories): #TODO: make sure test_categories is non-string collection type
-                        extra_hook_kwargs={'test_data': test_data, 'test_username': test_username, 'prefix': config.POSTGRES_PREFIX}
+                        extra_hook_kwargs={'test_data': test_data}
                         with hooks.around('each', builtin_selector=test_data, extra_kwargs=extra_hook_kwargs):
                             start = time.time()
                             out, err = '', ''
                             timeout_expired = None
                             timeout = test_data.get('timeout')
                             try:
+                                db_env_vars = setup_database(test_username)
                                 proc = subprocess.Popen(args, start_new_session=True, cwd=tests_path, shell=True, 
                                                         stdout=subprocess.PIPE, stderr=subprocess.PIPE, 
-                                                        stdin=subprocess.PIPE, preexec_fn=preexec_fn)
+                                                        stdin=subprocess.PIPE, preexec_fn=preexec_fn,
+                                                        env={**os.environ, **db_env_vars})
                                 try:
                                     settings_json = json.dumps({**settings, 'test_data': test_data}).encode('utf-8')
                                     out, err = proc.communicate(input=settings_json, timeout=timeout)

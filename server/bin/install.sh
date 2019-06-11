@@ -134,7 +134,7 @@ create_worker_dbs() {
 		CREATE ROLE ${SERVERUSEREFFECTIVE} LOGIN PASSWORD '${serverpwd}';
 		ALTER ROLE ${SERVERUSEREFFECTIVE} CREATEROLE;
 	EOF
-    echo -e "localhost:${pgport}:*:${SERVERUSEREFFECTIVE}:${serverpwd}" | sudo -u ${SERVERUSEREFFECTIVE} tee -a ${pgpassfile} > /dev/null
+    echo -e "${serverpwd}" | sudo -u ${SERVERUSEREFFECTIVE} tee -a ${pgpassfile} > /dev/null
     if [[ -z ${WORKERUSERS} ]]; then
         local database="${POSTGRESPREFIX}${SERVERUSEREFFECTIVE}"
         sudo -u postgres psql <<-EOF
@@ -155,10 +155,6 @@ create_worker_dbs() {
 			EOF
         done
     fi
-    conf_string="local\tall\t${SERVERUSEREFFECTIVE}\tpeer\n${conf_string}"
-    local pb_hba_conf=$(sudo -u postgres psql -t -P format=unaligned -c 'show hba_file';)
-    echo -e ${conf_string} | sudo -u postgres tee -a ${pb_hba_conf} > /dev/null
-    sudo -u postgres psql -c 'SELECT pg_reload_conf();' > /dev/null  
 }
 
 compile_reaper_script() {
