@@ -503,7 +503,7 @@ def setup_database(test_username):
     with psycopg2.connect(database=database, user=user, password=password) as conn:
         with conn.cursor() as cursor:
             cursor.execute("DROP OWNED BY CURRENT_USER;")
-            if config.SERVER_USER and config.SERVER_USER != user:
+            if test_username != user:
                 password = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(20))
                 cursor.execute("ALTER USER %s WITH PASSWORD %s;", (AsIs(test_username), password))
     
