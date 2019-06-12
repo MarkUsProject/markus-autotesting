@@ -676,6 +676,7 @@ def create_tester_environments(files_path, test_specs):
         settings = update_settings(settings, specs_dir)
         if settings.get('env_data'):
             new_env_dir = tempfile.mkdtemp(prefix='env', dir=TEST_SPECS_DIR)
+            os.chmod(new_env_dir, 0o775)
             settings['env_loc'] = new_env_dir
 
             create_file = os.path.join(bin_dir, 'create_environment.sh')

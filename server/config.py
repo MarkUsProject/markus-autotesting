@@ -33,7 +33,7 @@ LOGS_DIR_NAME = 'logs'
 # name of the server user
 SERVER_USER = ''
 # names of the worker users
-WORKER_USERS = ''
+WORKER_USERS = 'autotst0 autotst1 autotst2 autotst3 autotst4 autotst5 autotst6 autotst7'
 # prefix used to name reaper users 
 # (reapers not used to kill worker processes if set to the empty string)
 REAPER_USER_PREFIX = ''
