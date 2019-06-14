@@ -4,6 +4,7 @@ from unittest.mock import patch
 from contextlib import contextmanager
 import subprocess
 
+
 def _in_autotest_env():
     """
     Checks if we are running in an autotesting environment.
@@ -12,6 +13,7 @@ def _in_autotest_env():
     environment variables are set by the autotester
     """
     return os.environ.get('AUTOTESTENV') == 'true'
+
 
 def _connection(*args, **kwargs):
     """
@@ -27,8 +29,9 @@ def _connection(*args, **kwargs):
         return _unmockable_psycopg2_connect(database=database, user=user, password=password)
     return _unmockable_psycopg2_connect(*args, **kwargs)
 
+
 @contextmanager
-def mock_connect(target='psycopg2.connect') :
+def mock_connect(target='psycopg2.connect'):
     """
     Context manager that mocks any call to the function decribed in the <target> string
     with the connection function (in this module).
@@ -59,6 +62,7 @@ def mock_connect(target='psycopg2.connect') :
     """
     with patch(target, side_effect=_connection, autospec=True):
         yield
+
 
 def execute_file(filename, *args, database=None, password=None, user=None):
     """
