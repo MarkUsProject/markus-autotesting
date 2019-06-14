@@ -15,19 +15,22 @@ HOOKS = {'upload_feedback_file'    : {'context': 'after_each'},
          'upload_annotations'      : {'context': 'after_each'},
          'clear_feedback_file'     : {'context': 'before_each'}}
 
-def clear_feedback_file(feedback_file, test_data, **kwargs):
+def clear_feedback_file(test_data, **kwargs):
     """
     Remove any previous feedback file before the tests run.
     """
     feedback_file = test_data.get('feedback_file_name', '')
-    pass
+    if os.path.isfile(feedback_file):
+        os.remove(feedback_file)
 
-def upload_feedback_to_repo(api, assignment_id, group_id, group_repo_name, test_data, **kwargs):
+def upload_feedback_to_repo(api, assignment_id, group_id, test_data, **kwargs):
     """
-    Upload the feedback file to the repo group_repo_name.
+    Upload the feedback file to the group's repo.
     """
     feedback_file = test_data.get('feedback_file_name', '')
-    pass
+    if os.path.isfile(feedback_file):
+        with open(feedback_file) as feedback_open:
+            api.upload_file_to_repo(assignment_id, group_id, feedback_file, feedback_open.read())
 
 def upload_feedback_file(api, assignment_id, group_id, test_data, **kwargs):
     """

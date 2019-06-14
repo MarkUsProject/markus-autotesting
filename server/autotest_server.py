@@ -617,8 +617,7 @@ def run_test(markus_address, server_api_key, test_categories, files_path, assign
         test_username, tests_path = tester_user()
         hooks_kwargs = {'api': api,
                         'assignment_id': assignment_id,
-                        'group_id': group_id,
-                        'group_repo_name' : group_repo_name}
+                        'group_id': group_id}
         testers = {settings['tester_type'] for settings in test_specs['testers']}
         hooks = Hooks(hooks_script_path, testers, cwd=tests_path, kwargs=hooks_kwargs)
         try:

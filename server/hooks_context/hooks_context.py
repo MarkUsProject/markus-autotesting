@@ -62,8 +62,8 @@ class Hooks:
         self.custom_hooks_path = custom_hooks_path
         self.testers = [] if testers is None else testers
         self.cwd = cwd
-        self.args = [] if args is None else []
-        self.kwargs = {} if kwargs is None else {}
+        self.args = [] if args is None else args
+        self.kwargs = {} if kwargs is None else kwargs
         self.load_errors = []
         self.run_errors = []
         self.hooks = self._load_all()
