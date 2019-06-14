@@ -504,10 +504,11 @@ def setup_database(test_username):
         with conn.cursor() as cursor:
             cursor.execute("DROP OWNED BY CURRENT_USER;")
             if test_username != user:
+                user = test_username
                 password = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(20))
-                cursor.execute("ALTER USER %s WITH PASSWORD %s;", (AsIs(test_username), password))
+                cursor.execute("ALTER USER %s WITH PASSWORD %s;", (AsIs(user), password))
     
-    return {'AUTOTEST_DATABASE': database, 'AUTOTEST_PWD': password}
+    return {'PGDATABASE': database, 'PGPASSWORD': password, 'PGUSER': user, 'AUTOTESTENV': 'true'}
 
 def run_test_specs(cmd, test_specs, test_categories, tests_path, test_username, hooks):
     """
