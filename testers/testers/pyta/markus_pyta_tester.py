@@ -89,6 +89,7 @@ class MarkusPyTATester(MarkusTester):
     def __init__(self, specs, test_class=MarkusPyTATest):
         super().__init__(specs, test_class)
         self.feedback_file = self.specs.get('test_data', 'feedback_file_name')
+        self.annotation_file = self.specs.get('test_data', 'annotation_file')
         self.pyta_config = self.update_pyta_config()
         self.annotations = []
         self.devnull = open(os.devnull, 'w')
@@ -109,9 +110,8 @@ class MarkusPyTATester(MarkusTester):
         return config_dict
 
     def after_tester_run(self):
-        if self.feedback_file and self.annotations:
-            annotations_file = f'{os.path.splitext(self.feedback_file)[0]}.json'
-            with open(annotations_file, 'w') as annotations_open:
+        if self.annotation_file and self.annotations:
+            with open(self.annotation_file, 'w') as annotations_open:
                 json.dump(self.annotations, annotations_open)
         if self.devnull:
             self.devnull.close()

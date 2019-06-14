@@ -42,8 +42,7 @@ def upload_annotations(api, assignment_id, group_id, test_data, **kwargs):
     """
     Upload annotations using MarkUs' api.
     """
-    feedback_file = test_data.get('feedback_file_name', '')
-    annotations_name = os.path.splitext(feedback_file)[0]+'.json'
+    annotations_name = test_data.get('annotation_file', '')
     if os.path.isfile(annotations_name):
         with open(annotations_name) as annotations_open:
             api.upload_annotations(assignment_id, group_id, json.load(annotations_open))
