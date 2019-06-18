@@ -493,6 +493,7 @@ def create_test_script_command(env_dir, tester_type):
     venv_str = f'source {venv_activate}'
     return ' && '.join([venv_str, f'python -c "{python_str}"'])
 
+
 def setup_database(test_username):
     user = getpass.getuser()
     database = f'{config.POSTGRES_PREFIX}{test_username}'
