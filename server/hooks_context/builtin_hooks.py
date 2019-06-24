@@ -15,6 +15,7 @@ HOOKS = {'upload_feedback_file'    : {'context': 'after_each'},
          'upload_annotations'      : {'context': 'after_each'},
          'clear_feedback_file'     : {'context': 'before_each'}}
 
+
 def clear_feedback_file(test_data, **kwargs):
     """
     Remove any previous feedback file before the tests run.
@@ -22,6 +23,7 @@ def clear_feedback_file(test_data, **kwargs):
     feedback_file = test_data.get('feedback_file_name', '')
     if os.path.isfile(feedback_file):
         os.remove(feedback_file)
+
 
 def upload_feedback_to_repo(api, assignment_id, group_id, test_data, **kwargs):
     """
@@ -32,6 +34,7 @@ def upload_feedback_to_repo(api, assignment_id, group_id, test_data, **kwargs):
         with open(feedback_file) as feedback_open:
             api.upload_file_to_repo(assignment_id, group_id, feedback_file, feedback_open.read())
 
+
 def upload_feedback_file(api, assignment_id, group_id, test_data, **kwargs):
     """
     Upload the feedback file using MarkUs' api.
@@ -40,6 +43,7 @@ def upload_feedback_file(api, assignment_id, group_id, test_data, **kwargs):
     if os.path.isfile(feedback_file):
         with open(feedback_file) as feedback_open:
             api.upload_feedback_file(assignment_id, group_id, feedback_file, feedback_open.read())
+
             
 def upload_annotations(api, assignment_id, group_id, test_data, **kwargs):
     """
@@ -52,6 +56,7 @@ def upload_annotations(api, assignment_id, group_id, test_data, **kwargs):
             api.upload_annotations(assignment_id, group_id, json.load(annotations_open))
 
 ## DEFAULT TESTER HOOKS ##
+
 
 def _load_default_hooks():
     """
