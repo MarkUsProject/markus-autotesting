@@ -1,13 +1,13 @@
-from psycopg2 import connect as _unmockable_psycopg2_connect
-from psycopg2.extensions import AsIs
-from psycopg2.extensions import cursor as CursorType
 import os
-from unittest.mock import patch
-from contextlib import contextmanager
-from functools import wraps
 import inspect
 import subprocess
-from typing import ContextManager, Callable, Optional, List
+from unittest.mock import patch
+from contextlib import contextmanager
+from typing import ContextManager, Callable, Optional, List, ClassVar
+from psycopg2.extensions import AsIs
+from psycopg2.extensions import cursor as CursorType
+from psycopg2.extensions import connection as ConnectionType
+from psycopg2 import connect as _unmockable_psycopg2_connect
 
 
 def _in_autotest_env() -> bool:
@@ -57,12 +57,12 @@ def patch_connection(target: str = 'psycopg2.connect') -> ContextManager:
 
     >>> from psycopg2 import connect
     >>> with patch_connection('__main__.connect'):
-    >>>     conn = connect() # call __main__._connection instead
+    >>>     conn = connect() # calls __main__._connection instead
 
     >>> import psycopg2
     >>> @patch_connection()
     >>> def f():
-    >>>     conn = psycopg2.connect() # call __main__._connection instead
+    >>>     conn = psycopg2.connect() # calls __main__._connection instead
     """
     with patch(target, side_effect=connection):
         yield
@@ -78,7 +78,7 @@ def patch_connection_class(target: str ='psycopg2.connect') -> Callable:
     >>> @patch_connection_class()
     >>> class C: 
     >>>     def __init__(self):
-    >>>         self.conn = psycopg2.connect() # call __main__._connection instead
+    >>>         self.conn = psycopg2.connect() # calls __main__._connection instead
     """
     def _connect(cls):
         for name, method in inspect.getmembers(cls, inspect.isroutine):
@@ -114,7 +114,7 @@ def execute_psql_file(filename: str,
 
     >>> with open('my_file.sql', 'w') as f: f.write('\\list')
     >>> proc = execute_file('my_file.sql')
-    >>> len(proc.stdout) > 0:
+    >>> len(proc.stdout) > 0
     True
 
     >>> with open('my_file.sql', 'w') as f: 
@@ -132,9 +132,11 @@ def execute_psql_file(filename: str,
             'PGDATABASE': database or os.environ.get('PGDATABASE')
         }
         env = {**os.environ, **db_vars}
-    return subprocess.run(['psql', '-f', filename] + args, env=env, capture_output=True)
+    return subprocess.run(['psql', '-f', filename] + list(args), env=env, capture_output=True)
 
 class PSQLTest:
+
+    connection: ClassVar[Optional[ConnectionType]] = None
 
     SCHEMA_COPY_STR = """
     CREATE TABLE %(new)s.%(table)s (
@@ -266,6 +268,3 @@ class PSQLTest:
                 _execute_files()
         else:
             _execute_files()
-
-
-
