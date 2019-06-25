@@ -3,11 +3,14 @@ import inspect
 import subprocess
 from unittest.mock import patch
 from contextlib import contextmanager
-from typing import ContextManager, Callable, Optional, List, ClassVar
+from typing import ContextManager, Callable, Optional, List, ClassVar, Type
 from psycopg2.extensions import AsIs
-from psycopg2.extensions import cursor as CursorType
-from psycopg2.extensions import connection as ConnectionType
+from psycopg2.extensions import cursor as _psycopg2_cursor
+from psycopg2.extensions import connection as _psycopg2_connection
 from psycopg2 import connect as _unmockable_psycopg2_connect
+
+CursorType = Type[_psycopg2_cursor]
+ConnectionType =  Type[_psycopg2_connection]
 
 
 def _in_autotest_env() -> bool:
