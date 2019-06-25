@@ -40,6 +40,10 @@
           "timeout"
         ],
         "properties": {
+          "name": {
+            "title": "Test group name",
+            "type": "string"
+          },
           "query_files": {
             "title": "Query files",
             "type": "array",

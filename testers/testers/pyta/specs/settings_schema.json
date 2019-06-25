@@ -43,6 +43,10 @@
           "timeout"
         ],
         "properties": {
+          "name": {
+            "title": "Test group name",
+            "type": "string"
+          },
           "student_files": {
             "title": "Files to check",
             "type": "array",

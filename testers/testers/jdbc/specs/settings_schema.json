@@ -40,6 +40,10 @@
           "class_files"
         ],
         "properties": {
+          "name": {
+            "title": "Test group name",
+            "type": "string"
+          },
           "class_files": {
             "type": "array",
             "minItems": 1,
