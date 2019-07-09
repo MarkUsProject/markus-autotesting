@@ -41,6 +41,7 @@
         ],
         "properties": {
           "class_files": {
+            "title": "Class files",
             "type": "array",
             "minItems": 1,
             "items": {
@@ -50,6 +51,7 @@
               ],
               "properties": {
                 "class_file": {
+                  "title": "Java class file",
                   "$ref": "#/definitions/files_list"
                 }
               },
@@ -57,11 +59,13 @@
                 "class_file": {
                   "properties": {
                     "class_methods": {
+                      "title": "Class methods",
                       "type": "array",
                       "items": {
                         "type": "object",
                         "properties": {
                           "class_method": {
+                            "title": "Class method",
                             "type": "string"
                           }
                         },
@@ -69,15 +73,18 @@
                           "class_method": {
                             "properties": {
                               "order_on": {
+                                "title": "Sort method output",
                                 "type": "boolean",
                                 "default": false
                               },
                               "data_files": {
+                                "title": "Data files",
                                 "type": "array",
                                 "items": {
                                   "type": "object",
                                   "properties": {
                                     "data_file": {
+                                      "title": "Data file",
                                       "$ref": "#/definitions/files_list"
                                     }
                                   },
@@ -85,6 +92,7 @@
                                     "data_file": {
                                       "properties": {
                                         "tables": {
+                                          "title": "Tables",
                                           "type": "array",
                                           "items": {
                                             "type": "string"
@@ -101,10 +109,12 @@
                       }
                     },
                     "test_connection": {
+                      "title": "Test connection",
                       "type": "boolean",
                       "default": false
                     },
                     "test_disconnection": {
+                      "title": "Test disconnection",
                       "type": "boolean",
                       "default": false
                     }
@@ -115,6 +125,7 @@
             "uniqueItems": true
           },
           "category": {
+            "title": "Category",
             "type": "array",
             "minItems": 1,
             "items": {

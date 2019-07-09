@@ -30,6 +30,7 @@
             "uniqueItems": true
           },
           "category": {
+            "title": "Category",
             "type": "array",
             "items": {
               "$ref": "#/definitions/test_data_categories"

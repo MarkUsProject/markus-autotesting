@@ -55,6 +55,7 @@
             "uniqueItems": true
           },
           "category": {
+            "title": "Category",
             "type": "array",
             "items": {
               "$ref": "#/definitions/test_data_categories"
@@ -109,6 +110,7 @@
                     ]
                   },
                   "output_verbosity": {
+                    "title": "Pytest output verbosity",
                     "type": "string",
                     "enum": [
                       "short",
@@ -131,6 +133,7 @@
                     ]
                   },
                   "output_verbosity": {
+                    "title": "Unittest output verbosity",
                     "type": "integer",
                     "enum": [
                       2,

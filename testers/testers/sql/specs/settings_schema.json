@@ -60,9 +60,11 @@
                 "query_file": {
                   "properties": {
                     "order_by": {
+                      "title": "Order by",
                       "type": "string"
                     },
                     "data_files": {
+                      "title": "Data files",
                       "type": "array",
                       "items": {
                         "$ref": "#/definitions/files_list"
@@ -76,6 +78,7 @@
             "uniqueItems": true
           },
           "category": {
+            "title": "Category",
             "type": "array",
             "minItems": 1,
             "items": {

@@ -67,6 +67,7 @@
             "$ref": "#/definitions/files_list"
           },
           "category": {
+            "title": "Category",
             "type": "array",
             "minItems": 1,
             "items": {
