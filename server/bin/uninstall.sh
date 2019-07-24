@@ -51,7 +51,10 @@ remove_worker_dbs() {
     else
         for workeruser in ${WORKERUSERS}; do
             local database="${POSTGRESPREFIX}${workeruser}"
-            sudo -u postgres psql -c "DROP DATABASE IF EXISTS ${database}; DROP ROLE IF EXISTS ${workeruser};"
+            sudo -u postgres psql <<-EOF
+				DROP DATABASE IF EXISTS ${database};
+				DROP ROLE IF EXISTS ${workeruser};
+			EOF
         done
     fi
     sudo rm "${LOGSDIR}/.pgpass"
