@@ -89,7 +89,7 @@ def get_job_timeout(test_specs, test_categories, multiplier=1.5):
     Return multiplier times the sum of all timeouts in the
     <test_specs> dictionary
 
-    Raises a RuntimeError if there are no elements in test_data that 
+    Raises a RuntimeError if there are no elements in test_data that
     have the category <test_category>
     """
     total_timeout = 0
@@ -102,7 +102,7 @@ def get_job_timeout(test_specs, test_categories, multiplier=1.5):
                 test_data_count += 1
     if test_data_count:
         return int(total_timeout * multiplier)
-    raise RuntimeError(f'there are no test files of the given categories: {test_categories}')
+    raise RuntimeError(f'there are no tests of the given categories: {test_categories}')
 
 ### COMMAND FUNCTIONS ###
 
