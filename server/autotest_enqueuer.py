@@ -87,15 +87,22 @@ def clean_on_error(func):
 def get_job_timeout(test_specs, test_categories, multiplier=1.5):
     """
     Return multiplier times the sum of all timeouts in the
-    test_specs dictionary
+    <test_specs> dictionary
+
+    Raises a RuntimeError if there are no elements in test_data that 
+    have the category <test_category>
     """
     total_timeout = 0
+    test_data_count = 0
     for settings in test_specs['testers']:
         for test_data in settings['test_data']:
             test_category = test_data.get('category', [])
             if set(test_category) & set(test_categories): #TODO: make sure test_categories is non-string collection type
                 total_timeout += test_data.get('timeout', 30) #TODO: don't hardcode default timeout
-    return int(total_timeout * multiplier)
+                test_data_count += 1
+    if test_data_count:
+        return int(total_timeout * multiplier)
+    raise RuntimeError(f'there are no test files of the given categories: {test_categories}')
 
 ### COMMAND FUNCTIONS ###
 
