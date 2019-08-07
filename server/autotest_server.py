@@ -501,7 +501,7 @@ def setup_database(test_username):
     with open(PGPASSFILE) as f:
         password = f.read().strip()
 
-    with psycopg2.connect(database=database, user=user, password=password) as conn:
+    with psycopg2.connect(database=database, user=user, password=password, host='localhost') as conn:
         with conn.cursor() as cursor:
             cursor.execute("DROP OWNED BY CURRENT_USER;")
             if test_username != user:
