@@ -11,72 +11,224 @@ Jobs are enqueued using the gem Resque with a first in first out strategy, and s
 
 ### Client
 
-The autotesting client component is already included in a MarkUs installation.
+The autotesting client component is already included in a MarkUs installation. See the [Markus Configuration Options](#markus-configuration-options) section for how to configure your MarkUs installation to run tests with markus-autotesting.
 
 ### Server
 
-To install the autotesting server, run the `install.sh` script from the top level directory.
-You must pass a directory, which will be used as the working directory.
-You may also pass the names of a user to run the server, a user to run the testers, and the number of concurrent
-requests accepted (see [this section](#server-installation-options) for the details).
+To install the autotesting server, run the `install.sh` script from the `server/bin` directory as:
 
-The server will be installed and started, and a sample configuration for MarkUs will be generated as `markus_conf.rb`
-(see [this section](#markus-configuration-options) for the details).
+```
+$ server/bin/install.sh
+```
 
-To stop and start the server, use the `stop_resque.sh` and `start_resque.sh` scripts under the `server` directory.
+The server can be uninstalled by running the `uninstall.sh` script in the same directory.
 
-If you are a MarkUs developer, install the server with `install.sh /path_to_markus/data/dev/autotest/server`.
+#### Dependencies
+
+Installing the server will also install the following packages:
+
+- python3.X  (the python version can be configured in the config file; see below)
+- python3.X-venv
+- redis-server 
+- jq 
+- postgresql
+
+This script may also add new users and create new potgres databases. See the [configuration](#markus-autotesting-configuration-options) section for more details.
 
 ### Testers
 
-Instructors can create and submit arbitrary scripts through MarkUs to run tests. The scripts must start with a shebang
-line, and output results according to the specifications (see [this section](#tester-scripts-output-format) for
-the details).
+After the server has been installed, one or more of the following testers should also be installed:
 
-Alternatively, we come with a set of ready-to-use testers for: python, java, sql, haskell, racket,
-jdbc, xquery. To install one of these testers, run the `install.sh` script in the respective tester directory.
+- `haskell`
+- `java`
+- `py`
+- `pyta`
+- `racket`
+- `custom`
+- `jdbc` (deprecation warning: this tester will be removed in future versions)
+- `sql` (deprecation warning: this tester will be removed in future versions)
 
-If you use one of our testers, you should create a dedicated environment for each course (or even each assignment if you
-want to). To do so, run the `create_test_env.sh` script under the `testers` directory, passing (in order) the working
-directory of the autotesting server, the tester name (python|java|sql|jdbc|xquery), the python version you are using
-(our testers are written in python, the environment needs to know which version you have available), the course name,
-and the optional assignment name.
+Each tester may be installed by running install scripts:
 
-## Server installation options
+```
+$ testers/testers/${tester_name}/bin/install.sh
+```
 
-Let **X** be the user running `install.sh`, **S** the user passed with the *--server* option, **T** the user passed with
-the *--tester* option.
+where `tester_name` is one of the tester names listed above.
 
-1) **S** and **T** unspecified:
+Each tester can be uninstalled by running the `uninstall.sh` script in the same directory.
 
-   **X** is used as **S** and **T**, the tester directory and queue have a default name, the *--workers* option is
-   ignored: local file system copy of student files from MarkUs, student code executed as user **X**;
+Each language specific tester can run test files written in the following frameworks:
 
-2) **S** specified, **T** unspecified:
+- `haskell`
+    - [QuickCheck](http://hackage.haskell.org/package/QuickCheck)
+- `java`
+    - [JUnit](https://junit.org/junit4/)
+- `py`
+    - [Unittest](https://docs.python.org/3/library/unittest.html)
+    - [Pytest](https://docs.pytest.org/en/latest/)
+- `pyta`
+    - [PythonTa](https://github.com/pyta-uoft/pyta)
+- `racket`
+    - [RackUnit](https://docs.racket-lang.org/rackunit/)
+- `custom`
+    - see more information [here](#the-custom-tester)
 
-   **S** is used as **S** and **T**, the tester directory and queue have a default name, the *--workers* option is
-   ignored: authenticated scp copy of student files from MarkUs, student code executed as user **S**;
+#### Dependencies
 
-3) **S** unspecified, **T** specified:
+Installing each tester will also install the following additional packages:
+- `haskell`
+    - ghc 
+    - cabal-install 
+    - tasty-stats (cabal package)
+    - tasty-discover (cabal package)
+    - tasty-quickcheck (cabal package)
+- `java`
+    - openjdk-8-jdk
+- `py` (python)
+    - none
+- `pyta`
+    - none
+- `racket`
+    - racket
+- `custom`
+    - none
+- `jdbc`
+    - openjdk-8-jdk
+    - also requires the [posgresql jdbc driver jar file](https://jdbc.postgresql.org/download.html) to be installed on the server
+- `sql`
+    - none
 
-   **X** is used as **S**, **T** is used, the tester directory and queue are named **T**, the *--workers n* option
-   adds concurrency by making *n* **T** users, directories and queues (named **T0**..**Tn-1**): local file system copy
-   of student files from MarkUs, student code executed as user(s) **T** (**X** does `sudo -u T`);
+## Markus-autotesting configuration options
 
-4) **S** and **T** specified and equal:
+These settings can be set by editing the `server/config.py` file. If any changes are made to any of the options marked _restart required_, it is recommended that the server be uninstalled and reinstalled.
 
-   same as #2;
+##### REDIS_CURRENT_TEST_SCRIPT_HASH
+_restart required_
+Name of redis hash used to store the locations of test script directories.
+There is no need to change this unless it would conflict with another redis key.
+Default: `'curr_test_scripts'`
 
-5) **S** and **T** specified and different:
+##### REDIS_POP_HASH
+Name of redis hash used to store pop interval data for each worker queue.
+There is no need to change this unless it would conflict with another redis key.
+Default: `'pop_intervals'`
 
-   **S** and **T** are used, the tester directory and queue are named **T**, the *--workers n* option adds concurrency
-   by making *n* **T** users, directories and queues (named **T0**..**Tn-1**): authenticated scp copy of student files
-   from MarkUs, student code executed as user(s) **T** (**S** does `sudo -u T`).
+##### REDIS_WORKERS_HASH
+_restart required_
+Name of redis hash used to store workers data (username and worker directory).
+There is no need to change this unless it would conflict with another redis key.
+Default: `'workers'`
 
-**S** and/or **T** can be == **X**, but it is different than leaving **S** and/or **T** unspecified. #5 is the
-recommended setup for the best security.
+##### REDIS_CONNECTION_KWARGS
+Dictionary containing keyword arguments to pass to rq.use_connection when connecting to a redis database
+Default: `{}`
+
+##### REDIS_PREFIX
+Prefix to prepend to all redis keys generated by the autotester.
+There is no need to change this unless it would cause conflicts with other redis keys.
+Default: `'autotest:'`
+
+##### POSTGRES_PREFIX
+Prefix to prepend to all postgres databases created.
+There is no need to change this unless it would cause conflicts with other postgres databases.
+Default: `'autotest_'`
+
+##### WORKSPACE_DIR
+_restart required_
+Absolute path to the workspace directory which will contain all directories and files generated by the autotester.
+If this directory does not exist before the server is installed it will be created.
+Default: None (you should set this before you install the server)
+
+##### SCRIPTS_DIR_NAME
+_restart required_
+Name of the directory containing test scripts (under `WORKSPACE_DIR`)
+If this directory does not exist before the server is installed it will be created.
+There is no need to change this assuming `WORKSPACE_DIR` is empty before installation.
+Default: `'scripts'`
+
+##### RESULTS_DIR_NAME
+_restart required_
+Name of the directory containing test results (under `WORKSPACE_DIR`)
+If this directory does not exist before the server is installed it will be created.
+There is no need to change this assuming `WORKSPACE_DIR` is empty before installation.
+Default: `'results'`
+
+##### SPECS_DIR_NAME
+_restart required_
+Name of the directory containing tester environment specs (under `WORKSPACE_DIR`)
+If this directory does not exist before the server is installed it will be created.
+There is no need to change this assuming `WORKSPACE_DIR` is empty before installation.
+Default: `'specs'`
+
+##### WORKERS_DIR_NAME
+_restart required_
+Name of the directory containing secure workspace directories for each worker (under `WORKSPACE_DIR`)
+If this directory does not exist before the server is installed it will be created.
+There is no need to change this assuming `WORKSPACE_DIR` is empty before installation.
+Default: `'workers'`
+
+##### LOGS_DIR_NAME
+_restart required_
+Name of the directory containing log files (under `WORKSPACE_DIR`)
+If this directory does not exist before the server is installed it will be created.
+There is no need to change this assuming `WORKSPACE_DIR` is empty before installation.
+Default: `'logs'`
+
+##### SERVER_USER
+_restart required_
+Name of the user that enqueues and schedules each test job.
+If this user does not exist before the server is installed it will be created.
+If this is the empty string, the server user is assumed to be whichever user runs the server installation script.
+Default: `''`
+
+##### WORKER_USERS
+_restart required_
+String containing whitespace separated names of the users that run the test scripts themselves and report the results.
+If these users do not exist before the server is installed they will be created.
+If this is the empty string, a single worker user will be used and that user is the same as the SERVER_USER.
+Default: `'autotst0 autotst1 autotst2 autotst3 autotst4 autotst5 autotst6 autotst7'`
+
+##### REAPER_USER_PREFIX
+_restart required_
+Prefix to prepend to each username in WORKER_USERS to create a new user whose sole job is to safely kill any processes still running after a test has completed.
+If these users do not exist before the server is installed they will be created.
+If this is the empty string, no new users will be created and tests will be terminated in a slightly less secure way (though probably still good enough for most cases). 
+Default: `''`
+
+##### DEFAULT_ENV_NAME
+_restart required_
+Name of the environment used by default (if no custom environment is needed to run a given tester).
+There is no need to change this.
+Default: `'defaultenv'`
+
+##### WORKER_QUEUES
+A list of dictionaries containing the following keys/value pairs:
+- `'name'`: a string representing the unique name of this queue
+- `'filter'`: a function which takes the same keyword arguments as the `run_test` function in `autotest_enqueuer.py` and returns `True` if this queue should be used to schedule the test job
+See `config.py` for more details and to see defaults.
+
+##### SERVICE_QUEUE
+A string representing the name of the queue on which to enqueue service jobs (ie. jobs that don't involve running a test). 
+This string should have a different name than any of the worker queues (see above).
+Default: `'service'`
+
+##### WORKERS
+A list of tuples indicating the priority in which order a worker user should pop jobs off the end of each queue.
+Each tuple contains an integer indicating the number of worker users who should respect this priority order, followed by a list containing the names of queues in priority order.
+For example, the following indicates that two worker users should take jobs from queue `'A'` first and queue `'B'` second, and one worker user should take jobs from queue `'B'` first and queue `'A'` second and queue `'C'` third:
+
+```python
+WORKERS = [(2, ['A', 'B']),
+           (1, ['B', 'A', 'C'])]
+```
+
+The number of workers specified in this way should be equal to the number of worker users specified in the WORKER_USERS config option.
+See `config.py` for more details and to see defaults.
 
 ## MarkUs configuration options
+
+These settings are in the MarkUs configuration files typically found in the `config/environments` directory of your MarkUs installation:
 
 ##### AUTOTEST_ON
 Enables autotesting.
@@ -98,57 +250,57 @@ The directory where the test files for assignments are stored.
 
 (the user running MarkUs must be able to write here)
 
-##### AUTOTEST_RUN_QUEUE
-The name of the Resque queue where the test files wait to be copied to the server.
-
 ##### AUTOTEST_SERVER_HOST
-The server host name.
+The server host name that the markus-autotesting server is installed on.
 
 (use *localhost* if the server runs on the same machine)
 
 ##### AUTOTEST_SERVER_FILES_USERNAME
 The server user to copy the tester and student files over.
 
+This should be the same as the SERVER_USER in the markus-autotesting config file (see [above](#markus-autotesting-configuration-options)).
+
 (SSH passwordless login must be set up for the user running MarkUs to connect with this user on the server;
 multiple MarkUs instances can use the same user;
 can be *nil*, forcing *AUTOTEST_SERVER_HOST* to be *localhost* and local file system copy to be used)
 
-##### AUTOTEST_SERVER_FILES_DIR
-The directory on the server where test and student files are copied.
+##### AUTOTEST_SERVER_DIR
+The directory on the server where temporary files are copied. 
+
+This should be the same as the WORKSPACE_DIR in the markus-autotesting config file (see [above](#markus-autotesting-configuration-options)).
 
 (multiple MarkUs instances can use the same directory)
 
-##### AUTOTEST_SERVER_RESULTS_DIR
-The directory on the server where test results are logged.
+##### AUTOTEST_SERVER_COMMAND
+The command to run on the markus-autotesting server that runs the script in `server/autotest_enqueuer.py` script.
 
-(multiple MarkUs instances can use the same directory)
+In most cases, this should be set to `'autotest_enqueuer'`
 
-##### AUTOTEST_SERVER_TESTS
-An array of hashes with the server testers configurations. Each hash is a concurrent tester on the server running the
-tests, and has the following keys:
-* *user*: the server user to run the tests
-  (can be *nil* if there is no dedicated user);
-* *dir*: the directory on the server where tests run;
-* *queue*: the name of the Resque server queue where tests wait to be executed.
+## The Custom Tester
 
-(these settings must be different among concurrent testers, or they will interfere with each other)
+The markus-autotesting server supports running arbitrary scripts as a 'custom' tester. This script will be run using the custom tester and results from this test script will be parsed and reported to MarkUs in the same way as any other tester would. 
 
-## Tester scripts output format
-
-The tester scripts the instructors upload and run on the server must print the following on stdout for each test:
+Any custom script should report the results individual test cases by writing a json string to stdout in the following format:
 
 ```
-<test>
-    <name>REQUIRED (STRING)</name>
-    <input>OPTIONAL (STRING, NOT DISPLAYED YET)</input>
-    <expected>OPTIONAL (STRING, NOT DISPLAYED YET)</expected>
-    <actual>OPTIONAL (STRING, DISPLAYED AS OUTPUT)</actual>
-    <marks_earned>REQUIRED (INTEGER OR FLOAT)</marks_earned>
-    <marks_total>OPTIONAL (INTEGER OR FLOAT)</marks_total>
-    <status>REQUIRED (ONE OF pass,partial,fail,error,error_all)</status>
-</test>
-```
+{"name": test_name,
+ "output": output,
+ "marks_earned": points_earned,
+ "marks_total": points_total,
+ "status": status,
+ "time": time}
+```  
 
-Stdout is sent back to MarkUs and logged under *AUTOTEST_SERVER_RESULTS_DIR* in files named `output.txt`.
+where:
 
-Stderr is sent back too and logged under *AUTOTEST_SERVER_RESULTS_DIR* in files named `errors.txt`.
+- `test_name` is a unique string describing the test
+- `output` is a string describing the results of the test (can be the empty string)
+- `points_earned` is the number of points the student received for passing/failing/partially passing the test
+- `points_total` is the maximum number of points a student could receive for this test
+- `status` is one of `"pass"`, `"fail"`, `"partial"`, `"error"` 
+    - The following convention for determining the status is recommended:
+        - if `points_earned == points_total` then `status == "pass"`
+        - if `points_earned == 0` then `status == "fail"`
+        - if `0 < points_earned < points_total` then `status == "partial"`
+        - `status == "error"` if some error occurred that meant the number of points for this test could not be determined
+- `time` is optional (can be null) and is the amount of time it took to run the test (in ms)
