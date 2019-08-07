@@ -38,7 +38,8 @@ def connection(*args, **kwargs):
         kwargs = {**kwargs, 
                   'database': os.environ.get('PGDATABASE'), 
                   'password': os.environ.get('PGPASSWORD'), 
-                  'user': os.environ.get('PGUSER')}
+                  'user': os.environ.get('PGUSER'),
+                  'host': 'localhost'}
     return _unmockable_psycopg2_connect(*args, **kwargs)
 
 
