@@ -42,18 +42,6 @@ REAPER_USER_PREFIX = ''
 # default tester environment name
 DEFAULT_ENV_NAME = 'defaultenv'
 
-## RLIMIT SETTINGS FOR TESTER PROCESSES ##
-
-# values are: (soft limit, hard limit)
-# see https://docs.python.org/3/library/resource.html for reference on limit options
-# NOTE: these limits cannot be higher than the limits set for the tester user in 
-#       /etc/security/limits.conf (or similar). These limits may be reduced in certain 
-#       cases (see the docstring for get_test_preexec_fn and get_cleanup_preexec_fn in 
-#       autotest_server.py)
-RLIMIT_SETTINGS = {
-    'RLIMIT_NPROC': (300, 300)
-}
-
 ### QUEUE CONFIGS ###
 
 # functions used to select which type of queue to use. They must accept any number
