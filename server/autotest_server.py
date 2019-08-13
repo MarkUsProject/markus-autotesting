@@ -24,6 +24,7 @@ import getpass
 import secrets
 import string
 import psycopg2
+import socket
 from psycopg2.extensions import AsIs
 from markusapi import Markus
 import config
@@ -35,6 +36,7 @@ TEST_RESULT_DIR = os.path.join(config.WORKSPACE_DIR, config.RESULTS_DIR_NAME)
 TEST_SPECS_DIR = os.path.join(config.WORKSPACE_DIR, config.SPECS_DIR_NAME)
 REDIS_CURRENT_TEST_SCRIPT_HASH = '{}{}'.format(config.REDIS_PREFIX, config.REDIS_CURRENT_TEST_SCRIPT_HASH)
 REDIS_WORKERS_HASH = '{}{}'.format(config.REDIS_PREFIX, config.REDIS_WORKERS_HASH)
+REDIS_PORT_INT = '{}{}'.format(config.REDIS_PREFIX, config.REDIS_PORT_INT)
 REDIS_POP_HASH = '{}{}'.format(config.REDIS_PREFIX, config.REDIS_POP_HASH)
 DEFAULT_ENV_DIR = os.path.join(TEST_SPECS_DIR, config.DEFAULT_ENV_NAME)
 PGPASSFILE = os.path.join(config.WORKSPACE_DIR, config.LOGS_DIR_NAME, '.pgpass')
@@ -42,6 +44,9 @@ PGPASSFILE = os.path.join(config.WORKSPACE_DIR, config.LOGS_DIR_NAME, '.pgpass')
 TEST_SCRIPTS_SETTINGS_FILENAME = 'settings.json'
 TEST_SCRIPTS_FILES_DIRNAME = 'files'
 HOOKS_FILENAME = 'hooks.py'
+
+PORT_MIN = 1024
+PORT_MAX = 65535
 
 # For each rlimit limit (key), make sure that cleanup processes
 # have at least n=(value) resources more than tester processes 
@@ -511,6 +516,33 @@ def setup_database(test_username):
     
     return {'PGDATABASE': database, 'PGPASSWORD': password, 'PGUSER': user, 'AUTOTESTENV': 'true'}
 
+def next_port():
+    """ Return a port number that is greater than the last time this method was
+    called (by any process on this machine).
+
+    This port number is not guaranteed to be free
+    """
+    r = redis_connection()
+    return int(r.incr(REDIS_PORT_INT) or 0) % (PORT_MAX - PORT_MIN) + PORT_MIN
+
+def get_available_port():
+    """ Return the next available open port on localhost. """
+    while True:
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.bind(('localhost', next_port()))
+                s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                port = s.getsockname()[1]
+                return str(port)
+        except OSError:
+            continue
+
+def get_env_vars(test_username):
+    """ Return a dictionary containing all environment variables to pass to the next test """
+    db_env_vars = setup_database(test_username)
+    port_number = get_available_port()
+    return {'PORT': port_number, **db_env_vars}
+
 def run_test_specs(cmd, test_specs, test_categories, tests_path, test_username, hooks):
     """
     Run each test script in test_scripts in the tests_path directory using the 
@@ -539,11 +571,11 @@ def run_test_specs(cmd, test_specs, test_categories, tests_path, test_username, 
                             timeout_expired = None
                             timeout = test_data.get('timeout')
                             try:
-                                db_env_vars = setup_database(test_username)
+                                env_vars = get_env_vars(test_username)
                                 proc = subprocess.Popen(args, start_new_session=True, cwd=tests_path, shell=True, 
                                                         stdout=subprocess.PIPE, stderr=subprocess.PIPE, 
                                                         stdin=subprocess.PIPE, preexec_fn=preexec_fn,
-                                                        env={**os.environ, **db_env_vars})
+                                                        env={**os.environ, **env_vars})
                                 try:
                                     settings_json = json.dumps({**settings, 'test_data': test_data}).encode('utf-8')
                                     out, err = proc.communicate(input=settings_json, timeout=timeout)
