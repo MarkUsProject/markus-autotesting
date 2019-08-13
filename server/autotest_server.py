@@ -516,6 +516,7 @@ def setup_database(test_username):
     
     return {'PGDATABASE': database, 'PGPASSWORD': password, 'PGUSER': user, 'AUTOTESTENV': 'true'}
 
+
 def next_port():
     """ Return a port number that is greater than the last time this method was
     called (by any process on this machine).
@@ -524,6 +525,7 @@ def next_port():
     """
     r = redis_connection()
     return int(r.incr(REDIS_PORT_INT) or 0) % (PORT_MAX - PORT_MIN) + PORT_MIN
+
 
 def get_available_port():
     """ Return the next available open port on localhost. """
@@ -537,11 +539,13 @@ def get_available_port():
         except OSError:
             continue
 
+
 def get_env_vars(test_username):
     """ Return a dictionary containing all environment variables to pass to the next test """
     db_env_vars = setup_database(test_username)
     port_number = get_available_port()
     return {'PORT': port_number, **db_env_vars}
+
 
 def run_test_specs(cmd, test_specs, test_categories, tests_path, test_username, hooks):
     """
