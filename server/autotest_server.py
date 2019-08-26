@@ -45,7 +45,7 @@ TEST_SCRIPTS_SETTINGS_FILENAME = 'settings.json'
 TEST_SCRIPTS_FILES_DIRNAME = 'files'
 HOOKS_FILENAME = 'hooks.py'
 
-PORT_MIN = 1024
+PORT_MIN = 50000
 PORT_MAX = 65535
 
 # For each rlimit limit (key), make sure that cleanup processes
