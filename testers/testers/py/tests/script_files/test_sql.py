@@ -1,5 +1,4 @@
 import sql_helper as sh
-import pytest
 
 
 class TestDataset1(sh.PSQLTest):
