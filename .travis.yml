@@ -10,4 +10,4 @@ install:
   - pip install -r server/bin/requirements.txt
 # command to run tests
 script:
-  - pytest
+  - pytest --ignore testers/testers/py/tests
