@@ -1,5 +1,5 @@
 import sql_helper as sh
-
+import pytest
 
 class TestDataset1(sh.PSQLTest):
 
@@ -39,18 +39,22 @@ class TestDataset1(sh.PSQLTest):
         # close the connection to the database when all the tests have run (not necessary but cleaner).
         cls.close_connection()
 
+    @pytest.mark.skip(reason="TODO: setup postgres on travis and set env vars")
     def test_unordered_data(self):
         """ Test that the rows in the solution match the rows in the student's table (unordered) """
         assert set(self.solution_data) == set(self.student_data)
 
+    @pytest.mark.skip(reason="TODO: setup postgres on travis and set env vars")
     def test_ordered_data(self):
         """ Test that the rows in the solution match the rows in the student's table (order matters) """
         assert self.solution_data == self.student_data
 
+    @pytest.mark.skip(reason="TODO: setup postgres on travis and set env vars")
     def test_single_column_unordered(self):
         """ Test that the first column in the solution matches the first column in the student's table (unordered) """
         assert {s[0] for s in self.solution_data} == {s[0] for s in self.student_data}
 
+    @pytest.mark.skip(reason="TODO: setup postgres on travis and set env vars")
     def test_falsy_same_as_null(self):
         """
         Test that the rows in the solution match the rows in the student's table (unordered) but treat all falsy values
@@ -60,6 +64,7 @@ class TestDataset1(sh.PSQLTest):
         nulled_stu_data = {tuple(x or None for x in s) for s in self.student_data}
         assert nulled_sol_data == nulled_stu_data
 
+    @pytest.mark.skip(reason="TODO: setup postgres on travis and set env vars")
     def test_schema_gone(self):
         """ Test that demonstrates that the test_schema schema created in the setup_class method has been deleted """
         with self.cursor() as curr:
