@@ -10,7 +10,7 @@ from psycopg2.extensions import connection as _psycopg2_connection
 from psycopg2 import connect as _unmockable_psycopg2_connect
 
 CursorType = Type[_psycopg2_cursor]
-ConnectionType =  Type[_psycopg2_connection]
+ConnectionType = Type[_psycopg2_connection]
 
 
 def _in_autotest_env() -> bool:
@@ -43,7 +43,6 @@ def connection(*args, **kwargs):
     return _unmockable_psycopg2_connect(*args, **kwargs)
 
 
-
 @contextmanager
 def patch_connection(target: str = 'psycopg2.connect') -> ContextManager:
     """
@@ -72,7 +71,7 @@ def patch_connection(target: str = 'psycopg2.connect') -> ContextManager:
         yield
 
 
-def patch_connection_class(target: str ='psycopg2.connect') -> Callable:
+def patch_connection_class(target: str = 'psycopg2.connect') -> Callable:
     """
     Class decorator that adds the patch_connection decorator to every method
     in the class.
@@ -89,6 +88,7 @@ def patch_connection_class(target: str ='psycopg2.connect') -> Callable:
             setattr(cls, name, patch_connection(target)(method))
         return cls
     return _connect
+
 
 def execute_psql_file(filename: str,
                       *args: str,
@@ -137,6 +137,7 @@ def execute_psql_file(filename: str,
         }
         env = {**os.environ, **db_vars}
     return subprocess.run(['psql', '-f', filename] + list(args), env=env, capture_output=True)
+
 
 class PSQLTest:
 
