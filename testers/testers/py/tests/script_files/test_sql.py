@@ -1,11 +1,12 @@
 import sql_helper as sh
 
+
 class TestDataset1(sh.PSQLTest):
-    
+
     data_file = 'data1.sql'
     query = """
-            SELECT table1.word, table2.number 
-            FROM table1 JOIN table2 
+            SELECT table1.word, table2.number
+            FROM table1 JOIN table2
             ON table1.id = table2.foreign_id;
             """
 
@@ -31,7 +32,7 @@ class TestDataset1(sh.PSQLTest):
                 # get the contents of the correct_no_order table and store it in a class variable
                 with cls.cursor() as curr:
                     curr.execute("SELECT * FROM correct_no_order;")
-                    cls.student_data = curr.fetchall()              
+                    cls.student_data = curr.fetchall()
 
     @classmethod
     def teardown_class(cls):
