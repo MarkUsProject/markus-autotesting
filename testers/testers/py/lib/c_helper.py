@@ -247,7 +247,7 @@ class Trace:
         self.first_process = None
         self.split_lines = self.raw.splitlines()
         if len(self.split_lines) > 1:
-            parsed_line = parse_arbitrary(self.split_lines[0], '([0-9]+)\s*.*\.\.\.>')
+            parsed_line = parse_arbitrary(self.split_lines[0], r'([0-9]+)\s*.')
             if parsed_line:
                 self.first_process = parsed_line[0]
             else:
