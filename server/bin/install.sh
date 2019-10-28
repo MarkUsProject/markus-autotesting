@@ -151,7 +151,7 @@ create_worker_dbs() {
 				CREATE ROLE ${workeruser} LOGIN PASSWORD null;
 				CREATE DATABASE ${database} OWNER ${SERVERUSEREFFECTIVE};
 				REVOKE CONNECT ON DATABASE ${database} FROM PUBLIC;
-				GRANT CONNECT ON DATABASE ${database} TO ${workeruser};
+				GRANT CONNECT, CREATE ON DATABASE ${database} TO ${workeruser};
 			EOF
         done
     fi
