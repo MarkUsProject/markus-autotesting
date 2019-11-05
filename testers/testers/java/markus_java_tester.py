@@ -58,7 +58,7 @@ class MarkusJavaTester(MarkusTester):
 
     def run_junit(self):
         java_command = ['java', '-cp', self.java_classpath, MarkusJavaTester.JAVA_TESTER_CLASS]
-        java_command.extend(self.specs.get['test_data', 'script_files'])
+        java_command.extend(self.specs['test_data', 'script_files'])
         java = subprocess.run(java_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True,
                               check=True)
         return java
