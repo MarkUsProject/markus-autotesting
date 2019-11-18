@@ -1,3 +1,5 @@
+[![Acceptance tests](https://layerci.com/github/MarkUsProject/markus-autotesting/badge)](https://layerci.com/github/MarkUsProject/markus-autotesting)
+
 Autotesting with Markus
 ==============================
 
