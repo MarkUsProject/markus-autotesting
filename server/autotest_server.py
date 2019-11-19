@@ -316,9 +316,8 @@ def clean_up():
     """ Reset the pop interval data for each empty queue """
     with rq.Connection(redis_connection()):
         for q in rq.Queue.all():
-            if q != rq.queue.FailedQueue():
-                if q.is_empty():
-                    clear_pop_interval_stat(q.name)
+            if q.is_empty():
+                clear_pop_interval_stat(q.name)
 
 
 def clean_after(func):
