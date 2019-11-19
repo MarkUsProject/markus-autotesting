@@ -131,7 +131,7 @@ def update_specs(test_specs, schema=None, **kw):
         errors = list(form_validation.validate_with_defaults(schema, test_specs))
         if errors:
             raise form_validation.best_match(errors)
-    ats.update_test_specs(test_specs = test_specs, **kw)
+    ats.update_test_specs(test_specs=test_specs, **kw)
  
 def cancel_test(markus_address, run_ids, **kw):
     """
