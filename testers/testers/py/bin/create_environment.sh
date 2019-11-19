@@ -6,6 +6,7 @@ create_venv() {
     rm -rf ${VENV_DIR} # clean up existing venv if any
     python${PY_VERSION} -m venv ${VENV_DIR}
     source ${VENV_DIR}/bin/activate
+    pip install --upgrade pip
     pip install wheel
     pip install -r <(echo ${PIP_REQUIREMENTS} | sed 's/\s\+/\n/g') # sub spaces for newlines
     local pth_file=${VENV_DIR}/lib/python${PY_VERSION}/site-packages/lib.pth
