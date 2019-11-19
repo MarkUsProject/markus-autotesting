@@ -208,11 +208,6 @@ A list of dictionaries containing the following keys/value pairs:
 - `'filter'`: a function which takes the same keyword arguments as the `run_test` function in `autotest_enqueuer.py` and returns `True` if this queue should be used to schedule the test job
 See `config.py` for more details and to see defaults.
 
-##### SERVICE_QUEUE
-A string representing the name of the queue on which to enqueue service jobs (ie. jobs that don't involve running a test). 
-This string should have a different name than any of the worker queues (see above).
-Default: `'service'`
-
 ##### WORKERS
 A list of tuples indicating the priority in which order a worker user should pop jobs off the end of each queue.
 Each tuple contains an integer indicating the number of worker users who should respect this priority order, followed by a list containing the names of queues in priority order.

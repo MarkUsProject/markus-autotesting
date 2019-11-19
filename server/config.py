@@ -77,11 +77,8 @@ single_queue = {'name': 'single', 'filter': single_filter}
 student_queue = {'name': 'student', 'filter': student_filter}
 WORKER_QUEUES = [batch_queue, single_queue, student_queue]
 
-# name of the service queue
-SERVICE_QUEUE = 'service'
-
 ### WORKER CONFIGS ###
 
-WORKERS = [(4, [SERVICE_QUEUE, student_queue['name'], single_queue['name'], batch_queue['name']]),
-           (2, [SERVICE_QUEUE, single_queue['name'], student_queue['name'], batch_queue['name']]),
-           (2, [SERVICE_QUEUE, batch_queue['name'], student_queue['name'], single_queue['name']])]
+WORKERS = [(4, [student_queue['name'], single_queue['name'], batch_queue['name']]),
+           (2, [single_queue['name'], student_queue['name'], batch_queue['name']]),
+           (2, [batch_queue['name'], student_queue['name'], single_queue['name']])]
