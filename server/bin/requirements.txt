@@ -6,3 +6,4 @@ pyyaml
 psycopg2-binary
 git+https://github.com/MarkusProject/markus-api.git@master
 jsonschema
+fakeredis

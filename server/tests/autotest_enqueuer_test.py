@@ -1,142 +1,356 @@
 import sys
 import os
+import json
+import re
 import pytest
 import inspect
-from .fixtures.dummy_functions import dummy_functions
-from .fixtures.dummy_classes import FakeQueue
-from hypothesis import given
-from hypothesis import strategies as st
-from unittest.mock import patch
 import tempfile
+import rq
+import glob
+from unittest.mock import patch, ANY, Mock
+from contextlib import contextmanager
+from fakeredis import FakeStrictRedis
+from tests import config_default
 
 sys.path.append('..')
 import autotest_enqueuer as ate
+import autotest_server as ats
+ate.config = config_default
+ats.config = config_default
 
-class TestFormatJobID:
-    """ tests ate.format_job_id """
+@pytest.fixture(autouse=True)
+def redis():
+    fake_redis = FakeStrictRedis()
+    with patch('autotest_server.redis_connection', return_value=fake_redis):
+        yield fake_redis
 
-    @classmethod
-    def setup_class(cls):
-        cls.unique_strings = {}
+@contextmanager
+def tmp_script_dir(settings_dict):
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        files_dir = os.path.join(tmp_dir, 'files')
+        os.mkdir(files_dir)
+        with open(os.path.join(files_dir, '.gitkeep'), 'w') as f: pass
+        with open(os.path.join(tmp_dir, 'settings.json'), 'w') as f:
+            json.dump(settings_dict, f)
+        with patch('autotest_server.test_script_directory', return_value=tmp_dir):
+            yield tmp_dir
 
-    @given(markus_address=st.text(), run_id=st.integers())
-    def test_returns_unique_strings(self, **kw):
-        """ test that unique args return unique strings """
-        job_id = ate.format_job_id(**kw)
-        kwargs = tuple(sorted(kw.items()))
+@pytest.fixture(autouse=True)
+def empty_test_script_dir(request):
+    if 'no_test_script_dir' in request.keywords:
+        yield
+    else:
+        empty_settings = {"testers": [{"test_data": []}]}
+        with tmp_script_dir(empty_settings) as tmp_dir:
+            yield tmp_dir
+
+@pytest.fixture
+def non_existant_test_script_dir():
+    with patch('autotest_server.test_script_directory', return_value=None):
+        yield
+
+@pytest.fixture
+def pop_interval():
+    with patch('autotest_server.get_avg_pop_interval', return_value=None):
+        yield
+
+@pytest.fixture(autouse=True)
+def mock_rmtree():
+    with patch('shutil.rmtree') as rm:
+        yield rm
+
+@pytest.fixture(autouse=True)
+def mock_enqueue_call():
+    with patch('rq.Queue.enqueue_call') as enqueue_func:
+        yield enqueue_func
+
+class DummyTestError(Exception): pass
+
+class TestRunTest:
+
+    def get_kwargs(self, **kw):
+        param_kwargs = {k: '' for k in inspect.signature(ats.run_test).parameters}
+        return {**param_kwargs, **kw}
+
+    def test_fails_missing_required_args(self):
         try:
-            if kwargs in self.unique_strings:
-                assert self.unique_strings[kwargs] == job_id
-            else:
-                assert job_id not in self.unique_strings.values()
-        finally:
-            self.unique_strings[kwargs] = job_id
+            ate.run_test('Admin', 1)
+        except ate.JobArgumentError:
+            return
+        except ate.MarkUsError as e:
+            pytest.fail(f'should have failed because kwargs are missing but instead failed with: {e}')
+        pytest.fail('should have failed because kwargs are missing')
 
-    @given(markus_address=st.text(), run_id=st.integers())
-    def test_returns_consistent_strings(self, **kw):
-        """ test that identical args return the same string """
-        job_ids = {ate.format_job_id(**kw) for _ in range(10)}
-        assert len(job_ids) == 1
+    def test_accepts_same_kwargs_as_server_run_test_method(self):
+        try:
+            ate.run_test('Admin', 1, **self.get_kwargs())
+        except ate.JobArgumentError:
+            pytest.fail('should not have failed because kwargs are not missing')
+        except ate.MarkUsError:
+            pass
 
-    @given(markus_address=st.text(), 
-           run_id=st.integers(), 
-           kwargs=st.dictionaries(
-                    st.text().filter(
-                        lambda x: x not in ['markus_address', 'run_id']), 
-                    st.text()))
-    def test_accepts_arbitrary_kwargs(self, markus_address, run_id, kwargs):
-        """ test that the function can accept arbitrary kwargs """
-        ate.format_job_id(markus_address, run_id, **kwargs)
+    def test_fails_if_cannot_find_valid_queue(self):
+        try:
+            ate.run_test('Tim', None, **self.get_kwargs())
+        except ate.InvalidQueueError:
+            return
+        except ate.MarkUsError as e:
+            pytest.fail(f'should have failed because a valid queue is not found but instead failed with: {e}')
+        pytest.fail('should have failed because a valid queue is not found')
 
-class TestCheckArgs:
-    """ tests ate.check_args """
+    def test_can_find_valid_queue(self):
+        try:
+            ate.run_test('Admin', 1, **self.get_kwargs())
+        except ate.InvalidQueueError:
+            pytest.fail('should not have failed because a valid queue is available')
+        except ate.MarkUsError:
+            pass
 
-    def _generic_test(self, func, args, kwargs):
-        if self._is_good(func, args, kwargs):
+    def test_fails_if_test_files_do_not_exist(self, non_existant_test_script_dir):
+        try:
+            ate.run_test('Admin', 1, **self.get_kwargs())
+        except ate.TestScriptFilesError:
+            return
+        except ate.MarkUsError as e:
+            pytest.fail(f'should have failed because no test scripts could be found but instead failed with: {e}')
+        pytest.fail('should have failed because no test scripts could be found')
+
+    def test_can_find_test_files(self):
+        try:
+            ate.run_test('Admin', 1, **self.get_kwargs())
+        except ate.TestScriptFilesError:
+            pytest.fail('should not have failed because no test scripts could be found')
+        except ate.MarkUsError:
+            pass
+
+    def test_writes_queue_info_to_stdout(self, capfd, pop_interval):
+        try:
+            ate.run_test('Admin', 1, **self.get_kwargs())
+        except ate.MarkUsError:
+            pass
+        out, _err = capfd.readouterr()
+        assert re.search(r'^\d+$', out)
+
+    def test_fails_if_no_tests_groups(self):
+        try:
+            ate.run_test('Admin', 1, **self.get_kwargs())
+        except ate.TestParameterError:
+            return
+        except ate.MarkUsError:
+            pass
+
+    @pytest.mark.no_test_script_dir
+    def test_fails_if_no_groups_in_category(self):
+        settings = {"testers": [{"test_data": [{"category": ['admin']}]}]}
+        with tmp_script_dir(settings):
             try:
-                ate.check_args(func, args=args, kwargs=kwargs)
-            except TypeError as e:
-                pytest.fail(str(e))
+                ate.run_test('Admin', 1, **self.get_kwargs(test_categories=['student']))
+            except ate.TestParameterError:
+                return
+            except ate.MarkUsError:
+                pass
+
+    @pytest.mark.no_test_script_dir
+    def test_can_find_tests_in_given_category(self):
+        settings = {"testers": [{"test_data": [{"category": ['admin'], "timeout": 30}]}]}
+        with tmp_script_dir(settings):
+            try:
+                ate.run_test('Admin', 1, **self.get_kwargs(test_categories=['admin']))
+            except ate.TestParameterError:
+                pytest.fail('should not have failed to find an admin test')
+            except ate.MarkUsError:
+                pass
+
+    @pytest.mark.no_test_script_dir
+    def test_can_find_tests_in_given_category(self, mock_enqueue_call):
+        settings = {"testers": [{"test_data": [{"category": ['admin'], "timeout": 10}]}]}
+        with tmp_script_dir(settings):
+            ate.run_test('Admin', 1, **self.get_kwargs(test_categories=['admin']))
+            mock_enqueue_call.assert_called_with(ANY, kwargs=ANY, job_id=ANY, timeout=15)
+
+    def test_cleans_up_files_on_error(self, mock_rmtree):
+        try:
+            ate.run_test('Admin', 1, **self.get_kwargs(files_path='something'))
+        except:
+            mock_rmtree.assert_called_once()
         else:
-            with pytest.raises(TypeError):
-               ate.check_args(func, args=args, kwargs=kwargs) 
+            pytest.fail('This call to run_test should have failed. See other failures for details')
 
-    def _is_good(self, func, args, kwargs):
-        try:
-            inspect.signature(func).bind(*args, **kwargs)
-        except TypeError:
-            return False
-        return True
+@pytest.fixture
+def update_test_specs():
+    with patch('autotest_server.update_test_specs') as mock_func:
+        yield mock_func
 
-def _make_args_kwargs(names=None):
-    types = (st.text(), st.none(), st.integers())
-    args = st.lists(st.one_of(*types))
-    pat = f'(?:{"|".join(names)})' if names else r'[a-zA-Z]+'
-    keys = st.from_regex(pat, fullmatch=True)
-    values = st.one_of(*types)
-    kwargs = st.dictionaries(keys, values)
-    return st.tuples(args, kwargs)
+class TestUpdateSpecs:
 
-for dummy_func, arg_names in dummy_functions.items():
-    strategy = _make_args_kwargs(arg_names)
-    @given(args_kwargs=strategy, _func=st.just(dummy_func))
-    def func(self, args_kwargs, _func):
-        self._generic_test(_func, *args_kwargs)
-    setattr(TestCheckArgs, f'test_{dummy_func.__name__}', func)
+    def get_kwargs(self, **kw):
+        param_kwargs = {k: '' for k in inspect.signature(ats.update_test_specs).parameters}
+        return {**param_kwargs, **kw}
 
+    def test_fails_when_schema_is_invalid(self, update_test_specs):
+        with patch('form_validation.validate_with_defaults', return_value=['something']):
+            with patch('form_validation.best_match', return_value=DummyTestError('error')):
+                try:
+                    ate.update_specs({}, **self.get_kwargs(schema={}))
+                except DummyTestError:
+                    return
+        pytest.fail('should have failed because the form is invalid')
 
-class TestQueueName:
-    """ tests ate.queue_name """
+    def test_succeeds_when_schema_is_valid(self, update_test_specs):
+        with patch('form_validation.validate_with_defaults', return_value=[]):
+            with patch('form_validation.best_match', return_value=DummyTestError('error')):
+                try:
+                    ate.update_specs({}, **self.get_kwargs(schema={}))
+                except DummyTestError:
+                    pytest.fail('should not have failed because the form is valid')
 
-    @classmethod
-    def setup_class(cls):
-        cls.unique_strings = {}
+    def test_calls_update_test_specs(self, update_test_specs):
+        with patch('form_validation.validate_with_defaults', return_value=[]):
+            with patch('form_validation.best_match', return_value=DummyTestError('error')):
+                ate.update_specs({}, **self.get_kwargs(schema={}))
+        update_test_specs.assert_called_once()
 
-    @given(queue=st.builds(FakeQueue, st.text(min_size=1)), 
-           i=st.integers())
-    def test_returns_unique_strings(self, queue, i):
-        """ test that unique args return unique strings """
-        name = ate.queue_name(queue, i)
-        try:
-            if (queue.type, i) in self.unique_strings:
-                assert self.unique_strings[(queue.type, i)] == name
+    def test_cleans_up_files_on_error(self, mock_rmtree):
+        with patch('form_validation.validate_with_defaults', side_effect=Exception):
+            try:
+                ate.update_specs({}, **self.get_kwargs(schema={}, files_path='something'))
+            except:
+                mock_rmtree.assert_called_once()
             else:
-                assert name not in self.unique_strings.values()
-        finally:
-            self.unique_strings[(queue.type, i)] = name
-
-    @given(queue=st.builds(FakeQueue, st.text()), i=st.integers())
-    def test_returns_consistent_strings(self, queue, i):
-        """ test that identical args return the same string """
-        names = {ate.queue_name(queue, i) for _ in range(10)}
-        assert len(names) == 1
-
-class TestGetQueue:
-    """ tests ate.get_queue """
-
-    @patch('autotest_server.redis_connection', autospec=True)
-    @given(st.from_regex(r'[a-zA-Z]+', fullmatch=True), st.integers())
-    def test_can_find_a_queue(self, redis_conn, queue_name, conn_id):
-        redis_conn.return_value = conn_id
-        ate.config.WORKER_QUEUES = [{'name': queue_name, 
-                                     'filter': lambda **kw: True}]
-        with patch('rq.Queue', FakeQueue):
-            queue = ate.get_queue()
-        
-        assert queue.type == queue_name
-        assert queue.kwargs.get('connection') == conn_id
-
-    @patch('autotest_server.redis_connection', autospec=True)
-    def test_cannot_find_a_queue(self, _redis_conn):
-        ate.config.WORKER_QUEUES = [{'name': 'nothing', 
-                                     'filter': lambda **kw: False}]
-        with patch('rq.Queue', FakeQueue):
-            with pytest.raises(RuntimeError):
-                ate.get_queue()
+                pytest.fail('This call to update_specs should have failed. See other failures for details')
 
 
+@pytest.fixture
+def mock_rq_job():
+    with patch('rq.job.Job') as job:
+        enqueued_job = Mock()
+        job.fetch.return_value = enqueued_job
+        yield job, enqueued_job
 
+class TestCancelTest:
 
+    def test_do_nothing_if_job_does_not_exist(self, mock_rq_job):
+        Job, mock_job = mock_rq_job
+        Job.fetch.side_effect = rq.exceptions.NoSuchJobError
+        ate.cancel_test('something', [1])
+        mock_job.cancel.assert_not_called()
 
+    def test_do_nothing_if_job_not_enqueued(self, mock_rq_job):
+        _, mock_job = mock_rq_job
+        mock_job.is_queued.return_value = False
+        ate.cancel_test('something', [1])
+        mock_job.cancel.assert_not_called()
 
+    def test_cancel_job(self, mock_rq_job):
+        _, mock_job = mock_rq_job
+        mock_job.is_queued.return_value = True
+        mock_job.kwargs = {'files_path': None}
+        ate.cancel_test('something', [1])
+        mock_job.cancel.assert_called_once()
+
+    def test_remove_files_when_cancelling(self, mock_rq_job, mock_rmtree):
+        _, mock_job = mock_rq_job
+        mock_job.is_queued.return_value = True
+        files_path = 'something'
+        mock_job.kwargs = {'files_path': files_path}
+        ate.cancel_test('something', [1])
+        mock_rmtree.assert_called_once_with(files_path, onerror=ANY)
+
+    def test_cancel_multiple_jobs(self, mock_rq_job):
+        _, mock_job = mock_rq_job
+        mock_job.is_queued.return_value = True
+        mock_job.kwargs = {'files_path': None}
+        ate.cancel_test('something', [1, 2])
+        assert mock_job.cancel.call_count == 2
+
+    def test_remove_files_when_cancelling_multiple_jobs(self, mock_rq_job, mock_rmtree):
+        _, mock_job = mock_rq_job
+        mock_job.is_queued.return_value = True
+        files_path = 'something'
+        mock_job.kwargs = {'files_path': files_path}
+        ate.cancel_test('something', [1, 2])
+        assert mock_rmtree.call_count == 2
+
+class TestGetSchema:
+
+    def fake_installed_testers(self, installed):
+        server_dir = os.path.dirname(os.path.abspath(ate.__file__))
+        root_dir = os.path.dirname(server_dir)
+        paths = []
+        for tester in installed:
+            glob_pattern = os.path.join(root_dir, 'testers', 'testers', tester, 'specs')
+            paths.append(os.path.join(glob.glob(glob_pattern)[0], '.installed'))
+        return paths
+
+    def assert_tester_in_schema(self, tester, schema):
+        assert tester in schema["definitions"]["installed_testers"]["enum"]
+        installed = []
+        for option in schema['definitions']['tester_schemas']['oneOf']:
+            installed.append(option['properties']['tester_type']['enum'][0])
+        assert tester in installed
+
+    def test_prints_skeleton_when_none_installed(self, capfd):
+        with patch('glob.glob', return_value=[]):
+            ate.get_schema()
+            out, _err = capfd.readouterr()
+            schema = json.loads(out)
+            server_dir = os.path.dirname(os.path.abspath(ate.__file__))
+            with open(os.path.join(server_dir, 'bin', 'tester_schema_skeleton.json')) as f:
+                skeleton = json.load(f)
+            assert schema == skeleton
+
+    def test_prints_test_schema_when_one_installed(self, capfd):
+        with patch('glob.glob', return_value=self.fake_installed_testers(['custom'])):
+            ate.get_schema()
+            out, _err = capfd.readouterr()
+            schema = json.loads(out)
+            self.assert_tester_in_schema('custom', schema)
+
+    def test_prints_test_schema_when_multiple_installed(self, capfd):
+        with patch('glob.glob', return_value=self.fake_installed_testers(['custom', 'py'])):
+            ate.get_schema()
+            out, _err = capfd.readouterr()
+            schema = json.loads(out)
+            self.assert_tester_in_schema('custom', schema)
+            self.assert_tester_in_schema('py', schema)
+
+class TestParseArgFile:
+
+    @pytest.mark.no_test_script_dir
+    def test_loads_arg_file(self):
+        settings = {'some': 'data'}
+        with tmp_script_dir(settings) as tmp_dir:
+            arg_file = os.path.join(tmp_dir, 'settings.json')
+            kwargs = ate.parse_arg_file(arg_file)
+            try:
+                kwargs.pop('files_path')
+            except KeyError:
+                pass
+            assert settings == kwargs
+
+    @pytest.mark.no_test_script_dir
+    def test_remove_arg_file(self):
+        settings = {'some': 'data'}
+        with tmp_script_dir(settings) as tmp_dir:
+            arg_file = os.path.join(tmp_dir, 'settings.json')
+            ate.parse_arg_file(arg_file)
+            assert not os.path.isfile(arg_file)
+
+    @pytest.mark.no_test_script_dir
+    def test_adds_file_path_if_not_present(self):
+        settings = {'some': 'data'}
+        with tmp_script_dir(settings) as tmp_dir:
+            arg_file = os.path.join(tmp_dir, 'settings.json')
+            kwargs = ate.parse_arg_file(arg_file)
+            assert 'files_path' in kwargs
+            assert os.path.realpath(kwargs['files_path']) == os.path.realpath(tmp_dir)
+
+    @pytest.mark.no_test_script_dir
+    def test_does_not_add_file_path_if_present(self):
+        settings = {'some': 'data', 'files_path': 'something'}
+        with tmp_script_dir(settings) as tmp_dir:
+            arg_file = os.path.join(tmp_dir, 'settings.json')
+            kwargs = ate.parse_arg_file(arg_file)
+            assert 'files_path' in kwargs
+            assert kwargs['files_path'] == 'something'
 
