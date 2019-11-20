@@ -13,10 +13,11 @@ from fakeredis import FakeStrictRedis
 from tests import config_default
 
 sys.path.append('..')
-import autotest_enqueuer as ate
-import autotest_server as ats
+import autotest_enqueuer as ate  # noqa: E402
+import autotest_server as ats  # noqa: E402
 ate.config = config_default
 ats.config = config_default
+
 
 @pytest.fixture(autouse=True)
 def redis():
@@ -24,16 +25,19 @@ def redis():
     with patch('autotest_server.redis_connection', return_value=fake_redis):
         yield fake_redis
 
+
 @contextmanager
 def tmp_script_dir(settings_dict):
     with tempfile.TemporaryDirectory() as tmp_dir:
         files_dir = os.path.join(tmp_dir, 'files')
         os.mkdir(files_dir)
-        with open(os.path.join(files_dir, '.gitkeep'), 'w') as f: pass
+        with open(os.path.join(files_dir, '.gitkeep'), 'w') as f:
+            pass
         with open(os.path.join(tmp_dir, 'settings.json'), 'w') as f:
             json.dump(settings_dict, f)
         with patch('autotest_server.test_script_directory', return_value=tmp_dir):
             yield tmp_dir
+
 
 @pytest.fixture(autouse=True)
 def empty_test_script_dir(request):
@@ -44,27 +48,34 @@ def empty_test_script_dir(request):
         with tmp_script_dir(empty_settings) as tmp_dir:
             yield tmp_dir
 
+
 @pytest.fixture
 def non_existant_test_script_dir():
     with patch('autotest_server.test_script_directory', return_value=None):
         yield
+
 
 @pytest.fixture
 def pop_interval():
     with patch('autotest_server.get_avg_pop_interval', return_value=None):
         yield
 
+
 @pytest.fixture(autouse=True)
 def mock_rmtree():
     with patch('shutil.rmtree') as rm:
         yield rm
+
 
 @pytest.fixture(autouse=True)
 def mock_enqueue_call():
     with patch('rq.Queue.enqueue_call') as enqueue_func:
         yield enqueue_func
 
-class DummyTestError(Exception): pass
+
+class DummyTestError(Exception):
+    pass
+
 
 class TestRunTest:
 
@@ -162,7 +173,7 @@ class TestRunTest:
                 pass
 
     @pytest.mark.no_test_script_dir
-    def test_can_find_tests_in_given_category(self, mock_enqueue_call):
+    def test_can_enqueue_test_with_timeout(self, mock_enqueue_call):
         settings = {"testers": [{"test_data": [{"category": ['admin'], "timeout": 10}]}]}
         with tmp_script_dir(settings):
             ate.run_test('Admin', 1, **self.get_kwargs(test_categories=['admin']))
@@ -171,15 +182,17 @@ class TestRunTest:
     def test_cleans_up_files_on_error(self, mock_rmtree):
         try:
             ate.run_test('Admin', 1, **self.get_kwargs(files_path='something'))
-        except:
+        except Exception:
             mock_rmtree.assert_called_once()
         else:
             pytest.fail('This call to run_test should have failed. See other failures for details')
+
 
 @pytest.fixture
 def update_test_specs():
     with patch('autotest_server.update_test_specs') as mock_func:
         yield mock_func
+
 
 class TestUpdateSpecs:
 
@@ -214,7 +227,7 @@ class TestUpdateSpecs:
         with patch('form_validation.validate_with_defaults', side_effect=Exception):
             try:
                 ate.update_specs({}, **self.get_kwargs(schema={}, files_path='something'))
-            except:
+            except Exception:
                 mock_rmtree.assert_called_once()
             else:
                 pytest.fail('This call to update_specs should have failed. See other failures for details')
@@ -226,6 +239,7 @@ def mock_rq_job():
         enqueued_job = Mock()
         job.fetch.return_value = enqueued_job
         yield job, enqueued_job
+
 
 class TestCancelTest:
 
@@ -271,6 +285,7 @@ class TestCancelTest:
         ate.cancel_test('something', [1, 2])
         assert mock_rmtree.call_count == 2
 
+
 class TestGetSchema:
 
     def fake_installed_testers(self, installed):
@@ -314,6 +329,7 @@ class TestGetSchema:
             self.assert_tester_in_schema('custom', schema)
             self.assert_tester_in_schema('py', schema)
 
+
 class TestParseArgFile:
 
     @pytest.mark.no_test_script_dir
@@ -353,4 +369,3 @@ class TestParseArgFile:
             kwargs = ate.parse_arg_file(arg_file)
             assert 'files_path' in kwargs
             assert kwargs['files_path'] == 'something'
-
