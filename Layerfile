@@ -11,6 +11,7 @@ RUN python3 -m venv /tmp/venv
 RUN /tmp/venv/bin/pip install -U pip
 COPY server/bin/requirements.txt /tmp/
 RUN /tmp/venv/bin/pip install -U pytest hypothesis attrs -r /tmp/requirements.txt
+RUN echo test
 CHECKPOINT
 
 WORKDIR /app
