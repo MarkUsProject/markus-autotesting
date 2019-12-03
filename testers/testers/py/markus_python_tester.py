@@ -3,7 +3,6 @@ import tempfile
 import unittest
 import pytest
 import sys
-import xml.etree.ElementTree as eTree
 from testers.markus_tester import MarkusTester, MarkusTest
 
 
@@ -40,12 +39,32 @@ class MarkusTextTestResults(unittest.TextTestResult):
                              'errors': self.errors[-1][-1],
                              'description': test._testMethodDoc})
 
+class MarkusPytestPlugin:
+    """
+    Pytest plugin to collect and parse test results as well
+    as any errors during the test collection process. 
+    """
 
-class AddDocstringToJunitXMLPlugin(object):
+    def __init__(self):
+        self.results = {}
 
-    def pytest_itemcollected(self, item):
-        docstring = item.obj.__doc__ or ''
-        item.user_properties.append(("description", docstring))
+    @pytest.hookimpl(hookwrapper=True, tryfirst=True)
+    def pytest_runtest_makereport(self, item, call):
+        outcome = yield
+        rep = outcome.get_result()
+        if rep.failed or item.nodeid not in self.results:
+            self.results[item.nodeid] = {'status': 'failure' if rep.failed else 'success',
+                                         'name': item.nodeid,
+                                         'errors': str(rep.longrepr) if rep.failed else '',
+                                         'description': item.obj.__doc__}
+        return rep
+
+    def pytest_collectreport(self, report):
+        if report.failed:
+            self.results[report.nodeid] = {'status': 'error',
+                                           'name': report.nodeid,
+                                           'errors': str(report.longrepr),
+                                           'description': None}  
 
 
 class MarkusPythonTest(MarkusTest):
@@ -60,10 +79,9 @@ class MarkusPythonTest(MarkusTest):
 
     @property
     def test_name(self):
-        name = '.'.join([self._file_name, self._test_name])
         if self.description:
-            return f'{name} ({self.description})'
-        return name
+            return f'{self._test_name} ({self.description})'
+        return self._test_name
 
     @MarkusTest.run_decorator
     def run(self):
@@ -90,35 +108,6 @@ class MarkusPythonTester(MarkusTester):
         discovered_tests = test_loader.discover(test_file_dir, test_file)
         return unittest.TestSuite(discovered_tests)
 
-    def _parse_junitxml(self, xml_filename):
-        """
-        Parse pytest results written to the file named
-        xml_filename and yield a hash containing result data
-        for each testcase so it can be parsed by MarkusPythonTest.run
-        """
-        tree = eTree.parse(xml_filename)
-        root = tree.getroot()
-        for testcase in root.iterfind('testcase'):
-            result = {}
-            classname = testcase.attrib['classname']    
-            testname = testcase.attrib['name']
-            result['name'] = '{}.{}'.format(classname, testname)
-            failure = testcase.find('failure')
-            if failure is not None:
-                result['status'] = 'failure'
-                result['errors'] = failure.text
-            else:
-                result['status'] = 'success'
-                result['errors'] = ''
-            error = testcase.find('error')
-            if error is not None:
-                result['status'] = 'error'
-                result['errors'] = error.text
-            description = testcase.find("./properties/property[@name='description']")
-            if description is not None:
-                result['description'] = description.attrib['value']
-            yield result
-
     def _run_unittest_tests(self, test_file):
         """
         Run unittest tests in test_file and return the results
@@ -144,10 +133,9 @@ class MarkusPythonTester(MarkusTester):
             try:
                 sys.stdout = null_out
                 verbosity = self.specs['test_data', 'output_verbosity']
-                with tempfile.NamedTemporaryFile(mode="w+", dir=this_dir) as sf:
-                    pytest.main([test_file, f'--junitxml={sf.name}', f'--tb={verbosity}'],
-                                plugins=[AddDocstringToJunitXMLPlugin()])
-                    results = list(self._parse_junitxml(sf))
+                plugin = MarkusPytestPlugin()
+                pytest.main([test_file, f'--tb={verbosity}'], plugins=[plugin])
+                results = list(plugin.results.values())
             finally:
                 sys.stdout = sys.__stdout__
         return results
