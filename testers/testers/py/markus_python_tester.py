@@ -9,7 +9,7 @@ from testers.markus_tester import MarkusTester, MarkusTest
 class MarkusTextTestResults(unittest.TextTestResult):
     """
     Custom unittest.TextTestResult that saves results as
-    a hash to self.results so they can be more easily 
+    a hash to self.results so they can be more easily
     parsed by the MarkusPythonTest.run function
     """
 
@@ -19,30 +19,31 @@ class MarkusTextTestResults(unittest.TextTestResult):
         self.successes = []
 
     def addSuccess(self, test):
-        self.results.append({'status': 'success', 
-                             'name'  : test.id(), 
+        self.results.append({'status': 'success',
+                             'name'  : test.id(),
                              'errors': '',
                              'description': test._testMethodDoc})
         self.successes.append(test)
 
     def addFailure(self, test, err):
         super().addFailure(test, err)
-        self.results.append({'status': 'failure', 
-                             'name'  : test.id(), 
+        self.results.append({'status': 'failure',
+                             'name'  : test.id(),
                              'errors': self.failures[-1][-1],
                              'description': test._testMethodDoc})
 
     def addError(self, test, err):
         super().addError(test, err)
-        self.results.append({'status': 'error', 
-                             'name'  : test.id(), 
+        self.results.append({'status': 'error',
+                             'name'  : test.id(),
                              'errors': self.errors[-1][-1],
                              'description': test._testMethodDoc})
+
 
 class MarkusPytestPlugin:
     """
     Pytest plugin to collect and parse test results as well
-    as any errors during the test collection process. 
+    as any errors during the test collection process.
     """
 
     def __init__(self):
@@ -64,7 +65,7 @@ class MarkusPytestPlugin:
             self.results[report.nodeid] = {'status': 'error',
                                            'name': report.nodeid,
                                            'errors': str(report.longrepr),
-                                           'description': None}  
+                                           'description': None}
 
 
 class MarkusPythonTest(MarkusTest):
@@ -100,8 +101,8 @@ class MarkusPythonTester(MarkusTester):
 
     def _load_unittest_tests(self, test_file):
         """
-        Discover unittest tests in test_file and return 
-        a unittest.TestSuite that contains these tests 
+        Discover unittest tests in test_file and return
+        a unittest.TestSuite that contains these tests
         """
         test_loader = unittest.defaultTestLoader
         test_file_dir = os.path.dirname(test_file)
@@ -114,7 +115,7 @@ class MarkusPythonTester(MarkusTester):
         of these tests
         """
         test_suite = self._load_unittest_tests(test_file)
-        with open(os.devnull, 'w') as nullstream:    
+        with open(os.devnull, 'w') as nullstream:
             test_runner = unittest.TextTestRunner(
                 verbosity=self.specs['test_data', 'output_verbosity'],
                 stream=nullstream,
