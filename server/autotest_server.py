@@ -356,12 +356,18 @@ def setup_files(files_path, tests_path, markus_address, assignment_id):
     The following permissions are also set:
         - tests_path directory:     rwxrwx--T
         - subdirectories:           rwxr-xr-x
-        - files:                    rw-r--r--
+        - test files:               rw-r--r--
+        - student files:            rw-rw-rw-
     """
-    student_files = move_tree(files_path, tests_path)
-    script_files = copy_test_script_files(markus_address, assignment_id, tests_path)
     os.chmod(tests_path, 0o1770)
-    for fd, file_or_dir in recursive_iglob(tests_path):
+    student_files = move_tree(files_path, tests_path)
+    for fd, file_or_dir in student_files:
+        if fd == 'd':
+            os.chmod(file_or_dir, 0o755)
+        else:
+            os.chmod(file_or_dir, 0o666)
+    script_files = copy_test_script_files(markus_address, assignment_id, tests_path)
+    for fd, file_or_dir in script_files:
         permissions = 0o755 
         if fd == 'f':
             permissions -= 0o111
