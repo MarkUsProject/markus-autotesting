@@ -46,7 +46,11 @@ class MarkusRacketTester(MarkusTester):
             if test_file:
                 suite_name = group.get('test_suite_name', 'all-tests')
                 cmd = [markus_rkt, '--test-suite', suite_name, test_file]
-                rkt = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, check=True)
+                rkt = subprocess.run(cmd,
+                                     stdout=subprocess.PIPE,
+                                     stderr=subprocess.PIPE,
+                                     universal_newlines=True,
+                                     check=True)
                 results[test_file] = rkt.stdout
         return results
         

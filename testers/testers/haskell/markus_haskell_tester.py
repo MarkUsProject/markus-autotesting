@@ -70,7 +70,7 @@ class MarkusHaskellTester(MarkusTester):
 
     def run_haskell_tests(self):
         """
-        Return test results for each test file. Results contain a list of parsed test results 
+        Return test results for each test file. Results contain a list of parsed test results.
 
         Tests are run by first discovering all tests from a specific module (using tasty-discover)
         and then running all the discovered tests and parsing the results from a csv file.
@@ -83,7 +83,11 @@ class MarkusHaskellTester(MarkusTester):
                 subprocess.run(cmd, stdout=subprocess.DEVNULL, universal_newlines=True, check=True)
                 with tempfile.NamedTemporaryFile(mode="w+", dir=this_dir) as sf:
                     cmd = ['runghc', f.name, f"--stats={sf.name}"]
-                    test_proc = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, universal_newlines=True, check=True)
+                    subprocess.run(cmd,
+                                   stdout=subprocess.DEVNULL,
+                                   stderr=subprocess.PIPE,
+                                   universal_newlines=True,
+                                   check=True)
                     results[test_file] = self._parse_test_results(csv.reader(sf))
         return results
 
