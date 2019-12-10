@@ -8,7 +8,7 @@ from testers.markus_tester import MarkusTester, MarkusTest, MarkusTestError
 class MarkusHaskellTest(MarkusTest):
 
     def __init__(self, tester, test_file, result, feedback_open=None):
-        self._test_name = result['name']
+        self._test_name = result.get('name')
         self._file_name = test_file
         self.status = result['status']
         self.message = result['description']
@@ -16,7 +16,9 @@ class MarkusHaskellTest(MarkusTest):
 
     @property
     def test_name(self):
-        return '.'.join([self._file_name, self._test_name])
+        if self._test_name:
+            return '.'.join([self._file_name, self._test_name])
+        return self._file_name
 
     @MarkusTest.run_decorator
     def run(self):
@@ -68,8 +70,7 @@ class MarkusHaskellTester(MarkusTester):
 
     def run_haskell_tests(self):
         """
-        Return test results for each test file. Results contain a list of parsed test results and the 
-        output of stderr from running the tests. 
+        Return test results for each test file. Results contain a list of parsed test results 
 
         Tests are run by first discovering all tests from a specific module (using tasty-discover)
         and then running all the discovered tests and parsing the results from a csv file.
@@ -79,11 +80,11 @@ class MarkusHaskellTester(MarkusTester):
         for test_file in self.specs['test_data', 'script_files']:
             with tempfile.NamedTemporaryFile(dir=this_dir) as f:
                 cmd = ['tasty-discover', '.', '_', f.name] + self._test_run_flags(test_file)
-                subprocess.run(cmd, stdout=subprocess.DEVNULL, universal_newlines=True)
+                subprocess.run(cmd, stdout=subprocess.DEVNULL, universal_newlines=True, check=True)
                 with tempfile.NamedTemporaryFile(mode="w+", dir=this_dir) as sf:
                     cmd = ['runghc', f.name, f"--stats={sf.name}"]
-                    test_proc = subprocess.run(cmd, stdout=subprocess.DEVNULL, universal_newlines=True)
-                    results[test_file] = {'stderr':test_proc.stderr, 'results':self._parse_test_results(csv.reader(sf))}
+                    test_proc = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, universal_newlines=True, check=True)
+                    results[test_file] = self._parse_test_results(csv.reader(sf))
         return results
 
     @MarkusTester.run_decorator
@@ -91,12 +92,9 @@ class MarkusHaskellTester(MarkusTester):
         try:
             results = self.run_haskell_tests()
         except subprocess.CalledProcessError as e:
-            msg = (e.stdout or '' + e.stderr or '') or str(e)
-            raise MarkusTestError(msg) from e
+            raise MarkusTestError(e.stderr) from e
         with self.open_feedback() as feedback_open:
             for test_file, result in results.items():
-                if result['stderr']:
-                    raise MarkusTestError(result['stderr'])
-                for res in result['results']:
+                for res in result:
                     test = self.test_class(self, test_file, res, feedback_open)
                     print(test.run(), flush=True)

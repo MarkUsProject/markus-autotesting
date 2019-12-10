@@ -246,14 +246,15 @@ class MarkusTester(ABC):
         self.test_class = test_class
 
     @staticmethod
-    def error_all(message, points_total=0):
+    def error_all(message, points_total=0, expected=False):
         """
         Err all tests of this tester with a single message.
         :param message: The error message.
         :param points_total: The total points the tests could earn, must be a float >= 0.
         :return The formatted erred tests.
         """
-        return MarkusTest.format_result(test_name='All tests', status=MarkusTest.Status.ERROR_ALL, output=message,
+        status = MarkusTest.Status.ERROR if expected else MarkusTest.Status.ERROR_ALL
+        return MarkusTest.format_result(test_name='All tests', status=status, output=message,
                                         points_earned=0, points_total=points_total)
 
     def before_tester_run(self):
@@ -284,7 +285,7 @@ class MarkusTester(ABC):
                 self.before_tester_run()
                 return run_func(self, *args, **kwargs)
             except MarkusTestError as e:
-                print(MarkusTester.error_all(message=str(e)), flush=True)
+                print(MarkusTester.error_all(message=str(e), expected=True), flush=True)
             except Exception:
                 print(MarkusTester.error_all(message=traceback.format_exc()), flush=True)
             finally:

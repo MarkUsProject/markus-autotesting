@@ -46,7 +46,7 @@ class MarkusRacketTester(MarkusTester):
             if test_file:
                 suite_name = group.get('test_suite_name', 'all-tests')
                 cmd = [markus_rkt, '--test-suite', suite_name, test_file]
-                rkt = subprocess.run(cmd, stdout=subprocess.PIPE, universal_newlines=True)
+                rkt = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, check=True)
                 results[test_file] = rkt.stdout
         return results
         
@@ -55,8 +55,7 @@ class MarkusRacketTester(MarkusTester):
         try:
             results = self.run_racket_test()
         except subprocess.CalledProcessError as e:
-            msg = e.stdout + e.stderr
-            raise MarkusTestError(msg) from e
+            raise MarkusTestError(e.stderr) from e
         with self.open_feedback() as feedback_open:
             for test_file, result in results.items():
                 if result.strip():
