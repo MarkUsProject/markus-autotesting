@@ -225,7 +225,7 @@ BINDIR=$(dirname ${THISSCRIPT})
 SERVERDIR=$(dirname ${BINDIR})
 TESTERSDIR=$(dirname ${SERVERDIR})/testers
 THISUSER=$(whoami)
-PYTHONVERSION="3.7"
+PYTHONVERSION="3.8"
 
 # install python here so we can parse arguments from the config file more easily
 install_packages

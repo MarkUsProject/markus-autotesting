@@ -137,7 +137,7 @@ BINDIR=$(dirname ${THISSCRIPT})
 SERVERDIR=$(dirname ${BINDIR})
 TESTERSDIR=$(dirname ${SERVERDIR})/testers
 THISUSER=$(whoami)
-PYTHONVERSION="3.7"
+PYTHONVERSION="3.8"
 
 SERVERUSER=$(get_config_param SERVER_USER)
 if [[ -n ${SERVERUSER} ]]; then
