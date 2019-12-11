@@ -41,7 +41,7 @@ class Hooks:
         after_all_X
         after_all
 
-    where X is the name of a tester (eg. 'racket', 'py', 'jdbc', etc.).
+    where X is the name of a tester (eg. 'racket', 'py', etc.).
 
     Builtin hooks can have any name and when they are executed is instead determined by the values
     associated to their name in the builtin_hooks.HOOKS dictionary.  

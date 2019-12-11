@@ -47,8 +47,6 @@ After the server has been installed, one or more of the following testers should
 - `pyta`
 - `racket`
 - `custom`
-- `jdbc` (deprecation warning: this tester will be removed in future versions)
-- `sql` (deprecation warning: this tester will be removed in future versions)
 
 Each tester may be installed by running install scripts:
 
@@ -94,11 +92,6 @@ Installing each tester will also install the following additional packages:
 - `racket`
     - racket
 - `custom`
-    - none
-- `jdbc`
-    - openjdk-8-jdk
-    - also requires the [posgresql jdbc driver jar file](https://jdbc.postgresql.org/download.html) to be installed on the server
-- `sql`
     - none
 
 ## Markus-autotesting configuration options

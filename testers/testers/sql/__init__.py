@@ -1,1 +1,0 @@
-from .markus_sql_tester import MarkusSQLTester as SQLTester

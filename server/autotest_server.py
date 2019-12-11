@@ -55,11 +55,9 @@ RLIMIT_ADJUSTMENTS = {'RLIMIT_NPROC': 10}
 TESTER_IMPORT_LINE = {'custom' : 'from testers.custom.markus_custom_tester import MarkusCustomTester as Tester',
                       'haskell' : 'from testers.haskell.markus_haskell_tester import MarkusHaskellTester as Tester',
                       'java' : 'from testers.java.markus_java_tester import MarkusJavaTester as Tester',
-                      'jdbc' : 'from testers.jdbc.markus_jdbc_tester import MarkusJDBCTester as Tester',
                       'py' : 'from testers.py.markus_python_tester import MarkusPythonTester as Tester',
                       'pyta' : 'from testers.pyta.markus_pyta_tester import MarkusPyTATester as Tester',
-                      'racket' : 'from testers.racket.markus_racket_tester import MarkusRacketTester as Tester',
-                      'sql' : 'from testers.sql.markus_sql_tester import MarkusSQLTester as Tester'}
+                      'racket' : 'from testers.racket.markus_racket_tester import MarkusRacketTester as Tester'}
 
 ### CUSTOM EXCEPTION CLASSES ###
 
