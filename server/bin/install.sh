@@ -4,7 +4,7 @@ set -e
 
 install_packages() {
     echo "[AUTOTEST-INSTALL] Installing system packages"
-    sudo apt-get install "python${PYTHONVERSION}" "python${PYTHONVERSION}-venv" redis-server jq postgresql
+    sudo apt-get install "python${PYTHONVERSION}" "python${PYTHONVERSION}-venv" redis-server jq postgresql iptables
 }
 
 create_server_user() {
@@ -45,11 +45,11 @@ create_worker_dir() {
     sudo mkdir -p ${workerdir}
     sudo chown ${SERVERUSEREFFECTIVE}:${workeruser} ${workerdir}
     sudo chmod ug=rwx,o=,+t ${workerdir}
-    redis-cli HSET ${REDISWORKERS} ${workeruser} ${workerdir}
+    redis-cli -u ${REDIS_URL} HSET ${REDISWORKERS} ${workeruser} ${workerdir}
 }
 
 create_worker_and_reaper_users() {
-    redis-cli DEL ${REDISWORKERS} > /dev/null
+    redis-cli -u ${REDIS_URL} DEL ${REDISWORKERS} > /dev/null
     if [[ -z ${WORKERUSERS} ]]; then
         echo "[AUTOTEST-INSTALL] No dedicated worker user, using '${SERVERUSEREFFECTIVE}'"
         create_worker_dir ${SERVERUSEREFFECTIVE}
@@ -205,7 +205,7 @@ suggest_next_steps() {
     if [[ -n ${SERVERUSER} ]]; then
         echo "[AUTOTEST-INSTALL] You must add MarkUs web server's public key to ${SERVERUSER}'s '~/.ssh/authorized_keys'"
     fi
-    echo "[AUTOTEST-INSTALL] You may want to add 'source ${SERVERDIR}/venv/bin/activate && cd ${WORKSPACEDIR} && supervisord -c ${SERVERDIR}/supervisord.conf && deactivate' to ${SERVERUSEREFFECTIVE}'s crontab with a @reboot time"
+    echo "[AUTOTEST-INSTALL] You may want to add '${BINDIR}/start-stop.sh start' to ${SERVERUSEREFFECTIVE}'s crontab with a @reboot time"
     echo "[AUTOTEST-INSTALL] You should install the individual testers you plan to use"
 }
 
@@ -247,6 +247,7 @@ REDISPREFIX=$(get_config_param REDIS_PREFIX)
 REDISWORKERS=${REDISPREFIX}$(get_config_param REDIS_WORKERS_HASH)
 REAPERPREFIX=$(get_config_param REAPER_USER_PREFIX)
 POSTGRESPREFIX=$(get_config_param POSTGRES_PREFIX)
+REDIS_URL=$(get_config_param REDIS_URL)
 
 # main
 create_server_user

@@ -127,14 +127,13 @@ def recursive_iglob(root_dir):
 def redis_connection():
     """
     Return the currently open redis connection object. If there is no 
-    connection currently open, one is created using the keyword arguments 
-    specified in config.REDIS_CONNECTION_KWARGS
+    connection currently open, one is created using the url specified in
+    config.REDIS_URL
     """
     conn = rq.get_current_connection()
     if conn:
         return conn
-    kwargs = config.REDIS_CONNECTION_KWARGS
-    rq.use_connection(redis=redis.Redis(**kwargs))
+    rq.use_connection(redis=redis.Redis.from_url(config.REDIS_URL))
     return rq.get_current_connection()
 
 def copy_tree(src, dst, exclude=[]):
