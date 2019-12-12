@@ -1,0 +1,16 @@
+redis:
+  url: !ENV {REDIS_URL}
+
+workspace: '/app/server/workspace'
+
+users:
+  server: 'autotst'
+  workers:
+    - autotst0
+    - autotst1
+  reaper_user_prefix: null
+
+rlimit_settings:
+  nproc:
+    - 300
+    - 300
