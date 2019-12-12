@@ -231,7 +231,7 @@ COMMANDS = {'run': run_test,
             'cancel': cancel_test,
             'schema': get_schema}
 
-if __name__ == '__main__':
+def cli():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('command', choices=COMMANDS)
@@ -248,3 +248,6 @@ if __name__ == '__main__':
     except MarkUsError as e:
         print(str(e))
         sys.exit(1)
+
+if __name__ == '__main__':
+    cli()
