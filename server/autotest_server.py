@@ -353,8 +353,9 @@ def setup_files(files_path, tests_path, markus_address, assignment_id):
     then make it the current working directory.
     The following permissions are also set:
         - tests_path directory:     rwxrwx--T
-        - subdirectories:           rwxr-xr-x
+        - test subdirectories:      rwxr-xr-x
         - test files:               rw-r--r--
+        - student subdirectories:   rwxrwxrwx
         - student files:            rw-rw-rw-
     """
     os.chmod(tests_path, 0o1770)
