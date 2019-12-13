@@ -251,6 +251,7 @@ class MarkusTester(ABC):
         Err all tests of this tester with a single message.
         :param message: The error message.
         :param points_total: The total points the tests could earn, must be a float >= 0.
+        :param expected: Indicates whether this reports an expected or an unexpected tester error.
         :return The formatted erred tests.
         """
         status = MarkusTest.Status.ERROR if expected else MarkusTest.Status.ERROR_ALL
