@@ -10,8 +10,8 @@ import traceback
 from collections import defaultdict, deque
 from collections.abc import Callable
 from contextlib import contextmanager
-from hooks_context import builtin_hooks
-from hooks_context.utils import current_directory, add_path
+from . import builtin_hooks
+from .utils import current_directory, add_path
 
 
 class Hooks:

@@ -7,7 +7,7 @@ import sys
 import json
 import glob
 from pathlib import Path
-from hooks_context.utils import add_path
+from .utils import add_path
 
 HOOKS = {'upload_feedback_file'    : {'context': 'after_each'},
          'upload_feedback_to_repo' : {'requires': ['clear_feedback_file'], 

@@ -1,376 +1,28 @@
 #!/usr/bin/env python3
 
 import os
-import fcntl
 import shutil
-import sys
 import time
 import json 
 import subprocess
 import signal
-import redis
 import rq
-import pwd
-from contextlib import contextmanager
-from functools import wraps
-from itertools import zip_longest
-from hooks_context.hooks_context import Hooks
-import resource
-import uuid
 import tempfile
-import hashlib
-import yaml
-import getpass
-import secrets
-import string
-import psycopg2
-import socket
-from psycopg2.extensions import AsIs
 from markusapi import Markus
-import config
 
-
-CURRENT_TEST_SCRIPT_FORMAT = '{}_{}'
-TEST_SCRIPT_DIR = os.path.join(config.WORKSPACE_DIR, config.SCRIPTS_DIR_NAME)
-TEST_RESULT_DIR = os.path.join(config.WORKSPACE_DIR, config.RESULTS_DIR_NAME)
-TEST_SPECS_DIR = os.path.join(config.WORKSPACE_DIR, config.SPECS_DIR_NAME)
-REDIS_CURRENT_TEST_SCRIPT_HASH = '{}{}'.format(config.REDIS_PREFIX, config.REDIS_CURRENT_TEST_SCRIPT_HASH)
-REDIS_WORKERS_HASH = '{}{}'.format(config.REDIS_PREFIX, config.REDIS_WORKERS_HASH)
-REDIS_PORT_INT = '{}{}'.format(config.REDIS_PREFIX, config.REDIS_PORT_INT)
-REDIS_POP_HASH = '{}{}'.format(config.REDIS_PREFIX, config.REDIS_POP_HASH)
-DEFAULT_ENV_DIR = os.path.join(TEST_SPECS_DIR, config.DEFAULT_ENV_NAME)
-PGPASSFILE = os.path.join(config.WORKSPACE_DIR, config.LOGS_DIR_NAME, '.pgpass')
-
-TEST_SCRIPTS_SETTINGS_FILENAME = 'settings.json'
-TEST_SCRIPTS_FILES_DIRNAME = 'files'
-HOOKS_FILENAME = 'hooks.py'
-
-PORT_MIN = 50000
-PORT_MAX = 65535
-
-# For each rlimit limit (key), make sure that cleanup processes
-# have at least n=(value) resources more than tester processes 
-RLIMIT_ADJUSTMENTS = {'RLIMIT_NPROC': 10}
-
-TESTER_IMPORT_LINE = {'custom' : 'from testers.custom.markus_custom_tester import MarkusCustomTester as Tester',
-                      'haskell' : 'from testers.haskell.markus_haskell_tester import MarkusHaskellTester as Tester',
-                      'java' : 'from testers.java.markus_java_tester import MarkusJavaTester as Tester',
-                      'py' : 'from testers.py.markus_python_tester import MarkusPythonTester as Tester',
-                      'pyta' : 'from testers.pyta.markus_pyta_tester import MarkusPyTATester as Tester',
-                      'racket' : 'from testers.racket.markus_racket_tester import MarkusRacketTester as Tester'}
+from ..exceptions import MarkUsError
+from .utils import config, constants, string_management, file_management, resource_management
+from .hooks_context.hooks_context import Hooks
 
 ### CUSTOM EXCEPTION CLASSES ###
 
-class AutotestError(Exception): pass
+class AutotestError(MarkUsError): pass
 
 ### HELPER FUNCTIONS ###
 
-def stringify(*args):
-    for a in args:
-        yield str(a)
-
-def rlimit_str2int(rlimit_string):
-    return resource.__getattribute__(rlimit_string)
-
-def current_user():
-    return pwd.getpwuid(os.getuid()).pw_name
-
-def get_reaper_username(test_username):
-    return '{}{}'.format(config.REAPER_USER_PREFIX, test_username)
-
-def decode_if_bytes(b, format='utf-8'):
-    return b.decode(format) if isinstance(b, bytes) else b
-
-def clean_dir_name(name):
-    """ Return name modified so that it can be used as a unix style directory name """
-    return name.replace('/', '_')
-
-def random_tmpfile_name():
-    return os.path.join(tempfile.gettempdir(), uuid.uuid4().hex)
-
-def get_test_script_key(markus_address, assignment_id):
-    """ 
-    Return unique key for each assignment used for 
-    storing the location of test scripts in Redis 
-    """
-    clean_markus_address = clean_dir_name(markus_address)
-    return CURRENT_TEST_SCRIPT_FORMAT.format(clean_markus_address, assignment_id)
-
-def test_script_directory(markus_address, assignment_id, set_to=None):
-    """
-    Return the directory containing the test scripts for a specific assignment.
-    Optionally updates the location of the test script directory to the value 
-    of the set_to keyword argument (if it is not None)
-    """
-    key = get_test_script_key(markus_address, assignment_id)
-    r = redis_connection()
-    if set_to is not None:
-        r.hset(REDIS_CURRENT_TEST_SCRIPT_HASH, key, set_to)
-    out = r.hget(REDIS_CURRENT_TEST_SCRIPT_HASH, key)
-    return decode_if_bytes(out)
-
-def recursive_iglob(root_dir):
-    """
-    Walk breadth first over a directory tree starting at root_dir and
-    yield the path to each directory or file encountered. 
-    Yields a tuple containing a string indicating whether the path is to
-    a directory ("d") or a file ("f") and the path itself. Raise a 
-    ValueError if the root_dir doesn't exist 
-    """
-    if os.path.isdir(root_dir):
-        for root, dirnames, filenames in os.walk(root_dir):
-            yield from (('d', os.path.join(root, d)) for d in dirnames)
-            yield from (('f', os.path.join(root, f)) for f in filenames)
-    else:
-        raise ValueError('directory does not exist: {}'.format(root_dir))
-
-def redis_connection():
-    """
-    Return the currently open redis connection object. If there is no 
-    connection currently open, one is created using the url specified in
-    config.REDIS_URL
-    """
-    conn = rq.get_current_connection()
-    if conn:
-        return conn
-    rq.use_connection(redis=redis.Redis.from_url(config.REDIS_URL))
-    return rq.get_current_connection()
-
-def copy_tree(src, dst, exclude=[]):
-    """
-    Recursively copy all files and subdirectories in the path 
-    indicated by src to the path indicated by dst. If directories
-    don't exist, they are created. Do not copy files or directories
-    in the exclude list.
-    """
-    copied = []
-    for fd, file_or_dir in recursive_iglob(src):
-        src_path = os.path.relpath(file_or_dir, src)
-        if src_path in exclude:
-            continue
-        target = os.path.join(dst, src_path)
-        if fd == 'd':
-            os.makedirs(target, exist_ok=True)
-        else:
-            os.makedirs(os.path.dirname(target), exist_ok=True)
-            shutil.copy2(file_or_dir, target)
-        copied.append((fd, target))
-    return copied
-
-def ignore_missing_dir_error(_func, _path, excinfo):
-    """ Used by shutil.rmtree to ignore a FileNotFoundError """
-    err_type, err_inst, traceback = excinfo
-    if err_type == FileNotFoundError:
-        return 
-    raise err_inst
-
-def move_tree(src, dst):
-    """
-    Recursively move all files and subdirectories in the path 
-    indicated by src to the path indicated by dst. If directories
-    don't exist, they are created.
-    """
-    os.makedirs(dst, exist_ok=True)
-    moved = copy_tree(src, dst)
-    shutil.rmtree(src, onerror=ignore_missing_dir_error)
-    return moved
-
-def loads_partial_json(json_string, expected_type=None):
-    """
-    Return a list of objects loaded from a json string and a boolean
-    indicating whether the json_string was malformed.  This will try 
-    to load as many valid objects as possible from a (potentially 
-    malformed) json string. If the optional expected_type keyword argument
-    is not None then only objects of the given type are returned, 
-    if any objects of a different type are found, the string will 
-    be treated as malfomed.
-    """
-    i = 0
-    decoder = json.JSONDecoder()
-    results = []
-    malformed = False
-    json_string = json_string.strip()
-    while i < len(json_string):
-        try:
-            obj, ind = decoder.raw_decode(json_string[i:])
-            if expected_type is None or isinstance(obj, expected_type):
-                results.append(obj)
-            elif json_string[i:i+ind].strip():
-                malformed = True
-            i += ind
-        except json.JSONDecodeError:
-            if json_string[i].strip():
-                malformed = True
-            i += 1
-    return results, malformed
-
-@contextmanager
-def fd_open(path, flags=os.O_RDONLY, *args, **kwargs):
-    """
-    Open the file or directory at path, yield its 
-    file descriptor, and close it when finished. 
-    flags, *args and **kwargs are passed on to os.open.
-    """
-    fd = os.open(path, flags, *args, **kwargs)
-    try:
-        yield fd
-    finally:
-        os.close(fd)
-
-@contextmanager
-def fd_lock(file_descriptor, exclusive=True):
-    """
-    Lock the object with the given file descriptor and unlock it 
-    when finished.  A lock can either be exclusive or shared by
-    setting the exclusive keyword argument to True or False.
-    """
-    fcntl.flock(file_descriptor, fcntl.LOCK_EX if exclusive else fcntl.LOCK_SH)
-    try:
-        yield
-    finally:
-        fcntl.flock(file_descriptor, fcntl.LOCK_UN)
-
-def tester_user():
-    """
-    Get the workspace for the tester user specified by the MARKUSWORKERUSER
-    environment variable, return the user_name and path to that user's workspace.
-
-    Raises an AutotestError if a tester user is not specified or if a workspace
-    has not been setup for that user.
-    """
-    r = redis_connection()
-
-    user_name = os.environ.get('MARKUSWORKERUSER')
-    if user_name is None:
-        raise AutotestError('No worker users available to run this job')
-
-    user_workspace = r.hget(REDIS_WORKERS_HASH, user_name)
-    if user_workspace is None:
-        raise AutotestError(f'No workspace directory for user: {user_name}')
-
-    return user_name, decode_if_bytes(user_workspace)
-
 ### MAINTENANCE FUNCTIONS ###
 
-def update_pop_interval_stat(queue_name):
-    """
-    Update the values contained in the redis hash named REDIS_POP_HASH for 
-    the queue named queue_name. This should be called whenever a new job
-    is popped from a queue for which we want to keep track of the popping 
-    rate. For more details about the data updated see get_pop_interval_stat.
-    """
-    r = redis_connection()
-    now = time.time()
-    r.hsetnx(REDIS_POP_HASH, '{}_start'.format(queue_name), now)
-    r.hset(REDIS_POP_HASH, '{}_last'.format(queue_name), now)
-    r.hincrby(REDIS_POP_HASH, '{}_count'.format(queue_name), 1)
-
-def clear_pop_interval_stat(queue_name):
-    """
-    Reset the values contained in the redis hash named REDIS_POP_HASH for 
-    the queue named queue_name. This should be called whenever a queue becomes 
-    empty. For more details about the data updated see get_pop_interval_stat. 
-    """
-    r = redis_connection()
-    r.hdel(REDIS_POP_HASH, '{}_start'.format(queue_name))
-    r.hset(REDIS_POP_HASH, '{}_last'.format(queue_name), 0)
-    r.hset(REDIS_POP_HASH, '{}_count'.format(queue_name), 0)
-
-def get_pop_interval_stat(queue_name):
-    """
-    Return the following data about the queue named queue_name:
-        - the time the first job was popped from the queue during the 
-          current burst of jobs. 
-        - the number of jobs popped from the queue during the current 
-          burst of jobs.
-        - the time the most recent job was popped from the queue during
-          current burst of jobs.
-    """
-    r = redis_connection()
-    start = r.hget(REDIS_POP_HASH, '{}_start'.format(queue_name))
-    last = r.hget(REDIS_POP_HASH, '{}_count'.format(queue_name))
-    count = r.hget(REDIS_POP_HASH, '{}_count'.format(queue_name))
-    return start, last, count
-
-def get_avg_pop_interval(queue_name):
-    """
-    Return the average interval between pops off of the end of the
-    queue named queue_name during the current burst of jobs. 
-    Return None if there are no jobs in the queue, indicating that 
-    there is no current burst.
-    """
-    start, last, count = get_pop_interval_stat(queue_name)
-    try:
-        start = float(start)
-        last = float(last)
-        count = int(count)
-    except TypeError:
-        return None
-    count -= 1
-    return (last-start) / count if count else 0
-
-def clean_up():
-    """ Reset the pop interval data for each empty queue """
-    with rq.Connection(redis_connection()):
-        for q in rq.Queue.all():
-            if q.is_empty():
-                clear_pop_interval_stat(q.name)
-
-
-def clean_after(func):
-    """ 
-    Call the clean_up function after the 
-    decorated function func is finished 
-    """
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        finally:
-            clean_up()
-    return wrapper
-
 ### RUN TESTS ###
-
-def copy_test_script_files(markus_address, assignment_id, tests_path):
-    """
-    Copy test script files for a given assignment to the tests_path
-    directory if they exist. tests_path may already exist and contain 
-    files and subdirectories.
-    """
-    test_script_outer_dir = test_script_directory(markus_address, assignment_id)
-    test_script_dir = os.path.join(test_script_outer_dir, TEST_SCRIPTS_FILES_DIRNAME)
-    if os.path.isdir(test_script_dir):
-        with fd_open(test_script_dir) as fd:
-            with fd_lock(fd, exclusive=False):
-                return copy_tree(test_script_dir, tests_path)
-    return []
-
-def setup_files(files_path, tests_path, markus_address, assignment_id):
-    """
-    Copy test script files and student files to the working directory tests_path,
-    then make it the current working directory.
-    The following permissions are also set:
-        - tests_path directory:     rwxrwx--T
-        - test subdirectories:      rwxrwx--T
-        - test files:               rw-r-----
-        - student subdirectories:   rwxrwx---
-        - student files:            rw-rw----
-    """
-    os.chmod(tests_path, 0o1770)
-    student_files = move_tree(files_path, tests_path)
-    for fd, file_or_dir in student_files:
-        if fd == 'd':
-            os.chmod(file_or_dir, 0o770)
-        else:
-            os.chmod(file_or_dir, 0o660)
-    script_files = copy_test_script_files(markus_address, assignment_id, tests_path)
-    for fd, file_or_dir in script_files:
-        if fd == 'd':
-            os.chmod(file_or_dir, 0o1770)
-        else:
-            os.chmod(file_or_dir, 0o640)
-    return student_files, script_files
 
 def test_run_command(test_username=None):
     """
@@ -405,49 +57,6 @@ def create_test_group_result(stdout, stderr, run_time, extra_info, timeout=None)
             'malformed' :  stdout if malformed else None,
             'extra_info': extra_info or {}}
 
-def get_test_preexec_fn():
-    """
-    Return a function that sets rlimit settings specified in config file
-    This function ensures that for specific limits (defined in RLIMIT_ADJUSTMENTS),
-    there are at least n=RLIMIT_ADJUSTMENTS[limit] resources available for cleanup
-    processes that are not available for test processes.  This ensures that cleanup
-    processes will always be able to run. 
-    """
-    def preexec_fn():
-        for limit_str in config.RLIMIT_SETTINGS.keys() | RLIMIT_ADJUSTMENTS.keys():
-            limit = rlimit_str2int(limit_str)
-
-            values = config.RLIMIT_SETTINGS.get(limit_str, (resource.RLIM_INFINITY, resource.RLIM_INFINITY))
-            curr_soft, curr_hard = resource.getrlimit(limit)
-            soft, hard = (min(vals) for vals in zip((curr_soft, curr_hard), values))
-            # reduce the hard limit so that cleanup scripts will have at least 
-            # adj more resources to use. 
-            adj = RLIMIT_ADJUSTMENTS.get(limit_str, 0)
-            if (curr_hard - hard) < adj:
-                hard = curr_hard - adj
-            # make sure the soft limit doesn't exceed the hard limit
-            hard = max(hard, 0)
-            soft = max(min(hard, soft), 0)
-            
-            resource.setrlimit(limit, (soft, hard))
-
-    return preexec_fn
-
-def get_cleanup_preexec_fn():
-    """
-    Return a function that sets the rlimit settings specified in RLIMIT_ADJUSTMENTS
-    so that both the soft and hard limits are set as high as possible. This ensures
-    that cleanup processes will have as many resources as possible to run. 
-    """
-    def preexec_fn():
-        for limit_str in RLIMIT_ADJUSTMENTS:
-            limit = rlimit_str2int(limit_str)
-            soft, hard = resource.getrlimit(limit)
-            soft = max(soft, hard)
-            resource.setrlimit(limit, (soft, hard))
-
-    return preexec_fn
-
 def kill_with_reaper(test_username):
     """
     Try to kill all processes currently being run by test_username using the method
@@ -467,7 +76,7 @@ def kill_with_reaper(test_username):
         reaper_username = get_reaper_username(test_username)
         cwd = os.path.dirname(os.path.abspath(__file__))
         kill_file_dst = random_tmpfile_name()
-        preexec_fn = get_cleanup_preexec_fn()
+        preexec_fn = set_rlimits_before_cleanup()
 
         copy_cmd = "sudo -u {0} -- bash -c 'cp kill_worker_procs {1} && chmod 4550 {1}'".format(test_username, kill_file_dst)
         copy_proc = subprocess.Popen(copy_cmd, shell=True, preexec_fn=preexec_fn, cwd=cwd)
@@ -501,48 +110,6 @@ def create_test_script_command(env_dir, tester_type):
     venv_str = f'source {venv_activate}'
     return ' && '.join([venv_str, f'python -c "{python_str}"'])
 
-
-def setup_database(test_username):
-    user = getpass.getuser()
-    database = f'{config.POSTGRES_PREFIX}{test_username}'
-
-    with open(PGPASSFILE) as f:
-        password = f.read().strip()
-
-    with psycopg2.connect(database=database, user=user, password=password, host='localhost') as conn:
-        with conn.cursor() as cursor:
-            cursor.execute("DROP OWNED BY CURRENT_USER;")
-            if test_username != user:
-                user = test_username
-                password = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(20))
-                cursor.execute("ALTER USER %s WITH PASSWORD %s;", (AsIs(user), password))
-    
-    return {'PGDATABASE': database, 'PGPASSWORD': password, 'PGUSER': user, 'AUTOTESTENV': 'true'}
-
-
-def next_port():
-    """ Return a port number that is greater than the last time this method was
-    called (by any process on this machine).
-
-    This port number is not guaranteed to be free
-    """
-    r = redis_connection()
-    return int(r.incr(REDIS_PORT_INT) or 0) % (PORT_MAX - PORT_MIN) + PORT_MIN
-
-
-def get_available_port():
-    """ Return the next available open port on localhost. """
-    while True:
-        try:
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.bind(('localhost', next_port()))
-                s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-                port = s.getsockname()[1]
-                return str(port)
-        except OSError:
-            continue
-
-
 def get_env_vars(test_username):
     """ Return a dictionary containing all environment variables to pass to the next test """
     db_env_vars = setup_database(test_username)
@@ -556,7 +123,7 @@ def run_test_specs(cmd, test_specs, test_categories, tests_path, test_username, 
     command cmd. Return the results. 
     """
     results = []
-    preexec_fn = get_test_preexec_fn()
+    preexec_fn = set_rlimits_before_test()
 
     with hooks.around('all'):
         for settings in test_specs['testers']:
@@ -704,7 +271,7 @@ def run_test(markus_address, server_api_key, test_categories, files_path, assign
         store_results(results_data, markus_address, assignment_id, group_id, submission_id)
         report(results_data, api, assignment_id, group_id, run_id)
 
-### UPDATE TEST SCRIPTS ### 
+### UPDATE TEST SCRIPTS ###
 
 def get_tester_root_dir(tester_type):
     """

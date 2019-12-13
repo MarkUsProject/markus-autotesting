@@ -7,19 +7,19 @@ import rq
 import json
 import inspect
 import glob
-import autotest_server as ats
 import time
-import config
 import shutil
 from functools import wraps
-import form_validation
+from .exceptions import MarkUsError
+from .server.utils.redis_management import redis_connection, get_avg_pop_interval
+from .server.utils.file_management import test_script_directory, ignore_missing_dir_error
+from .server.utils.constants import TEST_SCRIPTS_SETTINGS_FILENAME
+from .server.utils.config import WORKER_QUEUES
+from .server.form_validation import validate_with_defaults, best_match
+from .server.server import run_test, update_test_specs
+
 
 ### ERROR CLASSES ###
-
-
-class MarkUsError(Exception):
-    pass
-
 
 class JobArgumentError(MarkUsError):
     pass
@@ -63,9 +63,9 @@ def _get_queue(**kw):
     Return a queue. The returned queue is one whose condition function
     returns True when called with the arguments in **kw.
     """
-    for queue_type in config.WORKER_QUEUES:
+    for queue_type in WORKER_QUEUES:
         if queue_type['filter'](**kw):
-            return rq.Queue(queue_type['name'], connection=ats.redis_connection())
+            return rq.Queue(queue_type['name'], connection=redis_connection())
     raise InvalidQueueError('cannot enqueue job: unable to determine correct queue type')
 
 
@@ -76,12 +76,12 @@ def _print_queue_info(queue):
     from the queue and the number of jobs in the queue.
     """
     count = queue.count
-    avg_pop_interval = ats.get_avg_pop_interval(queue.name) or 0
+    avg_pop_interval = get_avg_pop_interval(queue.name) or 0
     print(avg_pop_interval * count)
 
 
 def _check_test_script_files_exist(markus_address, assignment_id, **kw):
-    if ats.test_script_directory(markus_address, assignment_id) is None:
+    if test_script_directory(markus_address, assignment_id) is None:
         raise TestScriptFilesError('cannot find test script files: please upload some before running tests')
 
 
@@ -98,7 +98,7 @@ def _clean_on_error(func):
         except Exception:
             files_path = kwargs.get('files_path')
             if files_path:
-                shutil.rmtree(files_path, onerror=ats.ignore_missing_dir_error)
+                shutil.rmtree(files_path, onerror=ignore_missing_dir_error)
             raise
 
     return wrapper
@@ -129,20 +129,20 @@ def _get_job_timeout(test_specs, test_categories, multiplier=1.5):
 
 
 @_clean_on_error
-def run_test(user_type, batch_id, **kw):
+def enqueue_test(user_type, batch_id, **kw):
     """
     Enqueue a test run job with keyword arguments specified in **kw
     """
     kw['enqueue_time'] = time.time()
     queue = _get_queue(user_type=user_type, batch_id=batch_id, **kw)
-    _check_args(ats.run_test, kwargs=kw)
+    _check_args(run_test, kwargs=kw)
     _check_test_script_files_exist(**kw)
-    test_files_dir = ats.test_script_directory(kw['markus_address'], kw['assignment_id'])
-    with open(os.path.join(test_files_dir, ats.TEST_SCRIPTS_SETTINGS_FILENAME)) as f:
+    test_files_dir = test_script_directory(kw['markus_address'], kw['assignment_id'])
+    with open(os.path.join(test_files_dir, TEST_SCRIPTS_SETTINGS_FILENAME)) as f:
         test_specs = json.load(f)
     _print_queue_info(queue)
     timeout = _get_job_timeout(test_specs, kw['test_categories'])
-    queue.enqueue_call(ats.run_test, kwargs=kw, job_id=_format_job_id(**kw), timeout=timeout)
+    queue.enqueue_call(run_test, kwargs=kw, job_id=_format_job_id(**kw), timeout=timeout)
 
 
 @_clean_on_error
@@ -154,7 +154,7 @@ def update_specs(test_specs, schema=None, **kw):
         errors = list(form_validation.validate_with_defaults(schema, test_specs))
         if errors:
             raise form_validation.best_match(errors)
-    ats.update_test_specs(test_specs=test_specs, **kw)
+    update_test_specs(test_specs=test_specs, **kw)
 
 
 def cancel_test(markus_address, run_ids, **kw):
@@ -162,7 +162,7 @@ def cancel_test(markus_address, run_ids, **kw):
     Cancel a test run job with the job_id defined using
     markus_address and run_id.
     """
-    with rq.Connection(ats.redis_connection()):
+    with rq.Connection(redis_connection()):
         for run_id in run_ids:
             job_id = _format_job_id(markus_address, run_id)
             try:
@@ -172,7 +172,7 @@ def cancel_test(markus_address, run_ids, **kw):
             if job.is_queued():
                 files_path = job.kwargs['files_path']
                 if files_path:
-                    shutil.rmtree(files_path, onerror=ats.ignore_missing_dir_error)
+                    shutil.rmtree(files_path, onerror=ignore_missing_dir_error)
                 job.cancel()
 
 
@@ -226,7 +226,7 @@ def parse_arg_file(arg_file):
     return kwargs
 
 
-COMMANDS = {'run': run_test,
+COMMANDS = {'run': enqueue_test,
             'specs': update_specs,
             'cancel': cancel_test,
             'schema': get_schema}
