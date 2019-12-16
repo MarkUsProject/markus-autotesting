@@ -5,23 +5,25 @@ import os
 import re
 from collections.abc import Mapping
 import yaml
-from autotester import CONFIG_ROOT
+import autotester
 
 DEFAULT_ROOT = os.path.join(os.path.dirname(__file__), 'defaults')
 
 class _Config:
 
-    _local_config = os.path.join(CONFIG_ROOT, 'config_local.yml')
+    _local_config = os.path.join(autotester.CONFIG_ROOT, 'config_local.yml')
     _default_config = os.path.join(DEFAULT_ROOT, 'config_default.yml')
     _env_var_config = os.path.join(DEFAULT_ROOT, 'config_env_vars.yml')
-    _env_pattern = re.compile(r'.*?\${(\w+)}.*?')
-    _env_tag = '!ENV'
-    _env_not_found_key = '!ENVIRONMENT VARIABLE NOT FOUND!'
+    _replacement_pattern = re.compile(r'.*?\${(\w+)}.*?')
+    _not_found_key = '!VARIABLE NOT FOUND!'
 
     def __init__(self):
         self._yaml_loader = yaml.SafeLoader
-        self._yaml_loader.add_implicit_resolver(self._env_tag, self._env_pattern, None)
-        self._yaml_loader.add_constructor(self._env_tag, self._env_var_constructor)
+
+        self._yaml_loader.add_implicit_resolver('!ENV', self._replacement_pattern, None)
+        env_constructor = self._constructor_factory(lambda g: os.environ.get(g, self._not_found_key))
+        self._yaml_loader.add_constructor('!ENV', env_constructor)
+
         self._settings = self._load_from_yaml()
 
     def __getitem__(self, key):
@@ -44,21 +46,24 @@ class _Config:
         if all(isinstance(d, Mapping) for d in dicts):
             for d in dicts[1:]:
                 for key, val in d.items():
-                    if key not in _merged or _merged[key] == cls._env_not_found_key:
+                    if key not in _merged or _merged[key] == cls._not_found_key:
                         _merged[key] = val
                     else:
                         _merged[key] = cls._merge_dicts([_merged[key], val])
         return _merged
 
-    def _env_var_constructor(self, loader, node):
-        value = loader.construct_scalar(node)
-        match = self._env_pattern.findall(value)
-        if match:
-            full_value = value
-            for g in match:
-                full_value = full_value.replace(f'${{{g}}}', os.environ.get(g, self._env_not_found_key))
-            return full_value
-        return value
+    def _constructor_factory(self, replacement_func):
+        def constructor(loader, node, pattern=self._replacement_pattern):
+            value = loader.construct_scalar(node)
+            match = pattern.findall(value)
+            if match:
+                full_value = value
+                for g in match:
+                    full_value = full_value.replace(f'${{{g}}}', replacement_func(g))
+                return full_value
+            return value
+
+        return constructor
 
     def _load_from_yaml(self):
         config_dicts = []
