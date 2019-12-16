@@ -14,8 +14,8 @@ from .exceptions import MarkUsError
 from .server.utils.redis_management import redis_connection, get_avg_pop_interval
 from .server.utils.file_management import test_script_directory, ignore_missing_dir_error
 from .server.utils.constants import TEST_SCRIPTS_SETTINGS_FILENAME
-from .server.utils.config import WORKER_QUEUES
-from .server.form_validation import validate_with_defaults, best_match
+from autotester.config import config
+from .server import form_validation
 from .server.server import run_test, update_test_specs
 
 
@@ -63,9 +63,9 @@ def _get_queue(**kw):
     Return a queue. The returned queue is one whose condition function
     returns True when called with the arguments in **kw.
     """
-    for queue_type in WORKER_QUEUES:
-        if queue_type['filter'](**kw):
-            return rq.Queue(queue_type['name'], connection=redis_connection())
+    for queue in config['queues']:
+        if form_validation.is_valid(kw, queue['schema']):
+            return rq.Queue(queue['name'], connection=redis_connection())
     raise InvalidQueueError('cannot enqueue job: unable to determine correct queue type')
 
 
@@ -151,9 +151,9 @@ def update_specs(test_specs, schema=None, **kw):
     Run test spec update function after validating the <schema> form data.
     """
     if schema is not None:
-        errors = list(form_validation.validate_with_defaults(schema, test_specs))
-        if errors:
-            raise form_validation.best_match(errors)
+        error = form_validation.validate_with_defaults(schema, test_specs, best_only=True)
+        if error:
+            raise error
     update_test_specs(test_specs=test_specs, **kw)
 
 

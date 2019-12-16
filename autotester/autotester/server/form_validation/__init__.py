@@ -1,4 +1,4 @@
-from jsonschema import Draft7Validator, validators, ValidationError
+from jsonschema import Draft7Validator, validators, ValidationError, validate
 from jsonschema.exceptions import best_match
 from copy import deepcopy
 
@@ -90,7 +90,7 @@ def extend_with_default(validator_class=Draft7Validator):
 
     return validators.extend(validator_class, custom_validators)
 
-def validate_with_defaults(schema, obj, validator_class=Draft7Validator):
+def validate_with_defaults(schema, obj, validator_class=Draft7Validator, best_only=True):
     """
     Return an iterator that yields errors from validating obj on schema 
     after first filling in defaults on obj.
@@ -99,5 +99,14 @@ def validate_with_defaults(schema, obj, validator_class=Draft7Validator):
     # first time to fill in defaults since validating 'required', 'minProperties',
     # etc. can't be done until the instance has been properly filled with defaults.
     list(validator.iter_errors(obj))
-    return validator.iter_errors(obj)
-    
+    errors = list(validator.iter_errors(obj))
+    if best_only:
+        return best_match(errors)
+    return errors
+
+def is_valid(obj, schema, validator_class=Draft7Validator):
+    """
+    Return True if <obj> is valid for schema <schema> using the
+    validator <validator_class>.
+    """
+    return validator_class(schema).is_valid(obj)
