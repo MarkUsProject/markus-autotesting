@@ -1,0 +1,10 @@
+redis:
+  url: !ENV ${REDIS_URL}
+
+workspace: !ENV ${AUTOTESTER_WORKSPACE}
+
+resources:
+  postgresql:
+    database: !ENV ${PGDATABASE}
+    password: !ENV ${PGPASSWORD}
+    host: !ENV ${PGHOST}
