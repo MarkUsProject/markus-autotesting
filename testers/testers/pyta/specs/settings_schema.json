@@ -21,10 +21,11 @@
           "title": "Python version",
           "type": "string",
           "enum": [
+            "3.8",
             "3.7",
             "3.6"
           ],
-          "default": "3.7"
+          "default": "3.8"
         },
         "pip_requirements": {
           "title": "Package requirements",

@@ -1,1 +1,1 @@
-python-ta>=1.4.2
+python-ta==1.4.2
