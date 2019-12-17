@@ -9,37 +9,23 @@ import inspect
 import glob
 import time
 import shutil
+from rq.exceptions import NoSuchJobError
 from functools import wraps
-from .exceptions import MarkUsError
-from .server.utils.redis_management import redis_connection, get_avg_pop_interval
-from .server.utils.file_management import test_script_directory, ignore_missing_dir_error
-from .server.utils.constants import TEST_SCRIPTS_SETTINGS_FILENAME
+from autotester.exceptions import *
+from autotester.server.utils.redis_management import redis_connection, get_avg_pop_interval, test_script_directory
+from autotester.server.utils.file_management import ignore_missing_dir_error
 from autotester.config import config
-from .server import form_validation
-from .server.server import run_test, update_test_specs
+from autotester.server import form_validation
+from autotester.server.server import run_test, update_test_specs
 
+SETTINGS_FILENAME = config['_workspace_contents', '_settings_file']
 
 ### ERROR CLASSES ###
-
-class JobArgumentError(MarkUsError):
-    pass
-
-
-class InvalidQueueError(MarkUsError):
-    pass
-
-
-class TestScriptFilesError(MarkUsError):
-    pass
-
-
-class TestParameterError(MarkUsError):
-    pass
 
 ### HELPER FUNCTIONS ###
 
 
-def _format_job_id(markus_address, run_id, **kw):
+def _format_job_id(markus_address, run_id, **_kw):
     """
     Return a unique job id for each enqueued job
     based on the markus_address and the run_id
@@ -47,11 +33,13 @@ def _format_job_id(markus_address, run_id, **kw):
     return '{}_{}'.format(markus_address, run_id)
 
 
-def _check_args(func, args=[], kwargs={}):
+def _check_args(func, args=None, kwargs=None):
     """
     Raises an error if calling the function func with args and
     kwargs would raise an error.
     """
+    args = args or []
+    kwargs = kwargs or {}
     try:
         inspect.signature(func).bind(*args, **kwargs)
     except TypeError as e:
@@ -80,7 +68,7 @@ def _print_queue_info(queue):
     print(avg_pop_interval * count)
 
 
-def _check_test_script_files_exist(markus_address, assignment_id, **kw):
+def _check_test_script_files_exist(markus_address, assignment_id, **_kw):
     if test_script_directory(markus_address, assignment_id) is None:
         raise TestScriptFilesError('cannot find test script files: please upload some before running tests')
 
@@ -138,7 +126,7 @@ def enqueue_test(user_type, batch_id, **kw):
     _check_args(run_test, kwargs=kw)
     _check_test_script_files_exist(**kw)
     test_files_dir = test_script_directory(kw['markus_address'], kw['assignment_id'])
-    with open(os.path.join(test_files_dir, TEST_SCRIPTS_SETTINGS_FILENAME)) as f:
+    with open(os.path.join(test_files_dir, SETTINGS_FILENAME)) as f:
         test_specs = json.load(f)
     _print_queue_info(queue)
     timeout = _get_job_timeout(test_specs, kw['test_categories'])
@@ -157,7 +145,7 @@ def update_specs(test_specs, schema=None, **kw):
     update_test_specs(test_specs=test_specs, **kw)
 
 
-def cancel_test(markus_address, run_ids, **kw):
+def cancel_test(markus_address, run_ids, **_kw):
     """
     Cancel a test run job with the job_id defined using
     markus_address and run_id.
@@ -167,7 +155,7 @@ def cancel_test(markus_address, run_ids, **kw):
             job_id = _format_job_id(markus_address, run_id)
             try:
                 job = rq.job.Job.fetch(job_id)
-            except rq.exceptions.NoSuchJobError:
+            except NoSuchJobError:
                 return
             if job.is_queued():
                 files_path = job.kwargs['files_path']
@@ -176,7 +164,7 @@ def cancel_test(markus_address, run_ids, **kw):
                 job.cancel()
 
 
-def get_schema(**kw):
+def get_schema(**_kw):
     """
     Print a json to stdout representing a json schema that indicates
     the required specs for each installed tester type.

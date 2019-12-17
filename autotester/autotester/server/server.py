@@ -10,17 +10,31 @@ import rq
 import tempfile
 from markusapi import Markus
 
-from ..exceptions import MarkUsError
-from .utils import config, constants, string_management, file_management, resource_management
-from .hooks_context.hooks_context import Hooks
+from autotester.exceptions import TesterCreationError
+from autotester.config import config
+from autotester.server.hooks_context.hooks_context import Hooks
+from autotester.server.utils.string_management import loads_partial_json, decode_if_bytes, stringify
+from autotester.server.utils.user_management import get_reaper_username, current_user, tester_user
+from autotester.server.utils.file_management import random_tmpfile_name, clean_dir_name, setup_files, ignore_missing_dir_error, fd_open, fd_lock, move_tree
+from autotester.server.utils.resource_management import set_rlimits_before_cleanup, set_rlimits_before_test
+from autotester.server.utils.redis_management import clean_after, test_script_directory, update_pop_interval_stat
+from autotester.resources.ports import get_available_port
+from autotester.resources.postgresql import setup_database
 
-### CUSTOM EXCEPTION CLASSES ###
+DEFAULT_ENV_DIR = config['_workspace_contents', '_default_venv_name']
+TEST_RESULT_DIR = os.path.join(config['workspace'], config['_workspace_contents', '_results'])
+HOOKS_FILENAME = config['_workspace_contents', '_hooks_file']
+SETTINGS_FILENAME = config['_workspace_contents', '_settings_file']
+FILES_DIRNAME = config['_workspace_contents', '_files_dir']
+TEST_SPECS_DIR = config['_workspace_contents', '_specs']
+TEST_SCRIPT_DIR = config['_workspace_contents', '_scripts']
 
-class AutotestError(MarkUsError): pass
-
-### HELPER FUNCTIONS ###
-
-### MAINTENANCE FUNCTIONS ###
+TESTER_IMPORT_LINE = {'custom' : 'from testers.custom.markus_custom_tester import MarkusCustomTester as Tester',
+                      'haskell' : 'from testers.haskell.markus_haskell_tester import MarkusHaskellTester as Tester',
+                      'java' : 'from testers.java.markus_java_tester import MarkusJavaTester as Tester',
+                      'py' : 'from testers.py.markus_python_tester import MarkusPythonTester as Tester',
+                      'pyta' : 'from testers.pyta.markus_pyta_tester import MarkusPyTATester as Tester',
+                      'racket' : 'from testers.racket.markus_racket_tester import MarkusRacketTester as Tester'}
 
 ### RUN TESTS ###
 
@@ -72,8 +86,8 @@ def kill_with_reaper(test_username):
     run by the test_username user, deletes itself and exits with a 0 exit code if 
     sucessful.  
     """
-    if config.REAPER_USER_PREFIX:
-        reaper_username = get_reaper_username(test_username)
+    reaper_username = get_reaper_username(test_username)
+    if reaper_username is not None:
         cwd = os.path.dirname(os.path.abspath(__file__))
         kill_file_dst = random_tmpfile_name()
         preexec_fn = set_rlimits_before_cleanup()
@@ -237,7 +251,7 @@ def run_test(markus_address, server_api_key, test_categories, files_path, assign
 
     test_script_path = test_script_directory(markus_address, assignment_id)
     hooks_script_path = os.path.join(test_script_path, HOOKS_FILENAME)
-    test_specs_path = os.path.join(test_script_path, TEST_SCRIPTS_SETTINGS_FILENAME)
+    test_specs_path = os.path.join(test_script_path, SETTINGS_FILENAME)
     api = Markus(server_api_key, markus_address)
 
     with open(test_specs_path) as f:
@@ -315,7 +329,7 @@ def create_tester_environments(files_path, test_specs):
                 cmd = [f'{create_file}', json.dumps(settings), files_path]
                 proc = subprocess.run(cmd, stderr=subprocess.PIPE)
                 if proc.returncode != 0:
-                    raise AutotestError(f'create tester environment failed with:\n{proc.stderr}')
+                    raise TesterCreationError(f'create tester environment failed with:\n{proc.stderr}')
         else:
             settings['env_loc'] = DEFAULT_ENV_DIR
         test_specs['testers'][i] = settings
@@ -323,7 +337,7 @@ def create_tester_environments(files_path, test_specs):
     return test_specs
 
 def destroy_tester_environments(old_test_script_dir):
-    test_specs_file = os.path.join(old_test_script_dir, TEST_SCRIPTS_SETTINGS_FILENAME)
+    test_specs_file = os.path.join(old_test_script_dir, SETTINGS_FILENAME)
     with open(test_specs_file) as f:
         test_specs = json.load(f)
     for settings in test_specs['testers']:
@@ -336,7 +350,7 @@ def destroy_tester_environments(old_test_script_dir):
                 cmd = [f'{destroy_file}', json.dumps(settings)]
                 proc = subprocess.run(cmd, stderr=subprocess.PIPE)
                 if proc.returncode != 0:
-                    raise AutotestError(f'destroy tester environment failed with:\n{proc.stderr}')
+                    raise TesterCreationError(f'destroy tester environment failed with:\n{proc.stderr}')
             shutil.rmtree(env_loc, onerror=ignore_missing_dir_error)
 
 @clean_after
@@ -353,14 +367,14 @@ def update_test_specs(files_path, assignment_id, markus_address, test_specs):
     test_script_dir_name = "test_scripts_{}".format(int(time.time()))
     clean_markus_address = clean_dir_name(markus_address)
     new_dir = os.path.join(*stringify(TEST_SCRIPT_DIR, clean_markus_address, assignment_id, test_script_dir_name))
-    new_files_dir = os.path.join(new_dir, TEST_SCRIPTS_FILES_DIRNAME)
+    new_files_dir = os.path.join(new_dir, FILES_DIRNAME)
     move_tree(files_path, new_files_dir)
     if 'hooks_file' in test_specs:
         src = os.path.isfile(os.path.join(new_files_dir, test_specs['hooks_file']))
         if os.path.isfile(src):
             os.rename(src, os.path.join(new_dir, HOOKS_FILENAME))
     test_specs = create_tester_environments(new_files_dir, test_specs)
-    settings_filename = os.path.join(new_dir, TEST_SCRIPTS_SETTINGS_FILENAME)
+    settings_filename = os.path.join(new_dir, SETTINGS_FILENAME)
     with open(settings_filename, 'w') as f:
         json.dump(test_specs, f)
     old_test_script_dir = test_script_directory(markus_address, assignment_id)

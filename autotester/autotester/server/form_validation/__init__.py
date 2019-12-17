@@ -1,4 +1,4 @@
-from jsonschema import Draft7Validator, validators, ValidationError, validate
+from jsonschema import Draft7Validator, validators, ValidationError
 from jsonschema.exceptions import best_match
 from copy import deepcopy
 
@@ -9,7 +9,6 @@ def extend_with_default(validator_class=Draft7Validator):
     """
     validate_props = validator_class.VALIDATORS["properties"]
     validate_array = validator_class.VALIDATORS["items"]
-    validate_oneOf = validator_class.VALIDATORS["oneOf"] # must use draft 4+
 
     def set_defaults(validator, properties, instance, schema):
         """ Set defaults within a "properties" context """

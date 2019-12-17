@@ -1,3 +1,7 @@
+# Default settings.
+# Settings prefixed with an underscore are technically overwritable by
+# a local settings file but it is not recommended.
+
 queues:
   - name: batch
     schema: {'type': 'object', 'properties': {'batch_id': {'type': 'number'}}}
@@ -14,7 +18,12 @@ workers:
       - batch
 
 redis:
-  url: redis://127.0.0.1:6379/0
+  url: 'redis://127.0.0.1:6379/0'
+  _prefix: 'redis:'
+  _current_test_script_hash: current_test_scripts
+  _workers_hash: workers
+  _pop_interval_hash: pop_interval
+
 
 rlimit_settings:
   nproc:
@@ -23,9 +32,21 @@ rlimit_settings:
 
 resources:
   port:
+    _redis_int: port
     min: 50000
     max: 65535
   postgresql:
+    _prefix: autotest_
     database: autotest
     password: null
     host: localhost
+
+_workspace_contents:
+  _scripts: scripts
+  _results: results
+  _specs: specs
+  _logs: logs
+  _default_venv_name: defaultvenv
+  _settings_file: settings.json
+  _files_dir: files
+  _hooks_file: hooks.py

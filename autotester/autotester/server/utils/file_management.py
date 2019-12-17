@@ -2,6 +2,8 @@ import os
 import uuid
 import tempfile
 import shutil
+import fcntl
+from contextlib import contextmanager
 
 def clean_dir_name(name):
     """ Return name modified so that it can be used as a unix style directory name """
@@ -25,7 +27,7 @@ def recursive_iglob(root_dir):
     else:
         raise ValueError('directory does not exist: {}'.format(root_dir))
 
-def copy_tree(src, dst, exclude=[]):
+def copy_tree(src, dst, exclude=tuple()):
     """
     Recursively copy all files and subdirectories in the path
     indicated by src to the path indicated by dst. If directories

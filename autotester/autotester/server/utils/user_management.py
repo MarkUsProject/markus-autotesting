@@ -1,3 +1,13 @@
+import os
+import pwd
+from autotester.exceptions import TesterUserError
+from autotester.config import config
+from autotester.server.utils.string_management import decode_if_bytes
+from autotester.server.utils.redis_management import redis_connection
+
+WORKERS_HASH = config['redis', '_workers_hash']
+WORKERS = config['users', 'workers']
+
 def current_user():
     return pwd.getpwuid(os.getuid()).pw_name
 
@@ -13,13 +23,15 @@ def tester_user():
 
     user_name = os.environ.get('MARKUSWORKERUSER')
     if user_name is None:
-        raise AutotestError('No worker users available to run this job')
+        raise TesterUserError('No worker users available to run this job')
 
-    user_workspace = r.hget(REDIS_WORKERS_HASH, user_name)
+    user_workspace = r.hget(WORKERS_HASH, user_name)
     if user_workspace is None:
-        raise AutotestError(f'No workspace directory for user: {user_name}')
+        raise TesterUserError(f'No workspace directory for user: {user_name}')
 
     return user_name, decode_if_bytes(user_workspace)
 
 def get_reaper_username(test_username):
-    return '{}{}'.format(config.REAPER_USER_PREFIX, test_username)
+    for workers in WORKERS:
+        if workers['name'] == test_username:
+            return workers['reaper']

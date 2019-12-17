@@ -5,13 +5,12 @@ default_hooks.py files in testers/testers/*/bin directories.
 """
 
 import os
-import sys
 import traceback
 from collections import defaultdict, deque
 from collections.abc import Callable
 from contextlib import contextmanager
-from . import builtin_hooks
-from .utils import current_directory, add_path
+from autotester.server.hooks_context import builtin_hooks
+from autotester.server.utils.path_management import current_directory, add_path
 
 
 class Hooks:
