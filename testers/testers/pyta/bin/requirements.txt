@@ -1,1 +1,2 @@
-python-ta==1.4.2
+python-ta==1.4.2;python_version<"3.8"
+python-ta>=1.5.0;python_version>="3.8"
