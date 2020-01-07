@@ -116,8 +116,7 @@ start_workers() {
     echo "[AUTOTEST-INSTALL] Generating supervisor config at '${supervisorconf}' and starting rq workers"
     sudo -u ${SERVERUSEREFFECTIVE} -- bash -c "source ${servervenv} &&
                                                ${SERVERDIR}/generate_supervisord_conf.py ${supervisorconf} ${worker_users} &&
-                                               cd ${LOGSDIR} &&
-                                               supervisord -c ${supervisorconf} &&
+                                               ${BINDIR}/start-stop.sh start
                                                deactivate"
 }
 
