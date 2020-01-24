@@ -7,11 +7,13 @@ __pycache__
 *.egg-info
 venv
 
+# bin
+bin/kill_worker_procs
+
 # server
 server/venv
 server/workspace
 server/bin/kill_worker_procs
-markus_config.rb
 
 # testers
 testers/testers/*/specs/.installed

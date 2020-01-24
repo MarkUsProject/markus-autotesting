@@ -21,7 +21,6 @@ redis:
   url: 'redis://127.0.0.1:6379/0'
   _prefix: 'redis:'
   _current_test_script_hash: current_test_scripts
-  _workers_hash: workers
   _pop_interval_hash: pop_interval
 
 
@@ -51,8 +50,7 @@ resources:
     max: 65535
   postgresql:
     _prefix: autotest_
-    database: autotest
-    password: null
+    port: 5432
     host: localhost
 
 _workspace_contents:
@@ -60,6 +58,7 @@ _workspace_contents:
   _results: results
   _specs: specs
   _logs: logs
+  _workers: workers
   _default_venv_name: defaultvenv
   _settings_file: settings.json
   _files_dir: files

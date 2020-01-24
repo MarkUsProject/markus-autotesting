@@ -1,0 +1,54 @@
+version: '3.7'
+
+services:
+  app: &app
+    build:
+      context: .
+      dockerfile: ./.dockerfiles/Dockerfile
+      args:
+        UBUNTU_VERSION: '18.04'
+        LOGIN_USER: 'docker'
+    image: markus-autotest-dev:1.0.0
+    stdin_open: true
+    tty: true
+    user: docker
+    volumes:
+      - .:/app:cached
+    environment:
+      - USER=docker
+      - REDIS_URL=redis://redis_autotest:6379/
+      - PGHOST=postgres_autotest
+      - PGPORT=5432
+      - EDITOR=vi
+      - MARKUS_AUTOTESTER_CONFIG=/app/.dockerfiles/docker-config.yml
+    depends_on:
+      - postgres_autotest
+      - redis_autotest
+
+  autotest:
+    <<: *app
+    entrypoint: .dockerfiles/entrypoint-dev.sh
+    command: '/bin/bash'
+
+  postgres_autotest:
+    image: postgres:10
+    volumes:
+    - .psqlrc:/root/.psqlrc:ro
+    - postgres_autotest:/var/lib/postgresql/data
+    - ./log:/root/log:cached
+    environment:
+    - PSQL_HISTFILE=/root/log/.psql_history
+    ports:
+    - '45432:5432'
+
+  redis_autotest:
+    image: redis:3.2-alpine
+    volumes:
+    - redis_autotest:/data
+    ports:
+    - 6379
+
+volumes:
+  postgres_autotest:
+  redis_autotest:
+

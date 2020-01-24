@@ -4,7 +4,7 @@ import psycopg2
 import secrets
 import string
 from psycopg2.extensions import AsIs
-from autotester import config
+from autotester.config import config
 
 POSTGRES_PREFIX = config['resources', 'postgresql', '_prefix']
 PGPASSFILE = os.path.join(config['workspace'], config['_workspace_contents', '_logs'], '.pgpass')

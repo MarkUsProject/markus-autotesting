@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import config
+from autotester.config import config
 import sys
 import os
 import shutil
@@ -36,8 +36,7 @@ THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def write_conf_file(conf_filename, user_names):
     try:
-        rkw = config.REDIS_CONNECTION_KWARGS
-        redis_url = '--url redis://{}:{}/{}'.format(rkw['host'], rkw['port'], rkw['db'])
+        redis_url = f'--url {config["redis", "url"]}'
     except KeyError:
         redis_url = ''
 
@@ -45,7 +44,9 @@ def write_conf_file(conf_filename, user_names):
         f.write(HEADER)
         user_name_set = set(user_names)
         enough_users = True
-        for numprocs, queues in config.WORKERS:
+        for worker_data in config["workers"]:
+            numprocs = worker_data['n']
+            queues = worker_data['queues']
             if enough_users:
                 for _ in range(numprocs):
                     try:

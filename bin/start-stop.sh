@@ -2,50 +2,55 @@
 
 set -e 
 
+THISSCRIPT=$(readlink -f "${BASH_SOURCE[0]}")
+THISDIR=$(dirname "${THISSCRIPT}")
+PROJECTROOT=$(dirname "${THISDIR}")
+PYTHON="${PROJECTROOT}/venv/bin/python"
+RQ="${PROJECTROOT}/venv/bin/rq"
+SUPERVISORD="${PROJECTROOT}/venv/bin/supervisord"
+
 start_supervisor() {
-	local pid_file=${LOGSDIR}/supervisord.pid
-	if [ -f ${pid_file} ]; then
-		echo "Supervisor appears to be running already (PID: $(cat ${pid_file}))" >&2
+	local pid_file
+	pid_file="${LOGS_DIR}/supervisord.pid"
+	if [ -f "${pid_file}" ]; then
+	  local supervisor_pid
+	  supervisor_pid=$(cat "${pid_file}")
+		echo "Supervisor appears to be running already (PID: ${supervisor_pid})" >&2
 		exit 1
 	fi
-	pushd ${LOGSDIR} > /dev/null
-	supervisord -c supervisord.conf
-	popd > /dev/null
+	(cd "${LOGS_DIR}" && ${SUPERVISORD} -c supervisord.conf)
 }
 
 stop_supervisor() {
-	local pid_file=${LOGSDIR}/supervisord.pid
-	if [ ! -f ${pid_file} ]; then
+	local pid_file
+	pid_file="${LOGS_DIR}/supervisord.pid"
+	if [ ! -f "${pid_file}" ]; then
 		echo 'Supervisor appears to be stopped already' >&2
 		exit 1
 	fi
-	kill $(cat ${pid_file})
+	local supervisor_pid
+	supervisor_pid=$(cat "${pid_file}")
+	kill "${supervisor_pid}"
 }
 
-get_config_param() {
-    echo $(cd ${SERVERDIR} && python3 -c "import config; print(config.$1)")
+load_config_settings() {
+  # Get the configuration settings as a json string and load config settings needed for this
+  # installation script
+  local config_json
+  config_json=$("${PYTHON}" -c "from autotester.config import config; print(config.to_json())")
+
+  SERVER_USER=$(echo "${config_json}" | jq --raw-output '.users.server.name')
+  WORKSPACE_DIR=$(echo "${config_json}" | jq --raw-output '.workspace')
+  LOGS_DIR="${WORKSPACE_DIR}/"$(echo "${config_json}" | jq --raw-output '._workspace_contents._logs')
+  REDIS_URL=$(echo "${config_json}" | jq --raw-output '.redis.url')
 }
 
 # script starts here
-THISSCRIPT=$(readlink -f ${BASH_SOURCE})
-THISDIR=$(dirname ${THISSCRIPT})
-SERVERDIR=$(dirname ${THISDIR})
-CONFIG=${SERVERDIR}/config.py
 
-source ${SERVERDIR}/venv/bin/activate
+load_config_settings
 
-SERVERUSER=$(get_config_param SERVERUSER)
-WORKSPACEDIR=$(get_config_param WORKSPACE_DIR)
-LOGSDIR=${WORKSPACEDIR}/$(get_config_param LOGS_DIR_NAME)
-
-if [[ -n ${SERVERUSER} ]]; then
-    SERVERUSEREFFECTIVE=${SERVERUSER}
-else
-    SERVERUSEREFFECTIVE=$(whoami)
-fi
-
-if [[ "$(whoami)" != "${SERVERUSEREFFECTIVE}" ]]; then
-	echo "Please run this script as user: ${SERVERUSEREFFECTIVE}" >&2
+if [[ "$(whoami)" != "${SERVER_USER}" ]]; then
+	echo "Please run this script as user: ${SERVER_USER}" >&2
 	exit 2
 fi
 
@@ -61,7 +66,8 @@ case $1 in
 		start_supervisor
 		;;
 	stat)
-		rq info ${@:2}
+		"${RQ}" info --url "${REDIS_URL}" "${@:2}"
+		;;
 	*)    
 		echo "Usage: $0 [start | stop | restart | stat]" >&2
     	exit 1

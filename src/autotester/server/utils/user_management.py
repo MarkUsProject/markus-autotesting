@@ -1,7 +1,7 @@
 import os
 import pwd
 from autotester.exceptions import TesterUserError
-from autotester import config
+from autotester.config import config
 from autotester.server.utils.string_management import decode_if_bytes
 from autotester.server.utils.redis_management import redis_connection
 
@@ -25,8 +25,10 @@ def tester_user():
     if user_name is None:
         raise TesterUserError('No worker users available to run this job')
 
-    user_workspace = r.hget(WORKERS_HASH, user_name)
-    if user_workspace is None:
+    user_workspace = os.path.join(config['workspace'],
+                                  config['_workspace_contents', '_workers'],
+                                  user_name)
+    if not os.path.isdir(user_workspace):
         raise TesterUserError(f'No workspace directory for user: {user_name}')
 
     return user_name, decode_if_bytes(user_workspace)

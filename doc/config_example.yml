@@ -1,40 +1,39 @@
-#workspace: !ENV ${HOME}/.markus-autotesting/workspace
-#
-#queues:
-#  - name: batch
-#    schema: {'type': 'object', 'properties': {'batch_id': {'type': 'number'}}}
-#  - name: single
-#    schema: {'type': 'object', 'properties': {'batch_id': {'type': 'null'}, 'user_type': {'const': 'Admin'}}}
-#  - name: student
-#    schema: {'type': 'object', 'properties': {'batch_id': {'type': 'null'}, 'user_type': {'const': 'Student'}}}
-#
-#workers:
-#  - n: 1
-#    queues:
-#      - student
-#      - single
-#      - batch
-#
-#users:
-#  server:
-#    name: !ENV ${USER}
-#  workers:
-#    - name: !ENV ${USER}
-#      reaper: null
-#
-#redis:
-#  url: redis://127.0.0.1:6379/0
-#
-#rlimit_settings:
-#  nproc:
-#    - 300
-#    - 300
-#
-#resources:
-#  port:
-#    min: 50000
-#    max: 65535
-#  postgresql:
-#    database: autotest
-#    password: null
-#    host: localhost
+workspace: !ENV ${HOME}/.markus-autotesting/workspace
+
+workers:
+  - n: 1
+    queues:
+      - student
+      - single
+      - batch
+
+users:
+  server:
+    name: !ENV ${USER}
+  workers:
+    - name: !ENV ${USER}
+      reaper: null
+
+redis:
+  url: redis://127.0.0.1:6379/0
+
+rlimit_settings:
+  nproc:
+    - 300
+    - 300
+
+resources:
+  port:
+    min: 50000
+    max: 65535
+  postgresql:
+    port: 5432
+    host: localhost
+
+queues:
+  - name: batch
+    schema: {'type': 'object', 'properties': {'batch_id': {'type': 'number'}}}
+  - name: single
+    schema: {'type': 'object', 'properties': {'batch_id': {'type': 'null'}, 'user_type': {'const': 'Admin'}}}
+  - name: student
+    schema: {'type': 'object', 'properties': {'batch_id': {'type': 'null'}, 'user_type': {'const': 'Student'}}}

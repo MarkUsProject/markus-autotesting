@@ -11,7 +11,7 @@ import tempfile
 from markusapi import Markus
 
 from autotester.exceptions import TesterCreationError
-from autotester import config
+from autotester.config import config
 from autotester.server.hooks_context.hooks_context import Hooks
 from autotester.server.utils.string_management import loads_partial_json, decode_if_bytes, stringify
 from autotester.server.utils.user_management import get_reaper_username, current_user, tester_user

@@ -12,6 +12,5 @@ users:
 
 resources:
   postgresql:
-    database: !ENV ${PGDATABASE}
-    password: !ENV ${PGPASSWORD}
+    port: !ENV ${PGPORT}
     host: !ENV ${PGHOST}

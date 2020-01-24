@@ -3,6 +3,7 @@
 
 import os
 import re
+import json
 from collections.abc import Mapping
 import yaml
 
@@ -49,6 +50,9 @@ class _Config:
                     d = d[k]
                 return d
             raise
+
+    def to_json(self):
+        return json.dumps(self._settings)
 
     @classmethod
     def _merge_dicts(cls, dicts):
