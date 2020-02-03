@@ -367,10 +367,10 @@ def setup_files(files_path, tests_path, markus_address, assignment_id):
             os.chmod(file_or_dir, 0o666)
     script_files = copy_test_script_files(markus_address, assignment_id, tests_path)
     for fd, file_or_dir in script_files:
-        permissions = 0o755 
-        if fd == 'f':
-            permissions -= 0o111
-        os.chmod(file_or_dir, permissions)
+        if fd == 'd':
+            os.chmod(file_or_dir, 0o1777)
+        else:
+            os.chmod(file_or_dir, 0o644)
     return student_files, script_files
 
 def test_run_command(test_username=None):
