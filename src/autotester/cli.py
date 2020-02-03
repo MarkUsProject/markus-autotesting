@@ -14,15 +14,11 @@ from functools import wraps
 from autotester.exceptions import *
 from autotester.server.utils.redis_management import redis_connection, get_avg_pop_interval, test_script_directory
 from autotester.server.utils.file_management import ignore_missing_dir_error
-from autotester import config
-from autotester.server import form_validation
+from autotester.config import config
+from autotester.server.utils import form_validation
 from autotester.server.server import run_test, update_test_specs
 
 SETTINGS_FILENAME = config['_workspace_contents', '_settings_file']
-
-### ERROR CLASSES ###
-
-### HELPER FUNCTIONS ###
 
 
 def _format_job_id(markus_address, run_id, **_kw):
@@ -111,9 +107,6 @@ def _get_job_timeout(test_specs, test_categories, multiplier=1.5):
     if test_data_count:
         return int(total_timeout * multiplier)
     raise TestParameterError(f'there are no tests of the given categories: {test_categories}')
-
-
-### COMMAND FUNCTIONS ###
 
 
 @_clean_on_error
@@ -219,6 +212,7 @@ COMMANDS = {'run': enqueue_test,
             'cancel': cancel_test,
             'schema': get_schema}
 
+
 def cli():
     parser = argparse.ArgumentParser()
 
@@ -236,6 +230,7 @@ def cli():
     except MarkUsError as e:
         print(str(e))
         sys.exit(1)
+
 
 if __name__ == '__main__':
     cli()
