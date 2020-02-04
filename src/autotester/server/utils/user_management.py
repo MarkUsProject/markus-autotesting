@@ -5,8 +5,6 @@ from autotester.config import config
 from autotester.server.utils.string_management import decode_if_bytes
 from autotester.server.utils.redis_management import redis_connection
 
-WORKERS_HASH = config['redis', '_workers_hash']
-WORKERS = config['users', 'workers']
 
 def current_user():
     return pwd.getpwuid(os.getuid()).pw_name

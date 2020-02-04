@@ -1,6 +1,6 @@
 import socket
 from autotester.server.utils.redis_management import redis_connection
-from autotester import config
+from autotester.config import config
 
 PORT_MIN = config['resources', 'port', 'min']
 PORT_MAX = config['resources', 'port', 'max']

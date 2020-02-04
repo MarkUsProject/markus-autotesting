@@ -168,7 +168,7 @@ def get_schema(**_kw):
     this_dir = os.path.dirname(os.path.abspath(__file__))
     root_dir = os.path.dirname(this_dir)
 
-    with open(os.path.join(this_dir, 'bin', 'tester_schema_skeleton.json')) as f:
+    with open(os.path.join(this_dir, 'lib', 'tester_schema_skeleton.json')) as f:
         schema_skeleton = json.load(f)
 
     glob_pattern = os.path.join(root_dir, 'testers', 'testers', '*', 'specs', '.installed')

@@ -3,7 +3,11 @@ import uuid
 import tempfile
 import shutil
 import fcntl
+from autotester.server.utils import redis_management
+from autotester.config import config
 from contextlib import contextmanager
+
+FILES_DIRNAME = config['_workspace_contents', '_files_dir']
 
 def clean_dir_name(name):
     """ Return name modified so that it can be used as a unix style directory name """
@@ -98,8 +102,8 @@ def copy_test_script_files(markus_address, assignment_id, tests_path):
     directory if they exist. tests_path may already exist and contain
     files and subdirectories.
     """
-    test_script_outer_dir = test_script_directory(markus_address, assignment_id)
-    test_script_dir = os.path.join(test_script_outer_dir, TEST_SCRIPTS_FILES_DIRNAME)
+    test_script_outer_dir = redis_management.test_script_directory(markus_address, assignment_id)
+    test_script_dir = os.path.join(test_script_outer_dir, FILES_DIRNAME)
     if os.path.isdir(test_script_dir):
         with fd_open(test_script_dir) as fd:
             with fd_lock(fd, exclusive=False):

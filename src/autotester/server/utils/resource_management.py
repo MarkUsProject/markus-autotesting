@@ -1,5 +1,5 @@
 import resource
-from autotester import config
+from autotester.config import config
 
 RLIMIT_ADJUSTMENTS = {'nproc': 10}
 

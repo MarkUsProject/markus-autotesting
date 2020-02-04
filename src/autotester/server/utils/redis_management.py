@@ -3,7 +3,7 @@ import rq
 import time
 from functools import wraps
 from autotester.server.utils import file_management, string_management
-from autotester import config
+from autotester.config import config
 
 CURRENT_TEST_SCRIPT_HASH = config['redis', '_current_test_script_hash']
 POP_INTERVAL_HASH = config['redis', '_pop_interval_hash']

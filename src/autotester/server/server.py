@@ -26,8 +26,8 @@ TEST_RESULT_DIR = os.path.join(config['workspace'], config['_workspace_contents'
 HOOKS_FILENAME = config['_workspace_contents', '_hooks_file']
 SETTINGS_FILENAME = config['_workspace_contents', '_settings_file']
 FILES_DIRNAME = config['_workspace_contents', '_files_dir']
-TEST_SPECS_DIR = config['_workspace_contents', '_specs']
-TEST_SCRIPT_DIR = config['_workspace_contents', '_scripts']
+TEST_SPECS_DIR = os.path.join(config['workspace'], config['_workspace_contents', '_specs'])
+TEST_SCRIPT_DIR = os.path.join(config['workspace'], config['_workspace_contents', '_scripts'])
 
 TESTER_IMPORT_LINE = {'custom' : 'from testers.custom.markus_custom_tester import MarkusCustomTester as Tester',
                       'haskell' : 'from testers.haskell.markus_haskell_tester import MarkusHaskellTester as Tester',
@@ -293,7 +293,7 @@ def get_tester_root_dir(tester_type):
     """
     this_dir = os.path.dirname(os.path.abspath(__file__))
     root_dir = os.path.dirname(this_dir)
-    tester_dir = os.path.join(root_dir, 'testers', 'testers', tester_type)
+    tester_dir = os.path.join(root_dir, 'testers', tester_type)
     if not os.path.isdir(tester_dir):
         raise FileNotFoundError(f'{tester_type} is not a valid tester name')
     return tester_dir

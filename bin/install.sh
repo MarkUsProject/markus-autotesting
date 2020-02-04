@@ -188,7 +188,13 @@ create_worker_dbs() {
   pgpassfile="${WORKSPACE_SUBDIRS[LOGS]}/.pgpass"
 
   if [ -z "${DOCKER}" ]; then
-    psql=(sudo -u postgres psql -h "${POSTGRES_HOST}" -p "${POSTGRES_PORT}")
+    local pghost_args
+    if [[ "${POSTGRES_HOST}" == 'localhost' ]]; then
+      pghost_args='' # this allows for local peer authentication if it is configured
+    else
+      pghost_args="-h ${POSTGRES_HOST}"
+    fi
+    psql=(sudo -u postgres psql "${pghost_args}" -p "${POSTGRES_PORT}")
   else
     psql=(psql -h "${POSTGRES_HOST}" -p "${POSTGRES_PORT}" -U postgres)
   fi
@@ -196,10 +202,11 @@ create_worker_dbs() {
   sudo touch "${pgpassfile}"
   sudo chown "${SERVER_USER}:${SERVER_USER}" "${pgpassfile}"
   sudo chmod 'u=rw,go=' "${pgpassfile}"
-  echo -e "${serverpwd}" | sudo -u "${SERVER_USER}" tee -a "${pgpassfile}" > /dev/null
+  echo -e "${serverpwd}" | sudo -u "${SERVER_USER}" tee "${pgpassfile}" > /dev/null
 
   psql_string="DROP ROLE IF EXISTS ${SERVER_USER};
-    CREATE ROLE ${SERVER_USER} LOGIN PASSWORD '${serverpwd}';
+    CREATE ROLE ${SERVER_USER};
+    ALTER ROLE ${SERVER_USER} LOGIN PASSWORD '${serverpwd}';
     ALTER ROLE ${SERVER_USER} CREATEROLE;"
   "${psql[@]}" <<< "${psql_string}"
 
@@ -224,8 +231,8 @@ create_worker_dbs() {
 
 create_default_tester_venv() {
   local default_tester_venv
-  default_tester_venv="${WORKSPACE_SUBDIRS[SCRIPTS]}/"$(echo "${config_json}" | \
-                                                        jq --raw-output '._workspace_contents._default_venv_name')
+  default_tester_venv="${WORKSPACE_SUBDIRS[SPECS]}/${DEFAULT_VENV_NAME}"
+
   "python${PYTHON_VERSION}" -m venv "${default_tester_venv}"
   local pip
   pip="${default_tester_venv}/bin/pip"
@@ -243,17 +250,33 @@ compile_reaper_script() {
   chmod ugo=r "${reaperexe}"
 }
 
+create_enqueuer_wrapper() {
+  local enqueuer
+  enqueuer=/usr/local/bin/autotest_enqueuer
+
+  echo "[AUTOTEST-INSTALL] Creating enqueuer wrapper at '${enqueuer}'"
+
+  echo "#!/usr/bin/env bash
+        ${SERVER_VENV}/bin/markus_autotester \"\$@\"" | sudo tee ${enqueuer} > /dev/null
+  sudo chown "${SERVER_USER}:${SERVERUSER}" "${enqueuer}"
+  sudo chmod u=rwx,go=r ${enqueuer}
+
+}
+
 start_workers() {
   local supervisorconf
   local worker_users
   local generate_script
+  local rq
 
   supervisorconf="${WORKSPACE_SUBDIRS[LOGS]}/supervisord.conf"
   worker_users=$(echo "${WORKER_USERS}" | tr '\n' ' ')
   generate_script="${BINDIR}/generate_supervisord_conf.py"
+  rq="${SERVER_VENV}/bin/rq"
+
 
   echo "[AUTOTEST-INSTALL] Generating supervisor config at '${supervisorconf}' and starting rq workers"
-  sudo -u "${SERVER_USER}" -- bash -c "${PYTHON} ${generate_script} ${supervisorconf} ${worker_users} &&
+  sudo -u "${SERVER_USER}" -- bash -c "${PYTHON} ${generate_script} ${rq} ${supervisorconf} ${worker_users} &&
                                       ${BINDIR}/start-stop.sh start"
 }
 
@@ -278,7 +301,7 @@ load_config_settings() {
   POSTGRES_PORT=$(echo "${config_json}" | jq --raw-output '.resources.postgresql.port')
   POSTGRES_HOST=$(echo "${config_json}" | jq --raw-output '.resources.postgresql.host')
   WORKER_USERS=$(echo "${WORKER_AND_REAPER_USERS}" | sed -n 'p;n')
-
+  DEFAULT_VENV_NAME=$(echo "${config_json}" | jq --raw-output '._workspace_contents._default_venv_name')
   declare -gA WORKSPACE_SUBDIRS
   WORKSPACE_SUBDIRS=(
     ['SCRIPTS']="${WORKSPACE_DIR}"$(echo "${config_json}" | jq --raw-output '._workspace_contents._scripts')
@@ -323,6 +346,7 @@ create_users
 create_workspace
 create_default_tester_venv
 compile_reaper_script
+create_enqueuer_wrapper
 create_worker_dbs
 start_workers
 suggest_next_steps
