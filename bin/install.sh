@@ -231,7 +231,7 @@ create_worker_dbs() {
 
 create_default_tester_venv() {
   local default_tester_venv
-  default_tester_venv="${WORKSPACE_SUBDIRS[SPECS]}/${DEFAULT_VENV_NAME}"
+  default_tester_venv="${WORKSPACE_SUBDIRS[SPECS]}/${DEFAULT_VENV_NAME}/venv"
 
   "python${PYTHON_VERSION}" -m venv "${default_tester_venv}"
   local pip

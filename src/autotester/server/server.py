@@ -119,10 +119,9 @@ def create_test_script_command(env_dir, tester_type):
                       import_line,
                      'from testers.markus_test_specs import MarkusTestSpecs',
                     f'Tester(specs=MarkusTestSpecs.from_json(sys.stdin.read())).run()']
-    venv_activate = os.path.join(os.path.abspath(env_dir), 'venv', 'bin', 'activate')
+    python_ex = os.path.join(os.path.join(TEST_SPECS_DIR, env_dir), 'venv', 'bin', 'python')
     python_str = '; '.join(python_lines)
-    venv_str = f'source {venv_activate}'
-    return ' && '.join([venv_str, f'python -c "{python_str}"'])
+    return f'{python_ex} -c "{python_str}"'
 
 def get_env_vars(test_username):
     """ Return a dictionary containing all environment variables to pass to the next test """
