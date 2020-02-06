@@ -9,5 +9,6 @@ setup(name='markus-autotester-testers',
       author='Misha Schwartz, Alessio Di Sandro',
       author_email='mschwa@cs.toronto.edu',
       license='MIT',
-      packages=find_packages(where='testers', exclude=test_exclusions),
+      include_package_data=True,
+      packages=['testers'] + [f'testers.{pkg}' for pkg in find_packages(where='testers', exclude=test_exclusions)],
       zip_safe=False)

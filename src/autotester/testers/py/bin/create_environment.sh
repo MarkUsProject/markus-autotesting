@@ -8,11 +8,11 @@ create_venv() {
     source ${VENV_DIR}/bin/activate
     pip install --upgrade pip
     pip install wheel
+    pip install "${TESTERS_DIR}"
     pip install -r "${THIS_DIR}/requirements.txt"
     pip install -r <(echo ${PIP_REQUIREMENTS} | sed 's/\s\+/\n/g') # sub spaces for newlines
     local pth_file=${VENV_DIR}/lib/python${PY_VERSION}/site-packages/lib.pth
     echo ${LIB_DIR} >> ${pth_file}
-    echo ${TESTERS_DIR} >> ${pth_file}
 }
 
 # script starts here

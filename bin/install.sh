@@ -5,7 +5,11 @@ set -e
 THISSCRIPT=$(readlink -f "${BASH_SOURCE[0]}")
 BINDIR=$(dirname "${THISSCRIPT}")
 PROJECTROOT=$(dirname "${BINDIR}")
+TESTERSROOT="${PROJECTROOT}/src/autotester"
 SERVER_VENV="${PROJECTROOT}/venv"
+INSTALLABLE_TESTERS=(custom haskell java py pyta racket)
+TESTERS=()
+USAGE_MESSAGE="Usage: $0 [-p|--python_version python_version] [--non-interactive] [--docker] [-t|--testers tester ...]"
 
 _check_python_version() {
   # check if the python3 is at least version 3.6
@@ -238,7 +242,7 @@ create_default_tester_venv() {
   pip="${default_tester_venv}/bin/pip"
   ${pip} install --upgrade pip
   ${pip} install wheel # must be installed before requirements
-  ${pip} install -r "${BINDIR}/default_tester_venv_requirements.txt"
+  ${pip} install "${TESTERSROOT}"
 }
 
 compile_reaper_script() {
@@ -280,6 +284,20 @@ start_workers() {
                                       ${BINDIR}/start-stop.sh start"
 }
 
+install_testers() {
+  local tester
+  local to_install
+  if [[ -n ${INSTALL_ALL_TESTERS} ]]; then
+    to_install=( "${INSTALLABLE_TESTERS[@]}" )
+  else
+    to_install=( "${TESTERS[@]}" )
+  fi
+  for tester in "${to_install[@]}"; do
+    echo "[AUTOTEST-INSTALL] installing tester: ${tester}"
+    "${TESTERSROOT}/testers/${tester}/bin/install.sh"
+  done
+}
+
 suggest_next_steps() {
   echo "[AUTOTEST-INSTALL] You must add MarkUs web server's public key to ${SERVER_USER}'s '~/.ssh/authorized_keys'"
   echo "[AUTOTEST-INSTALL] You may want to add '${BINDIR}/start-stop.sh start' to ${SERVER_USER}'s crontab with a @reboot time"
@@ -312,31 +330,61 @@ load_config_settings() {
   )
 }
 
-# PARSE ARGUMENTS
+_add_valid_tester() {
+    local tester
+    for tester in "${INSTALLABLE_TESTERS[@]}"; do
+        if [[ "$1" == "${tester}" ]]; then
+           TESTERS=( "${TESTERS[@]}" "${tester}" )
+           return 0
+        fi
+    done
+
+    TESTER_MESSAGE="$1 is not an installable tester. Choose from: ${INSTALLABLE_TESTERS[*]}\n${TESTER_MESSAGE}"
+    return 1
+}
 
 while [[ $# -gt 0 ]]; do
   key="$1"
   case $key in
     -p|--python_version)
+    SELECTING_TESTERS=
     PYTHON_VERSION="$2"
-    shift
-    shift
+    shift 2
     ;;
     --non-interactive)
+    SELECTING_TESTERS=
     NON_INTERACTIVE=1
     shift
     ;;
     --docker)
+    SELECTING_TESTERS=
     NON_INTERACTIVE=1
     DOCKER=1
     shift
     ;;
+    -a|--all-testers)
+    INSTALL_ALL_TESTERS=1
+    shift
+    ;;
+    -t|--testers)
+    shift
+    SELECTING_TESTERS=1
+    while [[ -n "${1// }" && "-t --testers" != *"$1"* ]] && _add_valid_tester "$1"; do
+      shift
+    done
+    ;;
     *)
-      echo "Usage: $0 [-p|--python_version python_version] [--non-interactive] [--docker]" 1>&2
-      exit 1
-      ;;
+    BAD_USAGE=1
+    shift
+    ;;
   esac
 done
+
+if [[ -n ${BAD_USAGE} ]]; then
+    [[ -n "${SELECTING_TESTERS}" && -z ${INSTALL_ALL_TESTERS} ]] && echo -e "${TESTER_MESSAGE}" 1>&2
+    echo "${USAGE_MESSAGE}" 1>&2
+    exit 1
+fi
 
 set_python_version
 install_packages
@@ -344,6 +392,7 @@ create_venv
 load_config_settings
 create_users
 create_workspace
+install_testers
 create_default_tester_venv
 compile_reaper_script
 create_enqueuer_wrapper

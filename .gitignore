@@ -11,20 +11,20 @@ venv
 bin/kill_worker_procs
 
 # server
-server/venv
-server/workspace
-server/bin/kill_worker_procs
+src/autotester/server/venv
+src/autotester/server/workspace
+src/autotester/server/bin/kill_worker_procs
 
 # testers
-testers/testers/*/specs/.installed
-testers/testers/*/specs/install_settings.json
+src/autotester/testers/*/specs/.installed
+src/autotester/testers/*/specs/install_settings.json
 
 # java
-testers/testers/java/lib/.gradle
-testers/testers/java/lib/build
+src/autotester/testers/java/lib/.gradle
+src/autotester/testers/java/lib/build
 
 # racket
-testers/testers/racket/**/compiled/
+src/autotester/testers/racket/**/compiled/
 
 # haskell
 markus_cabal
