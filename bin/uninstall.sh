@@ -131,6 +131,16 @@ if [[ $# -gt 0 ]]; then
     exit 1
 fi
 
+# TODO: this uninstaller need to be updated
+echo 'This uninstaller is broken, do not use until it has been updated.
+To uninstall the autotester please run:
+
+$ bin/start-stop.sh stop
+
+and then optionally remove all tester users, server user, postgres databases, and remove any unneeded files in
+the workspace directory' 1>&2
+exit 1
+
 # vars
 THISSCRIPT=$(readlink -f ${BASH_SOURCE})
 BINDIR=$(dirname ${THISSCRIPT})
