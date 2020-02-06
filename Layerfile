@@ -8,11 +8,10 @@ CHECKPOINT
 
 RUN python3 -m venv /tmp/venv
 
-RUN /tmp/venv/bin/pip install -U pip
-COPY server/bin/requirements.txt /tmp/
-RUN /tmp/venv/bin/pip install -U pytest hypothesis attrs -r /tmp/requirements.txt
 CHECKPOINT
 
 WORKDIR /app
 COPY . .
-RUN /tmp/venv/bin/pytest --ignore testers/testers/py/tests
+RUN /tmp/venv/bin/pip install -U pytest hypothesis attrs .
+
+RUN /tmp/venv/bin/pytest --ignore src/autotester/testers/py/tests
