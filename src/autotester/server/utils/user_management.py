@@ -3,7 +3,6 @@ import pwd
 from autotester.exceptions import TesterUserError
 from autotester.config import config
 from autotester.server.utils.string_management import decode_if_bytes
-from autotester.server.utils.redis_management import redis_connection
 
 
 def current_user():
@@ -18,8 +17,6 @@ def tester_user():
     Raises an AutotestError if a tester user is not specified or if a workspace
     has not been setup for that user.
     """
-    r = redis_connection()
-
     user_name = os.environ.get('MARKUSWORKERUSER')
     if user_name is None:
         raise TesterUserError('No worker users available to run this job')

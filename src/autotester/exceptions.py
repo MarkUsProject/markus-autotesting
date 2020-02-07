@@ -1,4 +1,4 @@
-""" 
+"""
 Custom Exception Type for use in MarkUs
 """
 

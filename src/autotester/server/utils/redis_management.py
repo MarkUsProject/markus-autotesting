@@ -103,7 +103,7 @@ def get_avg_pop_interval(queue_name):
     except TypeError:
         return None
     count -= 1
-    return (last-start) / count if count else 0
+    return (last - start) / count if count else 0
 
 
 def clean_up():

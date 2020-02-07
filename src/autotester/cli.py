@@ -11,7 +11,8 @@ import time
 import shutil
 from rq.exceptions import NoSuchJobError
 from functools import wraps
-from autotester.exceptions import *
+from autotester.exceptions import JobArgumentError, InvalidQueueError, \
+    TestScriptFilesError, TestParameterError, MarkUsError
 from autotester.server.utils.redis_management import redis_connection, get_avg_pop_interval, test_script_directory
 from autotester.server.utils.file_management import ignore_missing_dir_error
 from autotester.config import config

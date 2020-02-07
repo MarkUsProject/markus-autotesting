@@ -41,7 +41,7 @@ TESTER_IMPORT_LINE = {'custom': 'from testers.custom.markus_custom_tester import
 def run_test_command(test_username=None):
     """
     Return a command used to run test scripts as a the test_username
-    user, with the correct arguments. Set test_username to None to 
+    user, with the correct arguments. Set test_username to None to
     run as the current user.
 
     >>> test_script = 'mysscript.py'
@@ -61,7 +61,7 @@ def run_test_command(test_username=None):
 
 def create_test_group_result(stdout, stderr, run_time, extra_info, timeout=None):
     """
-    Return the arguments passed to this function in a dictionary. If stderr is 
+    Return the arguments passed to this function in a dictionary. If stderr is
     falsy, change it to None. Load the json string in stdout as a dictionary.
     """
     test_results, malformed = loads_partial_json(stdout, dict)
@@ -83,10 +83,10 @@ def kill_with_reaper(test_username):
     the permissions of this copied file so that it can be executed by the corresponding
     reaper user.  Crucially, it sets the permissions to include the setuid bit so that
     the reaper user can manipulate the real uid and effective uid values of the process.
-    
+
     The reaper user then runs this copied executable which kills all processes being
     run by the test_username user, deletes itself and exits with a 0 exit code if 
-    sucessful.  
+    sucessful.
     """
     reaper_username = get_reaper_username(test_username)
     if reaper_username is not None:
@@ -108,7 +108,7 @@ def kill_with_reaper(test_username):
 
 def kill_without_reaper(test_username):
     """
-    Kill all processes that test_username is able to kill 
+    Kill all processes that test_username is able to kill
     """
     kill_cmd = f"sudo -u {test_username} -- bash -c 'kill -KILL -1'"
     subprocess.run(kill_cmd, shell=True)
@@ -116,7 +116,7 @@ def kill_without_reaper(test_username):
 
 def create_test_script_command(env_dir, tester_type):
     """
-    Return string representing a command line command to 
+    Return string representing a command line command to
     run tests.
     """
     import_line = TESTER_IMPORT_LINE[tester_type]
@@ -138,8 +138,8 @@ def get_env_vars(test_username):
 
 def run_test_specs(cmd, test_specs, test_categories, tests_path, test_username, hooks):
     """
-    Run each test script in test_scripts in the tests_path directory using the 
-    command cmd. Return the results. 
+    Run each test script in test_scripts in the tests_path directory using the
+    command cmd. Return the results.
     """
     results = []
     preexec_fn = set_rlimits_before_test()
@@ -221,7 +221,7 @@ def clear_working_directory(tests_path, test_username):
 
     subprocess.run(chmod_cmd, shell=True)
 
-    # be careful not to remove the tests_path dir itself since we have to 
+    # be careful not to remove the tests_path dir itself since we have to
     # set the group ownership with sudo (and that is only done in ../install.sh)
     clean_cmd = 'rm -rf {0}/.[!.]* {0}/*'.format(tests_path)
     subprocess.run(clean_cmd, shell=True)
@@ -375,7 +375,7 @@ def destroy_tester_environments(old_test_script_dir):
 def update_test_specs(files_path, assignment_id, markus_address, test_specs):
     """
     Copy new test scripts for a given assignment to from the files_path
-    to a new location. Indicate that these new test scripts should be used instead of 
+    to a new location. Indicate that these new test scripts should be used instead of
     the old ones. And remove the old ones when it is safe to do so (they are not in the
     process of being copied to a working directory).
 

@@ -64,6 +64,7 @@ def write_conf_file(rq, conf_filename, user_names):
                                        directory=THIS_DIR)
                     f.write(c)
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('rq')
