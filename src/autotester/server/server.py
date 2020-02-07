@@ -85,7 +85,7 @@ def kill_with_reaper(test_username):
     the reaper user can manipulate the real uid and effective uid values of the process.
 
     The reaper user then runs this copied executable which kills all processes being
-    run by the test_username user, deletes itself and exits with a 0 exit code if 
+    run by the test_username user, deletes itself and exits with a 0 exit code if
     sucessful.
     """
     reaper_username = get_reaper_username(test_username)

@@ -33,6 +33,7 @@ killasgroup=true
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
+
 def write_conf_file(rq, conf_filename, user_names):
     try:
         redis_url = f'--url {config["redis", "url"]}'
