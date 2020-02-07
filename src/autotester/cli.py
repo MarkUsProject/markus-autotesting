@@ -166,12 +166,11 @@ def get_schema(**_kw):
     (https://github.com/mozilla-services/react-jsonschema-form) or similar.
     """
     this_dir = os.path.dirname(os.path.abspath(__file__))
-    root_dir = os.path.dirname(this_dir)
 
     with open(os.path.join(this_dir, 'lib', 'tester_schema_skeleton.json')) as f:
         schema_skeleton = json.load(f)
 
-    glob_pattern = os.path.join(root_dir, 'testers', 'testers', '*', 'specs', '.installed')
+    glob_pattern = os.path.join(this_dir, 'testers', '*', 'specs', '.installed')
     for path in sorted(glob.glob(glob_pattern)):
         tester_type = os.path.basename(os.path.dirname(os.path.dirname(path)))
         specs_dir = os.path.dirname(path)
