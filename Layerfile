@@ -12,6 +12,4 @@ CHECKPOINT
 
 WORKDIR /app
 COPY . .
-RUN /tmp/venv/bin/pip install -U pytest hypothesis attrs .
-
-RUN /tmp/venv/bin/pytest --ignore src/autotester/testers/py/tests
+RUN /tmp/venv/bin/python setup.py test

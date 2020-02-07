@@ -23,10 +23,12 @@ setup(name='markus-autotester',
         'jsonschema==3.0.2'
       ],
       tests_require=[
+        'pytest==5.3.1',
+        'hypothesis==4.47.3',
         'fakeredis==1.1.0'
       ],
+      setup_requires=['pytest-runner'],
       include_package_data=True,
-      # data_files=[('config_defaults', ['config/config_default.yml', 'config/config_env_vars.yml'])],
       entry_points={
         'console_scripts': 'markus_autotester = autotester.cli:cli'
       })

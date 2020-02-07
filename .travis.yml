@@ -4,9 +4,6 @@ python:
   - "3.6"
   - "3.7"
   - "3.8"
-# command to install dependencies
-install:
-  - pip install --upgrade attrs && pip install -U pytest hypothesis fakeredis .
 # command to run tests
 script:
-  - pytest --ignore src/autotester/testers/py/tests
+  - python setup.py test
