@@ -9,14 +9,14 @@ install_packages() {
 
 compile_tester() {
     echo "[JAVA-INSTALL] Compiling tester"
-    pushd ${JAVADIR} > /dev/null
+    pushd "${JAVADIR}" > /dev/null
     ./gradlew installDist --no-daemon
     popd > /dev/null
 }
 
 update_specs() {
     echo "[JAVA-INSTALL] Updating specs"
-    echo '{}' | jq ".path_to_tester_jars = \"${JAVADIR}/build/install/MarkusJavaTester/lib\"" > ${TESTERDIR}/specs/install_settings.json
+    echo '{}' | jq ".path_to_tester_jars = \"${JAVADIR}/build/install/MarkusJavaTester/lib\"" > "${TESTERDIR}/specs/install_settings.json"
 }
 
 # script starts here
@@ -26,13 +26,13 @@ if [[ $# -ne 0 ]]; then
 fi
 
 # vars
-THISSCRIPT=$(readlink -f ${BASH_SOURCE})
-TESTERDIR=$(dirname $(dirname ${THISSCRIPT}))
-SPECSDIR=${TESTERDIR}/specs
-JAVADIR=${TESTERDIR}/lib
+THISSCRIPT=$(readlink -f "${BASH_SOURCE[0]}")
+THISDIR=$(dirname "${THISSCRIPT}")
+SPECSDIR=$(readlink -f "${THISDIR}/../specs")
+JAVADIR=$(readlink -f "${THISDIR}/../lib")
 
 # main
 install_packages
 compile_tester
 update_specs
-touch ${SPECSDIR}/.installed
+touch "${SPECSDIR}/.installed"

@@ -8,6 +8,7 @@ from autotester.config import config
 CURRENT_TEST_SCRIPT_HASH = config['redis', '_current_test_script_hash']
 POP_INTERVAL_HASH = config['redis', '_pop_interval_hash']
 
+
 def redis_connection():
     """
     Return the currently open redis connection object. If there is no
@@ -20,6 +21,7 @@ def redis_connection():
     rq.use_connection(redis=redis.Redis.from_url(config['redis', 'url']))
     return rq.get_current_connection()
 
+
 def get_test_script_key(markus_address, assignment_id):
     """
     Return unique key for each assignment used for
@@ -27,6 +29,7 @@ def get_test_script_key(markus_address, assignment_id):
     """
     clean_markus_address = file_management.clean_dir_name(markus_address)
     return f'{clean_markus_address}_{assignment_id}'
+
 
 def test_script_directory(markus_address, assignment_id, set_to=None):
     """
@@ -55,6 +58,7 @@ def update_pop_interval_stat(queue_name):
     r.hset(POP_INTERVAL_HASH, '{}_last'.format(queue_name), now)
     r.hincrby(POP_INTERVAL_HASH, '{}_count'.format(queue_name), 1)
 
+
 def clear_pop_interval_stat(queue_name):
     """
     Reset the values contained in the redis hash named REDIS_POP_HASH for
@@ -65,6 +69,7 @@ def clear_pop_interval_stat(queue_name):
     r.hdel(POP_INTERVAL_HASH, '{}_start'.format(queue_name))
     r.hset(POP_INTERVAL_HASH, '{}_last'.format(queue_name), 0)
     r.hset(POP_INTERVAL_HASH, '{}_count'.format(queue_name), 0)
+
 
 def get_pop_interval_stat(queue_name):
     """
@@ -82,6 +87,7 @@ def get_pop_interval_stat(queue_name):
     count = r.hget(POP_INTERVAL_HASH, '{}_count'.format(queue_name))
     return start, last, count
 
+
 def get_avg_pop_interval(queue_name):
     """
     Return the average interval between pops off of the end of the
@@ -98,6 +104,7 @@ def get_avg_pop_interval(queue_name):
         return None
     count -= 1
     return (last-start) / count if count else 0
+
 
 def clean_up():
     """ Reset the pop interval data for each empty queue """

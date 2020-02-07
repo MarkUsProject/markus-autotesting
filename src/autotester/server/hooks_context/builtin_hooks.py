@@ -8,11 +8,11 @@ import pkgutil
 import importlib
 from autotester import testers
 
-HOOKS = {'upload_feedback_file'    : {'context': 'after_each'},
-         'upload_feedback_to_repo' : {'requires': ['clear_feedback_file'], 
-                                      'context': 'after_each'},
-         'upload_annotations'      : {'context': 'after_each'},
-         'clear_feedback_file'     : {'context': 'before_each'}}
+HOOKS = {'upload_feedback_file': {'context': 'after_each'},
+         'upload_feedback_to_repo': {'requires': ['clear_feedback_file'],
+                                     'context': 'after_each'},
+         'upload_annotations': {'context': 'after_each'},
+         'clear_feedback_file': {'context': 'before_each'}}
 
 
 def clear_feedback_file(test_data, **_kwargs):
@@ -43,7 +43,7 @@ def upload_feedback_file(api, assignment_id, group_id, test_data, **_kwargs):
         with open(feedback_file) as feedback_open:
             api.upload_feedback_file(assignment_id, group_id, feedback_file, feedback_open.read())
 
-            
+
 def upload_annotations(api, assignment_id, group_id, test_data, **_kwargs):
     """
     Upload annotations using MarkUs' api.
@@ -52,8 +52,6 @@ def upload_annotations(api, assignment_id, group_id, test_data, **_kwargs):
     if os.path.isfile(annotations_name):
         with open(annotations_name) as annotations_open:
             api.upload_annotations(assignment_id, group_id, json.load(annotations_open))
-
-## DEFAULT TESTER HOOKS ##
 
 
 def _load_default_hooks():
@@ -67,5 +65,6 @@ def _load_default_hooks():
             for hook in default_hooks.HOOKS:
                 defaults[hook.__name__] = hook
     return defaults
+
 
 DEFAULT_HOOKS = _load_default_hooks()

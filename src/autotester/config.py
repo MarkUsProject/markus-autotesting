@@ -11,6 +11,7 @@ DEFAULT_ROOT = os.path.join(os.path.dirname(__file__), 'config_defaults')
 CONFIG_FILENAME = 'markus_autotester_config'
 CONFIG_ENV_VAR = 'MARKUS_AUTOTESTER_CONFIG'
 
+
 def _find_local_config():
     system_config = os.path.join(os.path.sep, 'etc', CONFIG_FILENAME)
     user_config = os.path.join(os.environ.get('HOME'), f'.{CONFIG_FILENAME}')
@@ -22,6 +23,7 @@ def _find_local_config():
         return user_config
     if os.path.isfile(system_config):
         return system_config
+
 
 class _Config:
 
@@ -94,5 +96,6 @@ class _Config:
         with open(self._default_config) as f:
             config_dicts.append(yaml.load(f, Loader=self._yaml_loader))
         return self._merge_dicts(config_dicts)
+
 
 config = _Config()

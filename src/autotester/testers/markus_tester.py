@@ -9,6 +9,7 @@ import traceback
 class MarkusTestError(Exception):
     pass
 
+
 class MarkusTest(ABC):
 
     class Status(enum.Enum):
@@ -224,8 +225,8 @@ class MarkusTest(ABC):
                 self.after_successful_test_run()
             except MarkusTestError as e:
                 result_json = self.error(message=str(e))
-            except Exception:
-                result_json = self.error(message=traceback.format_exc())
+            except Exception as e:
+                result_json = self.error(message=f'{traceback.format_exc()}\n{e}')
             return result_json
         return run_func_wrapper
 
@@ -287,8 +288,8 @@ class MarkusTester(ABC):
                 return run_func(self, *args, **kwargs)
             except MarkusTestError as e:
                 print(MarkusTester.error_all(message=str(e), expected=True), flush=True)
-            except Exception:
-                print(MarkusTester.error_all(message=traceback.format_exc()), flush=True)
+            except Exception as e:
+                print(MarkusTester.error_all(message=f'{traceback.format_exc()}\n{e}'), flush=True)
             finally:
                 self.after_tester_run()
         return run_func_wrapper

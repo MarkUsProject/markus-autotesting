@@ -7,10 +7,10 @@ if [[ $# -ne 0 ]]; then
 fi
 
 # vars
-THISSCRIPT=$(readlink -f ${BASH_SOURCE})
-TESTERDIR=$(dirname $(dirname ${THISSCRIPT}))
-SPECSDIR=${TESTERDIR}/specs
+THISSCRIPT=$(readlink -f "${BASH_SOURCE[0]}")
+THISDIR=$(dirname "${THISSCRIPT}")
+SPECSDIR=$(readlink -f "${THISDIR}/../specs")
 
 # main
 echo "[RACKET-UNINSTALL] The following system packages have not been uninstalled: racket python3. You may uninstall them if you wish."
-rm -f ${SPECSDIR}/.installed
+rm -f "${SPECSDIR}/.installed"

@@ -4,11 +4,11 @@ import re
 import pytest
 import inspect
 import tempfile
-import rq
 import glob
 from unittest.mock import patch, ANY, Mock
 from contextlib import contextmanager
 from fakeredis import FakeStrictRedis
+from rq.exceptions import NoSuchJobError
 from autotester import cli
 
 
@@ -25,7 +25,7 @@ def tmp_script_dir(settings_dict):
     with tempfile.TemporaryDirectory() as tmp_dir:
         files_dir = os.path.join(tmp_dir, 'files')
         os.mkdir(files_dir)
-        with open(os.path.join(files_dir, '.gitkeep'), 'w') as f:
+        with open(os.path.join(files_dir, '.gitkeep'), 'w'):
             pass
         with open(os.path.join(tmp_dir, 'settings.json'), 'w') as f:
             json.dump(settings_dict, f)
@@ -34,7 +34,7 @@ def tmp_script_dir(settings_dict):
 
 
 @pytest.fixture(autouse=True)
-def empty_test_script_dir(request, redis):
+def empty_test_script_dir(redis):
     empty_settings = {"testers": [{"test_data": []}]}
     with tmp_script_dir(empty_settings) as tmp_dir:
         yield tmp_dir
@@ -70,7 +70,8 @@ class DummyTestError(Exception):
 
 class TestEnqueueTest:
 
-    def get_kwargs(self, **kw):
+    @staticmethod
+    def get_kwargs(**kw):
         param_kwargs = {k: '' for k in inspect.signature(cli.run_test).parameters}
         return {**param_kwargs, **kw}
 
@@ -168,22 +169,20 @@ class TestEnqueueTest:
             mock_enqueue_call.assert_called_with(ANY, kwargs=ANY, job_id=ANY, timeout=15)
 
     def test_cleans_up_files_on_error(self, mock_rmtree):
-        try:
+        with pytest.raises(Exception):
             cli.enqueue_test('Admin', 1, **self.get_kwargs(files_path='something'))
-        except Exception as e:
-            mock_rmtree.assert_called_once()
-        else:
-            pytest.fail('This call to run_test should have failed. See other failures for details')
 
 
 class TestUpdateSpecs:
 
-    def get_kwargs(self, **kw):
+    @staticmethod
+    def get_kwargs(**kw):
         param_kwargs = {k: '' for k in inspect.signature(cli.update_test_specs).parameters}
         return {**param_kwargs, **kw}
 
     def test_fails_when_schema_is_invalid(self):
-        with patch('autotester.server.utils.form_validation.validate_with_defaults', return_value=DummyTestError('error')):
+        with patch('autotester.server.utils.form_validation.validate_with_defaults',
+                   return_value=DummyTestError('error')):
             with patch('autotester.cli.update_test_specs'):
                 try:
                     cli.update_specs('', **self.get_kwargs(schema={}))
@@ -193,8 +192,7 @@ class TestUpdateSpecs:
 
     def test_succeeds_when_schema_is_valid(self):
         with patch('autotester.server.utils.form_validation.validate_with_defaults', return_value=[]):
-            with patch('autotester.cli.update_test_specs') as p:
-                print(cli.update_test_specs)
+            with patch('autotester.cli.update_test_specs'):
                 try:
                     cli.update_specs('', **self.get_kwargs(schema={}))
                 except DummyTestError:
@@ -207,14 +205,11 @@ class TestUpdateSpecs:
                 update_test_specs.assert_called_once()
 
     def test_cleans_up_files_on_error(self, mock_rmtree):
-        with patch('autotester.server.utils.form_validation.validate_with_defaults', return_value=DummyTestError('error')):
+        with patch('autotester.server.utils.form_validation.validate_with_defaults',
+                   return_value=DummyTestError('error')):
             with patch('autotester.cli.update_test_specs'):
-                try:
+                with pytest.raises(Exception):
                     cli.update_specs(**self.get_kwargs(schema={}, files_path='test_files'))
-                except Exception:
-                    mock_rmtree.assert_called_once()
-                else:
-                    pytest.fail('This call to update_specs should have failed. See other failures for details')
 
 
 @pytest.fixture
@@ -228,8 +223,8 @@ def mock_rq_job():
 class TestCancelTest:
 
     def test_do_nothing_if_job_does_not_exist(self, mock_rq_job):
-        Job, mock_job = mock_rq_job
-        Job.fetch.side_effect = rq.exceptions.NoSuchJobError
+        job_class, mock_job = mock_rq_job
+        job_class.fetch.side_effect = NoSuchJobError
         cli.cancel_test('something', [1])
         mock_job.cancel.assert_not_called()
 
@@ -272,7 +267,8 @@ class TestCancelTest:
 
 class TestGetSchema:
 
-    def fake_installed_testers(self, installed):
+    @staticmethod
+    def fake_installed_testers(installed):
         root_dir = os.path.dirname(os.path.abspath(cli.__file__))
         paths = []
         for tester in installed:
@@ -280,7 +276,8 @@ class TestGetSchema:
             paths.append(os.path.join(glob.glob(glob_pattern)[0], '.installed'))
         return paths
 
-    def assert_tester_in_schema(self, tester, schema):
+    @staticmethod
+    def assert_tester_in_schema(tester, schema):
         assert tester in schema["definitions"]["installed_testers"]["enum"]
         installed = []
         for option in schema['definitions']['tester_schemas']['oneOf']:

@@ -1,11 +1,14 @@
 import json
 
+
 def stringify(*args):
     for a in args:
         yield str(a)
 
+
 def decode_if_bytes(b, format_='utf-8'):
     return b.decode(format_) if isinstance(b, bytes) else b
+
 
 def loads_partial_json(json_string, expected_type=None):
     """

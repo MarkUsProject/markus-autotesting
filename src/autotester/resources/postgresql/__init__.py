@@ -9,6 +9,7 @@ from autotester.config import config
 POSTGRES_PREFIX = config['resources', 'postgresql', '_prefix']
 PGPASSFILE = os.path.join(config['workspace'], config['_workspace_contents', '_logs'], '.pgpass')
 
+
 def setup_database(test_username):
     user = getpass.getuser()
     database = f'{POSTGRES_PREFIX}{test_username}'

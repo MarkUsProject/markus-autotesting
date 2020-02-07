@@ -1,5 +1,4 @@
 import os
-import tempfile
 import unittest
 import pytest
 import sys
@@ -20,7 +19,7 @@ class MarkusTextTestResults(unittest.TextTestResult):
 
     def addSuccess(self, test):
         self.results.append({'status': 'success',
-                             'name'  : test.id(),
+                             'name': test.id(),
                              'errors': '',
                              'description': test._testMethodDoc})
         self.successes.append(test)
@@ -28,14 +27,14 @@ class MarkusTextTestResults(unittest.TextTestResult):
     def addFailure(self, test, err):
         super().addFailure(test, err)
         self.results.append({'status': 'failure',
-                             'name'  : test.id(),
+                             'name': test.id(),
                              'errors': self.failures[-1][-1],
                              'description': test._testMethodDoc})
 
     def addError(self, test, err):
         super().addError(test, err)
         self.results.append({'status': 'error',
-                             'name'  : test.id(),
+                             'name': test.id(),
                              'errors': self.errors[-1][-1],
                              'description': test._testMethodDoc})
 
@@ -99,7 +98,8 @@ class MarkusPythonTester(MarkusTester):
     def __init__(self, specs, test_class=MarkusPythonTest):
         super().__init__(specs, test_class)
 
-    def _load_unittest_tests(self, test_file):
+    @staticmethod
+    def _load_unittest_tests(test_file):
         """
         Discover unittest tests in test_file and return
         a unittest.TestSuite that contains these tests
@@ -129,14 +129,13 @@ class MarkusPythonTester(MarkusTester):
         of these tests
         """
         results = []
-        this_dir = os.getcwd()
         with open(os.devnull, 'w') as null_out:
             try:
                 sys.stdout = null_out
                 verbosity = self.specs['test_data', 'output_verbosity']
                 plugin = MarkusPytestPlugin()
                 pytest.main([test_file, f'--tb={verbosity}'], plugins=[plugin])
-                results = list(plugin.results.values())
+                results.extend(plugin.results.values())
             finally:
                 sys.stdout = sys.__stdout__
         return results

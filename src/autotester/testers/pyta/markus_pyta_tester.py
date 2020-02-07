@@ -12,11 +12,13 @@ from testers.markus_tester import MarkusTester, MarkusTest
 
 class MarkusPyTAReporter(PositionReporter):
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(self, *args, **kwargs)
+        self._sorted_error_messages = defaultdict(list)
+
     def print_messages(self, level='all'):
         # print to feedback file, then reset and generate data for annotations
         PlainReporter.print_messages(self, level)
-        self._sorted_error_messages = defaultdict(list)
-        self._sorted_style_messages = defaultdict(list)
         super().print_messages(level)
 
     def output_blob(self):
@@ -124,5 +126,3 @@ class MarkusPyTATester(MarkusTester):
                 max_points = test_data.get('max_points', 10)
                 test = self.test_class(self, student_file_path, max_points, feedback_open)
                 print(test.run())
-
-

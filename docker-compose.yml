@@ -51,4 +51,3 @@ services:
 volumes:
   postgres_autotest:
   redis_autotest:
-

@@ -3,7 +3,7 @@
 import os
 import shutil
 import time
-import json 
+import json
 import subprocess
 import signal
 import rq
@@ -15,7 +15,8 @@ from autotester.config import config
 from autotester.server.hooks_context.hooks_context import Hooks
 from autotester.server.utils.string_management import loads_partial_json, decode_if_bytes, stringify
 from autotester.server.utils.user_management import get_reaper_username, current_user, tester_user
-from autotester.server.utils.file_management import random_tmpfile_name, clean_dir_name, setup_files, ignore_missing_dir_error, fd_open, fd_lock, move_tree
+from autotester.server.utils.file_management import random_tmpfile_name, clean_dir_name, setup_files, \
+    ignore_missing_dir_error, fd_open, fd_lock, move_tree
 from autotester.server.utils.resource_management import set_rlimits_before_cleanup, set_rlimits_before_test
 from autotester.server.utils.redis_management import clean_after, test_script_directory, update_pop_interval_stat
 from autotester.resources.ports import get_available_port
@@ -29,26 +30,25 @@ FILES_DIRNAME = config['_workspace_contents', '_files_dir']
 TEST_SPECS_DIR = os.path.join(config['workspace'], config['_workspace_contents', '_specs'])
 TEST_SCRIPT_DIR = os.path.join(config['workspace'], config['_workspace_contents', '_scripts'])
 
-TESTER_IMPORT_LINE = {'custom' : 'from testers.custom.markus_custom_tester import MarkusCustomTester as Tester',
-                      'haskell' : 'from testers.haskell.markus_haskell_tester import MarkusHaskellTester as Tester',
-                      'java' : 'from testers.java.markus_java_tester import MarkusJavaTester as Tester',
-                      'py' : 'from testers.py.markus_python_tester import MarkusPythonTester as Tester',
-                      'pyta' : 'from testers.pyta.markus_pyta_tester import MarkusPyTATester as Tester',
-                      'racket' : 'from testers.racket.markus_racket_tester import MarkusRacketTester as Tester'}
+TESTER_IMPORT_LINE = {'custom': 'from testers.custom.markus_custom_tester import MarkusCustomTester as Tester',
+                      'haskell': 'from testers.haskell.markus_haskell_tester import MarkusHaskellTester as Tester',
+                      'java': 'from testers.java.markus_java_tester import MarkusJavaTester as Tester',
+                      'py': 'from testers.py.markus_python_tester import MarkusPythonTester as Tester',
+                      'pyta': 'from testers.pyta.markus_pyta_tester import MarkusPyTATester as Tester',
+                      'racket': 'from testers.racket.markus_racket_tester import MarkusRacketTester as Tester'}
 
-### RUN TESTS ###
 
-def test_run_command(test_username=None):
+def run_test_command(test_username=None):
     """
     Return a command used to run test scripts as a the test_username
     user, with the correct arguments. Set test_username to None to 
     run as the current user.
 
     >>> test_script = 'mysscript.py'
-    >>> test_run_command('f').format(test_script)
+    >>> run_test_command('f').format(test_script)
     'sudo -u f -- bash -c "./myscript.py"'
 
-    >>> test_run_command().format(test_script)
+    >>> run_test_command().format(test_script)
     './myscript.py'
     """
     cmd = '{}'
@@ -58,18 +58,20 @@ def test_run_command(test_username=None):
 
     return cmd
 
+
 def create_test_group_result(stdout, stderr, run_time, extra_info, timeout=None):
     """
     Return the arguments passed to this function in a dictionary. If stderr is 
     falsy, change it to None. Load the json string in stdout as a dictionary.
     """
     test_results, malformed = loads_partial_json(stdout, dict)
-    return {'time' : run_time,
-            'timeout' : timeout,
-            'tests' : test_results, 
-            'stderr' : stderr or None,
-            'malformed' :  stdout if malformed else None,
+    return {'time': run_time,
+            'timeout': timeout,
+            'tests': test_results,
+            'stderr': stderr or None,
+            'malformed': stdout if malformed else None,
             'extra_info': extra_info or {}}
+
 
 def kill_with_reaper(test_username):
     """
@@ -92,15 +94,17 @@ def kill_with_reaper(test_username):
         kill_file_dst = random_tmpfile_name()
         preexec_fn = set_rlimits_before_cleanup()
 
-        copy_cmd = "sudo -u {0} -- bash -c 'cp kill_worker_procs {1} && chmod 4550 {1}'".format(test_username, kill_file_dst)
+        copy_cmd = "sudo -u {0} -- bash -c 'cp kill_worker_procs {1} && chmod 4550 {1}'".format(test_username,
+                                                                                                kill_file_dst)
         copy_proc = subprocess.Popen(copy_cmd, shell=True, preexec_fn=preexec_fn, cwd=cwd)
-        if copy_proc.wait() < 0: # wait returns the return code of the proc
+        if copy_proc.wait() < 0:  # wait returns the return code of the proc
             return False
 
         kill_cmd = 'sudo -u {} -- bash -c {}'.format(reaper_username, kill_file_dst)
         kill_proc = subprocess.Popen(kill_cmd, shell=True, preexec_fn=preexec_fn)
         return kill_proc.wait() == 0
     return False
+
 
 def kill_without_reaper(test_username):
     """
@@ -109,19 +113,21 @@ def kill_without_reaper(test_username):
     kill_cmd = f"sudo -u {test_username} -- bash -c 'kill -KILL -1'"
     subprocess.run(kill_cmd, shell=True)
 
+
 def create_test_script_command(env_dir, tester_type):
     """
     Return string representing a command line command to 
     run tests.
     """
     import_line = TESTER_IMPORT_LINE[tester_type]
-    python_lines = [ 'import sys, json',
-                      import_line,
-                     'from testers.markus_test_specs import MarkusTestSpecs',
+    python_lines = ['import sys, json',
+                    import_line,
+                    'from testers.markus_test_specs import MarkusTestSpecs',
                     f'Tester(specs=MarkusTestSpecs.from_json(sys.stdin.read())).run()']
     python_ex = os.path.join(os.path.join(TEST_SPECS_DIR, env_dir), 'venv', 'bin', 'python')
     python_str = '; '.join(python_lines)
     return f'{python_ex} -c "{python_str}"'
+
 
 def get_env_vars(test_username):
     """ Return a dictionary containing all environment variables to pass to the next test """
@@ -149,8 +155,9 @@ def run_test_specs(cmd, test_specs, test_categories, tests_path, test_username, 
                 args = cmd.format(cmd_str)
 
                 for test_data in settings['test_data']:
-                    test_category = test_data.get('category', [])  
-                    if set(test_category) & set(test_categories): #TODO: make sure test_categories is non-string collection type
+                    test_category = test_data.get('category', [])
+                    if set(test_category) & set(
+                            test_categories):  # TODO: make sure test_categories is non-string collection type
                         extra_hook_kwargs = {'test_data': test_data}
                         with hooks.around('each', builtin_selector=test_data, extra_kwargs=extra_hook_kwargs):
                             start = time.time()
@@ -159,8 +166,8 @@ def run_test_specs(cmd, test_specs, test_categories, tests_path, test_username, 
                             timeout = test_data.get('timeout')
                             try:
                                 env_vars = get_env_vars(test_username)
-                                proc = subprocess.Popen(args, start_new_session=True, cwd=tests_path, shell=True, 
-                                                        stdout=subprocess.PIPE, stderr=subprocess.PIPE, 
+                                proc = subprocess.Popen(args, start_new_session=True, cwd=tests_path, shell=True,
+                                                        stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                                         stdin=subprocess.PIPE, preexec_fn=preexec_fn,
                                                         env={**os.environ, **env_vars})
                                 try:
@@ -180,10 +187,12 @@ def run_test_specs(cmd, test_specs, test_categories, tests_path, test_username, 
                             finally:
                                 out = decode_if_bytes(out)
                                 err = decode_if_bytes(err)
-                                duration = int(round(time.time()-start, 3) * 1000)
+                                duration = int(round(time.time() - start, 3) * 1000)
                                 extra_info = test_data.get('extra_info', {})
-                                results.append(create_test_group_result(out, err, duration, extra_info, timeout_expired))
+                                results.append(
+                                    create_test_group_result(out, err, duration, extra_info, timeout_expired))
     return results, hooks.format_errors()
+
 
 def store_results(results_data, markus_address, assignment_id, group_id, submission_id):
     """
@@ -193,10 +202,13 @@ def store_results(results_data, markus_address, assignment_id, group_id, submiss
     """
     clean_markus_address = clean_dir_name(markus_address)
     run_time = "run_{}".format(int(time.time()))
-    destination = os.path.join(*stringify(TEST_RESULT_DIR, clean_markus_address, assignment_id, group_id, 's{}'.format(submission_id or ''), run_time))
+    destination = os.path.join(
+        *stringify(TEST_RESULT_DIR, clean_markus_address, assignment_id, group_id, 's{}'.format(submission_id or ''),
+                   run_time))
     os.makedirs(destination, exist_ok=True)
     with open(os.path.join(destination, 'output.json'), 'w') as f:
         json.dump(results_data, f, indent=4)
+
 
 def clear_working_directory(tests_path, test_username):
     """
@@ -206,13 +218,14 @@ def clear_working_directory(tests_path, test_username):
         chmod_cmd = "sudo -u {} -- bash -c 'chmod -Rf ugo+rwX {}'".format(test_username, tests_path)
     else:
         chmod_cmd = 'chmod -Rf ugo+rwX {}'.format(tests_path)
-    
+
     subprocess.run(chmod_cmd, shell=True)
-    
+
     # be careful not to remove the tests_path dir itself since we have to 
     # set the group ownership with sudo (and that is only done in ../install.sh)
     clean_cmd = 'rm -rf {0}/.[!.]* {0}/*'.format(tests_path)
     subprocess.run(clean_cmd, shell=True)
+
 
 def stop_tester_processes(test_username):
     """
@@ -224,20 +237,23 @@ def stop_tester_processes(test_username):
         if not kill_with_reaper(test_username):
             kill_without_reaper(test_username)
 
+
 def finalize_results_data(results, error, all_hooks_error, time_to_service):
     """ Return a dictionary of test script results combined with test run info """
-    return  {'test_groups'        : results,
-             'error'              : error,
-             'hooks_error'        : all_hooks_error,
-             'time_to_service'    : time_to_service}
+    return {'test_groups': results,
+            'error': error,
+            'hooks_error': all_hooks_error,
+            'time_to_service': time_to_service}
+
 
 def report(results_data, api, assignment_id, group_id, run_id):
     """ Post the results of running test scripts to the markus api """
     api.upload_test_group_results(assignment_id, group_id, run_id, json.dumps(results_data))
 
+
 @clean_after
-def run_test(markus_address, server_api_key, test_categories, files_path, assignment_id, 
-             group_id, group_repo_name, submission_id, run_id, enqueue_time):
+def run_test(markus_address, server_api_key, test_categories, files_path, assignment_id,
+             group_id, submission_id, run_id, enqueue_time):
     """
     Run autotesting tests using the tests in the test_specs json file on the files in files_path.
 
@@ -267,7 +283,7 @@ def run_test(markus_address, server_api_key, test_categories, files_path, assign
         hooks = Hooks(hooks_script_path, testers, cwd=tests_path, kwargs=hooks_kwargs)
         try:
             setup_files(files_path, tests_path, markus_address, assignment_id)
-            cmd = test_run_command(test_username=test_username)
+            cmd = run_test_command(test_username=test_username)
             results, hooks_error = run_test_specs(cmd,
                                                   test_specs,
                                                   test_categories,
@@ -284,7 +300,6 @@ def run_test(markus_address, server_api_key, test_categories, files_path, assign
         store_results(results_data, markus_address, assignment_id, group_id, submission_id)
         report(results_data, api, assignment_id, group_id, run_id)
 
-### UPDATE TEST SCRIPTS ###
 
 def get_tester_root_dir(tester_type):
     """
@@ -296,6 +311,7 @@ def get_tester_root_dir(tester_type):
     if not os.path.isdir(tester_dir):
         raise FileNotFoundError(f'{tester_type} is not a valid tester name')
     return tester_dir
+
 
 def update_settings(settings, specs_dir):
     """
@@ -312,7 +328,8 @@ def update_settings(settings, specs_dir):
     full_settings.update(settings)
     return full_settings
 
-def create_tester_environments(files_path, test_specs):    
+
+def create_tester_environments(files_path, test_specs):
     for i, settings in enumerate(test_specs['testers']):
         tester_dir = get_tester_root_dir(settings["tester_type"])
         specs_dir = os.path.join(tester_dir, 'specs')
@@ -335,6 +352,7 @@ def create_tester_environments(files_path, test_specs):
 
     return test_specs
 
+
 def destroy_tester_environments(old_test_script_dir):
     test_specs_file = os.path.join(old_test_script_dir, SETTINGS_FILENAME)
     with open(test_specs_file) as f:
@@ -351,6 +369,7 @@ def destroy_tester_environments(old_test_script_dir):
                 if proc.returncode != 0:
                     raise TesterCreationError(f'destroy tester environment failed with:\n{proc.stderr}')
             shutil.rmtree(env_loc, onerror=ignore_missing_dir_error)
+
 
 @clean_after
 def update_test_specs(files_path, assignment_id, markus_address, test_specs):
@@ -369,7 +388,7 @@ def update_test_specs(files_path, assignment_id, markus_address, test_specs):
     new_files_dir = os.path.join(new_dir, FILES_DIRNAME)
     move_tree(files_path, new_files_dir)
     if 'hooks_file' in test_specs:
-        src = os.path.isfile(os.path.join(new_files_dir, test_specs['hooks_file']))
+        src = os.path.join(new_files_dir, test_specs['hooks_file'])
         if os.path.isfile(src):
             os.rename(src, os.path.join(new_dir, HOOKS_FILENAME))
     test_specs = create_tester_environments(new_files_dir, test_specs)
@@ -378,10 +397,9 @@ def update_test_specs(files_path, assignment_id, markus_address, test_specs):
         json.dump(test_specs, f)
     old_test_script_dir = test_script_directory(markus_address, assignment_id)
     test_script_directory(markus_address, assignment_id, set_to=new_dir)
-    
+
     if old_test_script_dir is not None:
         with fd_open(old_test_script_dir) as fd:
             with fd_lock(fd, exclusive=True):
                 destroy_tester_environments(old_test_script_dir)
                 shutil.rmtree(old_test_script_dir, onerror=ignore_missing_dir_error)
-

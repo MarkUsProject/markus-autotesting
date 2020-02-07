@@ -116,14 +116,14 @@ class Hooks:
         order. 
         """
         merged = defaultdict(list)
-        sort_key = lambda x: (x.__name__ in Hooks.HOOK_BASENAMES, x.__name__)
         for d in hook_dicts:
             for key, hooks in d.items():
                 merged[key].extend(h for h in hooks if h)
         for key, hooks in merged.items():
-            merged[key] = sorted((h for h in hooks if h), key=sort_key, reverse=(key=='after'))
+            merged[key] = sorted((h for h in hooks if h),
+                                 key=lambda x: (x.__name__ in Hooks.HOOK_BASENAMES, x.__name__),
+                                 reverse=(key == 'after'))
         return merged
-
 
     def _load_all(self):
         """
@@ -143,7 +143,7 @@ class Hooks:
         custom_hooks_module = self._load_module(self.custom_hooks_path)
         
         for hook_name in Hooks.HOOK_BASENAMES:
-            hook_type, hook_context = hook_name.split('_') # eg. "before_all" -> ("before", "all")
+            hook_type, hook_context = hook_name.split('_')  # eg. "before_all" -> ("before", "all")
             custom_hook = self._load_hook(custom_hooks_module, hook_name)
             builtin_hook = builtin_hooks.DEFAULT_HOOKS.get(hook_name)
             hooks[None][hook_context][hook_type].extend([custom_hook, builtin_hook])
@@ -169,8 +169,8 @@ class Hooks:
                 with add_path(dirpath):
                     hooks_module = __import__(module_name)
                 return hooks_module
-            except Exception:
-                self.load_errors.append((module_name, traceback.format_exc()))
+            except Exception as e:
+                self.load_errors.append((module_name, f'{traceback.format_exc()}\n{e}'))
         return None
 
     def _load_hook(self, module, function_name):
@@ -198,7 +198,7 @@ class Hooks:
         try:
             func(*args, **kwargs)
         except BaseException as e:
-            self.run_errors.append((func.__name__, args, kwargs, traceback.format_exc()))
+            self.run_errors.append((func.__name__, args, kwargs, f'{traceback.format_exc()}\n{e}'))
 
     def _get_hooks(self, tester_type, builtin_selector=None):
         """
@@ -223,7 +223,6 @@ class Hooks:
             hooks = self.hooks.get(tester_type, {}).get('all', {})
             hooks = Hooks._merge_hook_dicts(hooks, builtin_hook_dict.get('all', {}))
         return hooks.get('before', []), hooks.get('after', [])
-
 
     @contextmanager
     def around(self, tester_type, builtin_selector=None, extra_args=None, extra_kwargs=None, cwd=None):
@@ -261,7 +260,6 @@ class Hooks:
         for module_name, tb in self.load_errors:
             error_list.append(f'module_name: {module_name}\ntraceback:\n{tb}')
         for hook_name, args, kwargs, tb in self.run_errors:   
-            error_list.append(f'function_name: {hook_name}\nargs: {self.args}\nkwargs: {self.kwargs},\ntraceback:\n{tb}')
+            error_list.append(f'function_name: {hook_name}\n'
+                              f'args: {self.args}\nkwargs: {self.kwargs},\ntraceback:\n{tb}')
         return '\n\n'.join(error_list)
-
-

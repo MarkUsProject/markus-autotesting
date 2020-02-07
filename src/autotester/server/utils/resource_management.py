@@ -3,8 +3,10 @@ from autotester.config import config
 
 RLIMIT_ADJUSTMENTS = {'nproc': 10}
 
+
 def rlimit_str2int(rlimit_string):
     return getattr(resource, f'RLIMIT_{rlimit_string.upper()}')
+
 
 def set_rlimits_before_test():
     """
@@ -30,6 +32,7 @@ def set_rlimits_before_test():
         soft = max(min(hard, soft), 0)
         
         resource.setrlimit(limit, (soft, hard))
+
 
 def set_rlimits_before_cleanup():
     """

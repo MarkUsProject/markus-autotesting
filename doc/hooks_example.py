@@ -22,18 +22,18 @@ def upload_svn_file(api, group_repo_name, assignment_name, file_name, svn_user, 
 
 
 # Hooks
-def before_all(api, assignment_id, group_id, group_repo_name):
+def before_all(_api, _assignment_id, _group_id, _group_repo_name):
     # clean up unwanted files
     pattern = os.path.join('**', '*.o')
     for file_path in glob.glob(pattern, recursive=True):
         os.remove(file_path)
 
 
-def before_each(api, assignment_id, group_id, group_repo_name):
+def before_each(_api, _assignment_id, _group_id, _group_repo_name):
     pass
 
 
-def after_each(api, assignment_id, group_id, group_repo_name):
+def after_each(_api, _assignment_id, _group_id, _group_repo_name):
     pass
 
 

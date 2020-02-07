@@ -9,6 +9,7 @@ from autotester.server.utils.redis_management import redis_connection
 def current_user():
     return pwd.getpwuid(os.getuid()).pw_name
 
+
 def tester_user():
     """
     Get the workspace for the tester user specified by the MARKUSWORKERUSER
@@ -31,7 +32,8 @@ def tester_user():
 
     return user_name, decode_if_bytes(user_workspace)
 
+
 def get_reaper_username(test_username):
-    for workers in WORKERS:
-        if workers['name'] == test_username:
-            return workers['reaper']
+    for worker_name, reaper_name in config['users', 'workers']:
+        if worker_name == test_username:
+            return reaper_name

@@ -7,6 +7,7 @@ PORT_MAX = config['resources', 'port', 'max']
 REDIS_PREFIX = config['redis', '_prefix']
 REDIS_PORT_INT = f"{REDIS_PREFIX}{config['resources', 'port', '_redis_int']}"
 
+
 def next_port():
     """ Return a port number that is greater than the last time this method was
     called (by any process on this machine).

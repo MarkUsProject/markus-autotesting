@@ -5,6 +5,7 @@ import csv
 
 from testers.markus_tester import MarkusTester, MarkusTest, MarkusTestError
 
+
 class MarkusHaskellTest(MarkusTest):
 
     def __init__(self, tester, test_file, result, feedback_open=None):
@@ -29,18 +30,18 @@ class MarkusHaskellTest(MarkusTest):
         else:
             return self.error(message=self.message)
 
-class MarkusHaskellTester(MarkusTester):
 
+class MarkusHaskellTester(MarkusTester):
     # column indexes of relevant data from tasty-stats csv
     # reference: http://hackage.haskell.org/package/tasty-stats
-    TASTYSTATS = {'name' : 1,
-                  'time' : 2,
-                  'result' : 3,
-                  'description' : -1}
+    TASTYSTATS = {'name': 1,
+                  'time': 2,
+                  'result': 3,
+                  'description': -1}
 
     def __init__(self, specs, test_class=MarkusHaskellTest):
         super().__init__(specs, test_class)
-    
+
     def _test_run_flags(self, test_file):
         """
         Return a list of additional arguments to the tasty-discover executable
@@ -61,10 +62,10 @@ class MarkusHaskellTester(MarkusTester):
         """
         test_results = []
         for line in reader:
-            result = {'status' : line[self.TASTYSTATS['result']], 
-                      'name' : line[self.TASTYSTATS['name']], 
-                      'description' : line[self.TASTYSTATS['description']], 
-                      'time' : line[self.TASTYSTATS['time']]}
+            result = {'status': line[self.TASTYSTATS['result']],
+                      'name': line[self.TASTYSTATS['name']],
+                      'description': line[self.TASTYSTATS['description']],
+                      'time': line[self.TASTYSTATS['time']]}
             test_results.append(result)
         return test_results
 

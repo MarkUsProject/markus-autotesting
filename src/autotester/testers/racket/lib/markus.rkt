@@ -84,4 +84,3 @@
           (set! test-results 
             (run-test (dynamic-require/expose (string->path test-file) test-suite-sym)))))
   (write-json (map show-test-result test-results)))
-    

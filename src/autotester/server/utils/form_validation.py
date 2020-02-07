@@ -2,6 +2,7 @@ from jsonschema import Draft7Validator, validators, ValidationError
 from jsonschema.exceptions import best_match
 from copy import deepcopy
 
+
 def extend_with_default(validator_class=Draft7Validator):
     """
     Extends a validator class to add defaults before validation.
@@ -89,6 +90,7 @@ def extend_with_default(validator_class=Draft7Validator):
 
     return validators.extend(validator_class, custom_validators)
 
+
 def validate_with_defaults(schema, obj, validator_class=Draft7Validator, best_only=True):
     """
     Return an iterator that yields errors from validating obj on schema 
@@ -102,6 +104,7 @@ def validate_with_defaults(schema, obj, validator_class=Draft7Validator, best_on
     if best_only:
         return best_match(errors)
     return errors
+
 
 def is_valid(obj, schema, validator_class=Draft7Validator):
     """

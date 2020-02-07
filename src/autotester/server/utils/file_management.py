@@ -9,12 +9,15 @@ from contextlib import contextmanager
 
 FILES_DIRNAME = config['_workspace_contents', '_files_dir']
 
+
 def clean_dir_name(name):
     """ Return name modified so that it can be used as a unix style directory name """
     return name.replace('/', '_')
 
+
 def random_tmpfile_name():
     return os.path.join(tempfile.gettempdir(), uuid.uuid4().hex)
+
 
 def recursive_iglob(root_dir):
     """
@@ -30,6 +33,7 @@ def recursive_iglob(root_dir):
             yield from (('f', os.path.join(root, f)) for f in filenames)
     else:
         raise ValueError('directory does not exist: {}'.format(root_dir))
+
 
 def copy_tree(src, dst, exclude=tuple()):
     """
@@ -52,12 +56,14 @@ def copy_tree(src, dst, exclude=tuple()):
         copied.append((fd, target))
     return copied
 
+
 def ignore_missing_dir_error(_func, _path, excinfo):
     """ Used by shutil.rmtree to ignore a FileNotFoundError """
     err_type, err_inst, traceback = excinfo
     if err_type == FileNotFoundError:
         return
     raise err_inst
+
 
 def move_tree(src, dst):
     """
@@ -69,6 +75,7 @@ def move_tree(src, dst):
     moved = copy_tree(src, dst)
     shutil.rmtree(src, onerror=ignore_missing_dir_error)
     return moved
+
 
 @contextmanager
 def fd_open(path, flags=os.O_RDONLY, *args, **kwargs):
@@ -83,6 +90,7 @@ def fd_open(path, flags=os.O_RDONLY, *args, **kwargs):
     finally:
         os.close(fd)
 
+
 @contextmanager
 def fd_lock(file_descriptor, exclusive=True):
     """
@@ -95,6 +103,7 @@ def fd_lock(file_descriptor, exclusive=True):
         yield
     finally:
         fcntl.flock(file_descriptor, fcntl.LOCK_UN)
+
 
 def copy_test_script_files(markus_address, assignment_id, tests_path):
     """
@@ -109,6 +118,7 @@ def copy_test_script_files(markus_address, assignment_id, tests_path):
             with fd_lock(fd, exclusive=False):
                 return copy_tree(test_script_dir, tests_path)
     return []
+
 
 def setup_files(files_path, tests_path, markus_address, assignment_id):
     """

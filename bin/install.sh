@@ -262,7 +262,7 @@ create_enqueuer_wrapper() {
 
   echo "#!/usr/bin/env bash
         ${SERVER_VENV}/bin/markus_autotester \"\$@\"" | sudo tee ${enqueuer} > /dev/null
-  sudo chown "${SERVER_USER}:${SERVERUSER}" "${enqueuer}"
+  sudo chown "${SERVER_USER}:${SERVER_USER}" "${enqueuer}"
   sudo chmod u=rwx,go=r ${enqueuer}
 
 }

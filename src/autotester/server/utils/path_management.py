@@ -19,6 +19,7 @@ def current_directory(path):
     else:
         yield
 
+
 @contextmanager
 def add_path(path, prepend=True):
     """
