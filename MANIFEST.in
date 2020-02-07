@@ -1,1 +1,3 @@
 include src/autotester/config_defaults/*
+include src/autotester/lib/*
+include src/autotester/testers/*/specs/*
