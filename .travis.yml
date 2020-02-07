@@ -6,9 +6,7 @@ python:
   - "3.8"
 # command to install dependencies
 install:
-  - pip install pytest
-  - pip install hypothesis
-  - pip install -r server/bin/requirements.txt
+  - pip install -U pytest hypothesis fakeredis .
 # command to run tests
 script:
-  - pytest --ignore testers/testers/py/tests
+  - pytest --ignore src/autotester/testers/py/tests
