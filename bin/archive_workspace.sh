@@ -22,6 +22,14 @@ if [[ $# -lt 1 ]]; then
     exit 1
 fi
 
+# TODO: this file needs to be updated
+echo 'This archiver is broken, do not use until it has been updated.
+To archive the workspace, run:
+
+$ tar cJf <tar.xz output file> <workspace directory>
+' 1>&2
+exit 1
+
 # vars
 THISSCRIPT=$(readlink -f ${BASH_SOURCE})
 BINDIR=$(dirname ${THISSCRIPT})
