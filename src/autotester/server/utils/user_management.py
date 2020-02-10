@@ -17,20 +17,20 @@ def tester_user():
     Raises an AutotestError if a tester user is not specified or if a workspace
     has not been setup for that user.
     """
-    user_name = os.environ.get('MARKUSWORKERUSER')
+    user_name = os.environ.get("MARKUSWORKERUSER")
     if user_name is None:
-        raise TesterUserError('No worker users available to run this job')
+        raise TesterUserError("No worker users available to run this job")
 
-    user_workspace = os.path.join(config['workspace'],
-                                  config['_workspace_contents', '_workers'],
-                                  user_name)
+    user_workspace = os.path.join(
+        config["workspace"], config["_workspace_contents", "_workers"], user_name
+    )
     if not os.path.isdir(user_workspace):
-        raise TesterUserError(f'No workspace directory for user: {user_name}')
+        raise TesterUserError(f"No workspace directory for user: {user_name}")
 
     return user_name, decode_if_bytes(user_workspace)
 
 
 def get_reaper_username(test_username):
-    for worker_name, reaper_name in config['users', 'workers']:
+    for worker_name, reaper_name in config["users", "workers"]:
         if worker_name == test_username:
             return reaper_name

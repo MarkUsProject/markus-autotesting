@@ -45,9 +45,12 @@ class Hooks:
     Builtin hooks can have any name and when they are executed is instead determined by the values
     associated to their name in the builtin_hooks.HOOKS dictionary.  
     """
-    HOOK_BASENAMES = ['before_all', 'before_each', 'after_all', 'after_each']
 
-    def __init__(self, custom_hooks_path=None, testers=None, cwd=None, args=None, kwargs=None):
+    HOOK_BASENAMES = ["before_all", "before_each", "after_all", "after_each"]
+
+    def __init__(
+        self, custom_hooks_path=None, testers=None, cwd=None, args=None, kwargs=None
+    ):
         """
         Create a new Hooks object instance with args:
 
@@ -98,11 +101,11 @@ class Hooks:
 
         for func_name, data in builtin_hooks.HOOKS.items():
             if tester_info.get(func_name):
-                hook_type, hook_context = data['context'].split('_')
+                hook_type, hook_context = data["context"].split("_")
                 func = getattr(builtin_hooks, func_name)
                 if func not in _info.get(hook_context, {}).get(hook_type, set()):
                     _info[hook_context][hook_type].append(func)
-                    for requires in data.get('requires', []):
+                    for requires in data.get("requires", []):
                         Hooks._select_builtins({requires: True}, _info)
         return _info
 
@@ -120,9 +123,11 @@ class Hooks:
             for key, hooks in d.items():
                 merged[key].extend(h for h in hooks if h)
         for key, hooks in merged.items():
-            merged[key] = sorted((h for h in hooks if h),
-                                 key=lambda x: (x.__name__ in Hooks.HOOK_BASENAMES, x.__name__),
-                                 reverse=(key == 'after'))
+            merged[key] = sorted(
+                (h for h in hooks if h),
+                key=lambda x: (x.__name__ in Hooks.HOOK_BASENAMES, x.__name__),
+                reverse=(key == "after"),
+            )
         return merged
 
     def _load_all(self):
@@ -141,17 +146,21 @@ class Hooks:
         hooks = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
 
         custom_hooks_module = self._load_module(self.custom_hooks_path)
-        
+
         for hook_name in Hooks.HOOK_BASENAMES:
-            hook_type, hook_context = hook_name.split('_')  # eg. "before_all" -> ("before", "all")
+            hook_type, hook_context = hook_name.split(
+                "_"
+            )  # eg. "before_all" -> ("before", "all")
             custom_hook = self._load_hook(custom_hooks_module, hook_name)
             builtin_hook = builtin_hooks.DEFAULT_HOOKS.get(hook_name)
             hooks[None][hook_context][hook_type].extend([custom_hook, builtin_hook])
             for tester_type in self.testers:
-                tester_hook_name = f'{hook_name}_{tester_type}'
+                tester_hook_name = f"{hook_name}_{tester_type}"
                 custom_hook = self._load_hook(custom_hooks_module, tester_hook_name)
                 builtin_hook = builtin_hooks.DEFAULT_HOOKS.get(tester_hook_name)
-                hooks[tester_type][hook_context][hook_type].extend([custom_hook, builtin_hook])
+                hooks[tester_type][hook_context][hook_type].extend(
+                    [custom_hook, builtin_hook]
+                )
         return hooks
 
     def _load_module(self, hooks_script_path):
@@ -170,7 +179,7 @@ class Hooks:
                     hooks_module = __import__(module_name)
                 return hooks_module
             except Exception as e:
-                self.load_errors.append((module_name, f'{traceback.format_exc()}\n{e}'))
+                self.load_errors.append((module_name, f"{traceback.format_exc()}\n{e}"))
         return None
 
     def _load_hook(self, module, function_name):
@@ -184,7 +193,9 @@ class Hooks:
             if isinstance(func, Callable):
                 return func
             else:
-                self.load_errors.append((module.__name__, f'hook function {function_name} is not callable'))
+                self.load_errors.append(
+                    (module.__name__, f"hook function {function_name} is not callable")
+                )
         except AttributeError:
             return
 
@@ -193,12 +204,14 @@ class Hooks:
         Run the function func with positional and keyword arguments obtained by 
         merging self.args with extra_args and self.kwargs with extra_kwargs.
         """
-        args = self.args+(extra_args or [])
+        args = self.args + (extra_args or [])
         kwargs = {**self.kwargs, **(extra_kwargs or {})}
         try:
             func(*args, **kwargs)
         except BaseException as e:
-            self.run_errors.append((func.__name__, args, kwargs, f'{traceback.format_exc()}\n{e}'))
+            self.run_errors.append(
+                (func.__name__, args, kwargs, f"{traceback.format_exc()}\n{e}")
+            )
 
     def _get_hooks(self, tester_type, builtin_selector=None):
         """
@@ -210,22 +223,29 @@ class Hooks:
         if no builtin hooks are used.  
         """
         builtin_hook_dict = Hooks._select_builtins(builtin_selector or {})
-        if tester_type == 'all':
-            hooks = self.hooks.get(None, {}).get('all', {})
-        elif tester_type == 'each':
-            hooks = self.hooks.get(None, {}).get('each', {})
-            other_hooks = [builtin_hook_dict.get('each', {})]
+        if tester_type == "all":
+            hooks = self.hooks.get(None, {}).get("all", {})
+        elif tester_type == "each":
+            hooks = self.hooks.get(None, {}).get("each", {})
+            other_hooks = [builtin_hook_dict.get("each", {})]
             for context in self._context:
-                context_hooks = self.hooks.get(context, {}).get('each', {})
+                context_hooks = self.hooks.get(context, {}).get("each", {})
                 other_hooks.append(context_hooks)
             hooks = Hooks._merge_hook_dicts(hooks, *other_hooks)
         else:
-            hooks = self.hooks.get(tester_type, {}).get('all', {})
-            hooks = Hooks._merge_hook_dicts(hooks, builtin_hook_dict.get('all', {}))
-        return hooks.get('before', []), hooks.get('after', [])
+            hooks = self.hooks.get(tester_type, {}).get("all", {})
+            hooks = Hooks._merge_hook_dicts(hooks, builtin_hook_dict.get("all", {}))
+        return hooks.get("before", []), hooks.get("after", [])
 
     @contextmanager
-    def around(self, tester_type, builtin_selector=None, extra_args=None, extra_kwargs=None, cwd=None):
+    def around(
+        self,
+        tester_type,
+        builtin_selector=None,
+        extra_args=None,
+        extra_kwargs=None,
+        cwd=None,
+    ):
         """
         Context manager used to run hooks around any block of code. Hooks are selected based on the tester type (one
         of 'all', 'each', or the name of a tester), a builtin_selector (usually the test settings for a given test
@@ -233,7 +253,7 @@ class Hooks:
         and self.kwargs. If cwd is specified, each hook will be run as if the current working directory were cwd.
         """
         before, after = self._get_hooks(tester_type, builtin_selector)
-        if tester_type not in {'all', 'each'}:
+        if tester_type not in {"all", "each"}:
             self._context.append(tester_type)
         try:
             if any(before) or any(after):
@@ -249,7 +269,7 @@ class Hooks:
             else:
                 yield
         finally:
-            if tester_type not in {'all', 'each'}:
+            if tester_type not in {"all", "each"}:
                 self._context.pop()
 
     def format_errors(self):
@@ -258,8 +278,10 @@ class Hooks:
         """
         error_list = []
         for module_name, tb in self.load_errors:
-            error_list.append(f'module_name: {module_name}\ntraceback:\n{tb}')
-        for hook_name, args, kwargs, tb in self.run_errors:   
-            error_list.append(f'function_name: {hook_name}\n'
-                              f'args: {self.args}\nkwargs: {self.kwargs},\ntraceback:\n{tb}')
-        return '\n\n'.join(error_list)
+            error_list.append(f"module_name: {module_name}\ntraceback:\n{tb}")
+        for hook_name, args, kwargs, tb in self.run_errors:
+            error_list.append(
+                f"function_name: {hook_name}\n"
+                f"args: {self.args}\nkwargs: {self.kwargs},\ntraceback:\n{tb}"
+            )
+        return "\n\n".join(error_list)

@@ -20,7 +20,7 @@ def _in_autotest_env() -> bool:
     This function can be used to check whether the AUTOTESTENV environment
     variable has been set to 'true'.
     """
-    return os.environ.get('AUTOTESTENV') == 'true'
+    return os.environ.get("AUTOTESTENV") == "true"
 
 
 def connection(*args, **kwargs):
@@ -35,16 +35,18 @@ def connection(*args, **kwargs):
     will be used to call psycopg2.connect in order to connect to a database.
     """
     if _in_autotest_env():
-        kwargs = {**kwargs,
-                  'database': os.environ.get('PGDATABASE'),
-                  'password': os.environ.get('PGPASSWORD'),
-                  'user': os.environ.get('PGUSER'),
-                  'host': 'localhost'}
+        kwargs = {
+            **kwargs,
+            "database": os.environ.get("PGDATABASE"),
+            "password": os.environ.get("PGPASSWORD"),
+            "user": os.environ.get("PGUSER"),
+            "host": "localhost",
+        }
     return _unmockable_psycopg2_connect(*args, **kwargs)
 
 
 @contextmanager
-def patch_connection(target: str = 'psycopg2.connect') -> ContextManager:
+def patch_connection(target: str = "psycopg2.connect") -> ContextManager:
     """
     Context manager that patches any call to the function decribed in the
     <target> string with the connection function (in this module).
@@ -71,7 +73,7 @@ def patch_connection(target: str = 'psycopg2.connect') -> ContextManager:
         yield
 
 
-def patch_connection_class(target: str = 'psycopg2.connect') -> Callable:
+def patch_connection_class(target: str = "psycopg2.connect") -> Callable:
     """
     Class decorator that adds the patch_connection decorator to every method
     in the class.
@@ -83,18 +85,22 @@ def patch_connection_class(target: str = 'psycopg2.connect') -> Callable:
     >>>     def __init__(self):
     >>>         self.conn = psycopg2.connect() # calls __main__._connection instead
     """
+
     def _connect(cls):
         for name, method in inspect.getmembers(cls, inspect.isroutine):
             setattr(cls, name, patch_connection(target)(method))
         return cls
+
     return _connect
 
 
-def execute_psql_file(filename: str,
-                      *args: str,
-                      database: Optional[str] = None,
-                      password: Optional[str] = None,
-                      user: Optional[str] = None) -> subprocess.CompletedProcess:
+def execute_psql_file(
+    filename: str,
+    *args: str,
+    database: Optional[str] = None,
+    password: Optional[str] = None,
+    user: Optional[str] = None
+) -> subprocess.CompletedProcess:
     """
     Return a CompletedProcess object returned after calling:
 
@@ -131,12 +137,14 @@ def execute_psql_file(filename: str,
         env = os.environ
     else:
         db_vars = {
-            'PGUSER': user or os.environ.get('PGUSER'),
-            'PGPASSWORD': password or os.environ.get('PGPASSWORD'),
-            'PGDATABASE': database or os.environ.get('PGDATABASE')
+            "PGUSER": user or os.environ.get("PGUSER"),
+            "PGPASSWORD": password or os.environ.get("PGPASSWORD"),
+            "PGDATABASE": database or os.environ.get("PGDATABASE"),
         }
         env = {**os.environ, **db_vars}
-    return subprocess.run(['psql', '-f', filename] + list(args), env=env, capture_output=True)
+    return subprocess.run(
+        ["psql", "-f", filename] + list(args), env=env, capture_output=True
+    )
 
 
 class PSQLTest:
@@ -219,16 +227,18 @@ class PSQLTest:
             with cls.cursor() as curr:
                 curr.execute("SET SEARCH_PATH TO %s;", org_search_path)
                 if not persist:
-                    curr.execute("DROP SCHEMA IF EXISTS %s CASCADE;",
-                                 [AsIs(schema)])
-                    if schema.lower() == 'public':
+                    curr.execute("DROP SCHEMA IF EXISTS %s CASCADE;", [AsIs(schema)])
+                    if schema.lower() == "public":
                         curr.execute("CREATE SCHEMA IF NOT EXISTS public;")
 
     @classmethod
-    def copy_schema(cls, to_schema: str,
-                    tables: Optional[List[str]] = None,
-                    from_schema: str = 'public',
-                    overwrite: bool = True) -> None:
+    def copy_schema(
+        cls,
+        to_schema: str,
+        tables: Optional[List[str]] = None,
+        from_schema: str = "public",
+        overwrite: bool = True,
+    ) -> None:
         """
         Copies tables from <from_schema> to <to_schema>. <from_schema> is
         'public' by default
@@ -237,8 +247,7 @@ class PSQLTest:
         names in <tables> will be copied. If <overwrite> is True, tables of the
         same name in <to_schema> will be overwritten.
         """
-        strings = {'new': AsIs(to_schema),
-                   'old': AsIs(from_schema)}
+        strings = {"new": AsIs(to_schema), "old": AsIs(from_schema)}
         if tables is None:
             with cls.cursor() as curr:
                 curr.execute(cls.GET_TABLES_STR, [from_schema])
@@ -247,14 +256,16 @@ class PSQLTest:
             curr.execute("CREATE SCHEMA IF NOT EXISTS %s;", [AsIs(to_schema)])
             for table in tables:
                 if overwrite:
-                    curr.execute("DROP TABLE IF EXISTS %s.%s;",
-                                 [AsIs(to_schema), AsIs(table)])
-                strs = {**strings, 'table': AsIs(table)}
+                    curr.execute(
+                        "DROP TABLE IF EXISTS %s.%s;", [AsIs(to_schema), AsIs(table)]
+                    )
+                strs = {**strings, "table": AsIs(table)}
                 curr.execute(cls.SCHEMA_COPY_STR, strs)
 
     @classmethod
-    def execute_files(cls, files: List[str], *args,
-                      cursor: Optional[CursorType] = None, **kwargs) -> None:
+    def execute_files(
+        cls, files: List[str], *args, cursor: Optional[CursorType] = None, **kwargs
+    ) -> None:
         """
         Execute each file in <files> by passing the content of each to
         cursor.execute.
@@ -263,6 +274,7 @@ class PSQLTest:
         the <args> and <kwargs>) or the cursor object passed as the <cursor>
         argument is used if <cursor> is not None.
         """
+
         def _execute_files():
             for file in files:
                 with open(file) as f:

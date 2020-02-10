@@ -38,39 +38,41 @@ def write_conf_file(rq, conf_filename, user_names):
     try:
         redis_url = f'--url {config["redis", "url"]}'
     except KeyError:
-        redis_url = ''
+        redis_url = ""
 
-    with open(conf_filename, 'w') as f:
+    with open(conf_filename, "w") as f:
         f.write(HEADER)
         user_name_set = set(user_names)
         enough_users = True
         for worker_data in config["workers"]:
-            numprocs = worker_data['n']
-            queues = worker_data['queues']
+            numprocs = worker_data["n"]
+            queues = worker_data["queues"]
             if enough_users:
                 for _ in range(numprocs):
                     try:
                         worker_user = user_name_set.pop()
                     except KeyError:
-                        msg = f'[AUTOTEST] Not enough worker users to create all rq workers.'
-                        sys.stderr.write(f'{msg}\n')
+                        msg = f"[AUTOTEST] Not enough worker users to create all rq workers."
+                        sys.stderr.write(f"{msg}\n")
                         enough_users = False
                         break
-                    queue_str = ' '.join(queues)
-                    c = CONTENT.format(worker_user=worker_user,
-                                       rq=rq,
-                                       worker_args=redis_url,
-                                       queues=queue_str,
-                                       numprocs=1,
-                                       directory=THIS_DIR)
+                    queue_str = " ".join(queues)
+                    c = CONTENT.format(
+                        worker_user=worker_user,
+                        rq=rq,
+                        worker_args=redis_url,
+                        queues=queue_str,
+                        numprocs=1,
+                        directory=THIS_DIR,
+                    )
                     f.write(c)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('rq')
-    parser.add_argument('conf_filename')
-    parser.add_argument('user_names', nargs='+')
+    parser.add_argument("rq")
+    parser.add_argument("conf_filename")
+    parser.add_argument("user_names", nargs="+")
     args = parser.parse_args()
 
     write_conf_file(args.rq, args.conf_filename, args.user_names)

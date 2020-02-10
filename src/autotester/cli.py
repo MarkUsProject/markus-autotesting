@@ -11,15 +11,24 @@ import time
 import shutil
 from rq.exceptions import NoSuchJobError
 from functools import wraps
-from autotester.exceptions import JobArgumentError, InvalidQueueError, \
-    TestScriptFilesError, TestParameterError, MarkUsError
-from autotester.server.utils.redis_management import redis_connection, get_avg_pop_interval, test_script_directory
+from autotester.exceptions import (
+    JobArgumentError,
+    InvalidQueueError,
+    TestScriptFilesError,
+    TestParameterError,
+    MarkUsError,
+)
+from autotester.server.utils.redis_management import (
+    redis_connection,
+    get_avg_pop_interval,
+    test_script_directory,
+)
 from autotester.server.utils.file_management import ignore_missing_dir_error
 from autotester.config import config
 from autotester.server.utils import form_validation
 from autotester.server.server import run_test, update_test_specs
 
-SETTINGS_FILENAME = config['_workspace_contents', '_settings_file']
+SETTINGS_FILENAME = config["_workspace_contents", "_settings_file"]
 
 
 def _format_job_id(markus_address, run_id, **_kw):
@@ -27,7 +36,7 @@ def _format_job_id(markus_address, run_id, **_kw):
     Return a unique job id for each enqueued job
     based on the markus_address and the run_id
     """
-    return '{}_{}'.format(markus_address, run_id)
+    return "{}_{}".format(markus_address, run_id)
 
 
 def _check_args(func, args=None, kwargs=None):
@@ -40,7 +49,9 @@ def _check_args(func, args=None, kwargs=None):
     try:
         inspect.signature(func).bind(*args, **kwargs)
     except TypeError as e:
-        raise JobArgumentError('{}\nWith args: {}\nWith kwargs:{}'.format(e, args, tuple(kwargs)))
+        raise JobArgumentError(
+            "{}\nWith args: {}\nWith kwargs:{}".format(e, args, tuple(kwargs))
+        )
 
 
 def _get_queue(**kw):
@@ -48,10 +59,12 @@ def _get_queue(**kw):
     Return a queue. The returned queue is one whose condition function
     returns True when called with the arguments in **kw.
     """
-    for queue in config['queues']:
-        if form_validation.is_valid(kw, queue['schema']):
-            return rq.Queue(queue['name'], connection=redis_connection())
-    raise InvalidQueueError('cannot enqueue job: unable to determine correct queue type')
+    for queue in config["queues"]:
+        if form_validation.is_valid(kw, queue["schema"]):
+            return rq.Queue(queue["name"], connection=redis_connection())
+    raise InvalidQueueError(
+        "cannot enqueue job: unable to determine correct queue type"
+    )
 
 
 def _print_queue_info(queue):
@@ -67,7 +80,9 @@ def _print_queue_info(queue):
 
 def _check_test_script_files_exist(markus_address, assignment_id, **_kw):
     if test_script_directory(markus_address, assignment_id) is None:
-        raise TestScriptFilesError('cannot find test script files: please upload some before running tests')
+        raise TestScriptFilesError(
+            "cannot find test script files: please upload some before running tests"
+        )
 
 
 def _clean_on_error(func):
@@ -76,12 +91,13 @@ def _clean_on_error(func):
 
     Note: the files_path directory must be passed to the function as a keyword argument.
     """
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
         except Exception:
-            files_path = kwargs.get('files_path')
+            files_path = kwargs.get("files_path")
             if files_path:
                 shutil.rmtree(files_path, onerror=ignore_missing_dir_error)
             raise
@@ -99,15 +115,21 @@ def _get_job_timeout(test_specs, test_categories, multiplier=1.5):
     """
     total_timeout = 0
     test_data_count = 0
-    for settings in test_specs['testers']:
-        for test_data in settings['test_data']:
-            test_category = test_data.get('category', [])
-            if set(test_category) & set(test_categories):  # TODO: ensure test_categories is non-string collection type
-                total_timeout += test_data.get('timeout', 30)  # TODO: don't hardcode default timeout
+    for settings in test_specs["testers"]:
+        for test_data in settings["test_data"]:
+            test_category = test_data.get("category", [])
+            if set(test_category) & set(
+                test_categories
+            ):  # TODO: ensure test_categories is non-string collection type
+                total_timeout += test_data.get(
+                    "timeout", 30
+                )  # TODO: don't hardcode default timeout
                 test_data_count += 1
     if test_data_count:
         return int(total_timeout * multiplier)
-    raise TestParameterError(f'there are no tests of the given categories: {test_categories}')
+    raise TestParameterError(
+        f"there are no tests of the given categories: {test_categories}"
+    )
 
 
 @_clean_on_error
@@ -115,16 +137,18 @@ def enqueue_test(user_type, batch_id, **kw):
     """
     Enqueue a test run job with keyword arguments specified in **kw
     """
-    kw['enqueue_time'] = time.time()
+    kw["enqueue_time"] = time.time()
     queue = _get_queue(user_type=user_type, batch_id=batch_id, **kw)
     _check_args(run_test, kwargs=kw)
     _check_test_script_files_exist(**kw)
-    test_files_dir = test_script_directory(kw['markus_address'], kw['assignment_id'])
+    test_files_dir = test_script_directory(kw["markus_address"], kw["assignment_id"])
     with open(os.path.join(test_files_dir, SETTINGS_FILENAME)) as f:
         test_specs = json.load(f)
     _print_queue_info(queue)
-    timeout = _get_job_timeout(test_specs, kw['test_categories'])
-    queue.enqueue_call(run_test, kwargs=kw, job_id=_format_job_id(**kw), timeout=timeout)
+    timeout = _get_job_timeout(test_specs, kw["test_categories"])
+    queue.enqueue_call(
+        run_test, kwargs=kw, job_id=_format_job_id(**kw), timeout=timeout
+    )
 
 
 @_clean_on_error
@@ -133,7 +157,9 @@ def update_specs(test_specs, schema=None, **kw):
     Run test spec update function after validating the <schema> form data.
     """
     if schema is not None:
-        error = form_validation.validate_with_defaults(schema, test_specs, best_only=True)
+        error = form_validation.validate_with_defaults(
+            schema, test_specs, best_only=True
+        )
         if error:
             raise error
     update_test_specs(test_specs=test_specs, **kw)
@@ -152,7 +178,7 @@ def cancel_test(markus_address, run_ids, **_kw):
             except NoSuchJobError:
                 return
             if job.is_queued():
-                files_path = job.kwargs['files_path']
+                files_path = job.kwargs["files_path"]
                 if files_path:
                     shutil.rmtree(files_path, onerror=ignore_missing_dir_error)
                 job.cancel()
@@ -168,14 +194,14 @@ def get_schema(**_kw):
     """
     this_dir = os.path.dirname(os.path.abspath(__file__))
 
-    with open(os.path.join(this_dir, 'lib', 'tester_schema_skeleton.json')) as f:
+    with open(os.path.join(this_dir, "lib", "tester_schema_skeleton.json")) as f:
         schema_skeleton = json.load(f)
 
-    glob_pattern = os.path.join(this_dir, 'testers', '*', 'specs', '.installed')
+    glob_pattern = os.path.join(this_dir, "testers", "*", "specs", ".installed")
     for path in sorted(glob.glob(glob_pattern)):
         tester_type = os.path.basename(os.path.dirname(os.path.dirname(path)))
         specs_dir = os.path.dirname(path)
-        with open(os.path.join(specs_dir, 'settings_schema.json')) as f:
+        with open(os.path.join(specs_dir, "settings_schema.json")) as f:
             tester_schema = json.load(f)
 
         schema_skeleton["definitions"]["installed_testers"]["enum"].append(tester_type)
@@ -201,25 +227,27 @@ def parse_arg_file(arg_file):
 
     with open(arg_file) as f:
         kwargs = json.load(f)
-        if 'files_path' not in kwargs:
-            kwargs['files_path'] = os.path.dirname(os.path.realpath(f.name))
+        if "files_path" not in kwargs:
+            kwargs["files_path"] = os.path.dirname(os.path.realpath(f.name))
     os.remove(arg_file)
     return kwargs
 
 
-COMMANDS = {'run': enqueue_test,
-            'specs': update_specs,
-            'cancel': cancel_test,
-            'schema': get_schema}
+COMMANDS = {
+    "run": enqueue_test,
+    "specs": update_specs,
+    "cancel": cancel_test,
+    "schema": get_schema,
+}
 
 
 def cli():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('command', choices=COMMANDS)
+    parser.add_argument("command", choices=COMMANDS)
     group = parser.add_mutually_exclusive_group(required=False)
-    group.add_argument('-f', '--arg_file', type=parse_arg_file)
-    group.add_argument('-j', '--arg_json', type=json.loads)
+    group.add_argument("-f", "--arg_file", type=parse_arg_file)
+    group.add_argument("-j", "--arg_json", type=json.loads)
 
     args = parser.parse_args()
 
@@ -232,5 +260,5 @@ def cli():
         sys.exit(1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     cli()

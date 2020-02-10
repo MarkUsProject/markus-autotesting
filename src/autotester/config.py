@@ -7,14 +7,14 @@ import json
 from collections.abc import Mapping
 import yaml
 
-DEFAULT_ROOT = os.path.join(os.path.dirname(__file__), 'config_defaults')
-CONFIG_FILENAME = 'markus_autotester_config'
-CONFIG_ENV_VAR = 'MARKUS_AUTOTESTER_CONFIG'
+DEFAULT_ROOT = os.path.join(os.path.dirname(__file__), "config_defaults")
+CONFIG_FILENAME = "markus_autotester_config"
+CONFIG_ENV_VAR = "MARKUS_AUTOTESTER_CONFIG"
 
 
 def _find_local_config():
-    system_config = os.path.join(os.path.sep, 'etc', CONFIG_FILENAME)
-    user_config = os.path.join(os.environ.get('HOME'), f'.{CONFIG_FILENAME}')
+    system_config = os.path.join(os.path.sep, "etc", CONFIG_FILENAME)
+    user_config = os.path.join(os.environ.get("HOME"), f".{CONFIG_FILENAME}")
     env_config = os.environ.get(CONFIG_ENV_VAR)
 
     if env_config is not None:
@@ -28,17 +28,19 @@ def _find_local_config():
 class _Config:
 
     _local_config = _find_local_config()
-    _default_config = os.path.join(DEFAULT_ROOT, 'config_default.yml')
-    _env_var_config = os.path.join(DEFAULT_ROOT, 'config_env_vars.yml')
-    _replacement_pattern = re.compile(r'.*?\${(\w+)}.*?')
-    _not_found_key = '!VARIABLE NOT FOUND!'
+    _default_config = os.path.join(DEFAULT_ROOT, "config_default.yml")
+    _env_var_config = os.path.join(DEFAULT_ROOT, "config_env_vars.yml")
+    _replacement_pattern = re.compile(r".*?\${(\w+)}.*?")
+    _not_found_key = "!VARIABLE NOT FOUND!"
 
     def __init__(self):
         self._yaml_loader = yaml.SafeLoader
 
-        self._yaml_loader.add_implicit_resolver('!ENV', self._replacement_pattern, None)
-        env_constructor = self._constructor_factory(lambda g: os.environ.get(g, self._not_found_key))
-        self._yaml_loader.add_constructor('!ENV', env_constructor)
+        self._yaml_loader.add_implicit_resolver("!ENV", self._replacement_pattern, None)
+        env_constructor = self._constructor_factory(
+            lambda g: os.environ.get(g, self._not_found_key)
+        )
+        self._yaml_loader.add_constructor("!ENV", env_constructor)
 
         self._settings = self._load_from_yaml()
 
@@ -78,7 +80,7 @@ class _Config:
             if match:
                 full_value = value
                 for g in match:
-                    full_value = full_value.replace(f'${{{g}}}', replacement_func(g))
+                    full_value = full_value.replace(f"${{{g}}}", replacement_func(g))
                 return full_value
             return value
 

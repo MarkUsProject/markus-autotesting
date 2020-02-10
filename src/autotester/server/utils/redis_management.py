@@ -5,8 +5,8 @@ from functools import wraps
 from autotester.server.utils import file_management, string_management
 from autotester.config import config
 
-CURRENT_TEST_SCRIPT_HASH = config['redis', '_current_test_script_hash']
-POP_INTERVAL_HASH = config['redis', '_pop_interval_hash']
+CURRENT_TEST_SCRIPT_HASH = config["redis", "_current_test_script_hash"]
+POP_INTERVAL_HASH = config["redis", "_pop_interval_hash"]
 
 
 def redis_connection():
@@ -18,7 +18,7 @@ def redis_connection():
     conn = rq.get_current_connection()
     if conn:
         return conn
-    rq.use_connection(redis=redis.Redis.from_url(config['redis', 'url']))
+    rq.use_connection(redis=redis.Redis.from_url(config["redis", "url"]))
     return rq.get_current_connection()
 
 
@@ -28,7 +28,7 @@ def get_test_script_key(markus_address, assignment_id):
     storing the location of test scripts in Redis
     """
     clean_markus_address = file_management.clean_dir_name(markus_address)
-    return f'{clean_markus_address}_{assignment_id}'
+    return f"{clean_markus_address}_{assignment_id}"
 
 
 def test_script_directory(markus_address, assignment_id, set_to=None):
@@ -54,9 +54,9 @@ def update_pop_interval_stat(queue_name):
     """
     r = redis_connection()
     now = time.time()
-    r.hsetnx(POP_INTERVAL_HASH, '{}_start'.format(queue_name), now)
-    r.hset(POP_INTERVAL_HASH, '{}_last'.format(queue_name), now)
-    r.hincrby(POP_INTERVAL_HASH, '{}_count'.format(queue_name), 1)
+    r.hsetnx(POP_INTERVAL_HASH, "{}_start".format(queue_name), now)
+    r.hset(POP_INTERVAL_HASH, "{}_last".format(queue_name), now)
+    r.hincrby(POP_INTERVAL_HASH, "{}_count".format(queue_name), 1)
 
 
 def clear_pop_interval_stat(queue_name):
@@ -66,9 +66,9 @@ def clear_pop_interval_stat(queue_name):
     empty. For more details about the data updated see get_pop_interval_stat.
     """
     r = redis_connection()
-    r.hdel(POP_INTERVAL_HASH, '{}_start'.format(queue_name))
-    r.hset(POP_INTERVAL_HASH, '{}_last'.format(queue_name), 0)
-    r.hset(POP_INTERVAL_HASH, '{}_count'.format(queue_name), 0)
+    r.hdel(POP_INTERVAL_HASH, "{}_start".format(queue_name))
+    r.hset(POP_INTERVAL_HASH, "{}_last".format(queue_name), 0)
+    r.hset(POP_INTERVAL_HASH, "{}_count".format(queue_name), 0)
 
 
 def get_pop_interval_stat(queue_name):
@@ -82,9 +82,9 @@ def get_pop_interval_stat(queue_name):
           current burst of jobs.
     """
     r = redis_connection()
-    start = r.hget(POP_INTERVAL_HASH, '{}_start'.format(queue_name))
-    last = r.hget(POP_INTERVAL_HASH, '{}_count'.format(queue_name))
-    count = r.hget(POP_INTERVAL_HASH, '{}_count'.format(queue_name))
+    start = r.hget(POP_INTERVAL_HASH, "{}_start".format(queue_name))
+    last = r.hget(POP_INTERVAL_HASH, "{}_count".format(queue_name))
+    count = r.hget(POP_INTERVAL_HASH, "{}_count".format(queue_name))
     return start, last, count
 
 
@@ -119,10 +119,12 @@ def clean_after(func):
     Call the clean_up function after the
     decorated function func is finished
     """
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
         finally:
             clean_up()
+
     return wrapper

@@ -1,11 +1,11 @@
 import resource
 from autotester.config import config
 
-RLIMIT_ADJUSTMENTS = {'nproc': 10}
+RLIMIT_ADJUSTMENTS = {"nproc": 10}
 
 
 def rlimit_str2int(rlimit_string):
-    return getattr(resource, f'RLIMIT_{rlimit_string.upper()}')
+    return getattr(resource, f"RLIMIT_{rlimit_string.upper()}")
 
 
 def set_rlimits_before_test():
@@ -16,10 +16,12 @@ def set_rlimits_before_test():
     processes that are not available for test processes.  This ensures that cleanup
     processes will always be able to run.
     """
-    for limit_str in config['rlimit_settings'].keys() | RLIMIT_ADJUSTMENTS.keys():
+    for limit_str in config["rlimit_settings"].keys() | RLIMIT_ADJUSTMENTS.keys():
         limit = rlimit_str2int(limit_str)
 
-        values = config['rlimit_settings'].get(limit_str, (resource.RLIM_INFINITY, resource.RLIM_INFINITY))
+        values = config["rlimit_settings"].get(
+            limit_str, (resource.RLIM_INFINITY, resource.RLIM_INFINITY)
+        )
         curr_soft, curr_hard = resource.getrlimit(limit)
         soft, hard = (min(vals) for vals in zip((curr_soft, curr_hard), values))
         # reduce the hard limit so that cleanup scripts will have at least

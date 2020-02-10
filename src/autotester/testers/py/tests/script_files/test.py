@@ -1,4 +1,5 @@
 import unittest
+
 try:
     import submission
 except ImportError:
@@ -6,7 +7,6 @@ except ImportError:
 
 
 class Test1(unittest.TestCase):
-
     def test_passes(self):
         """This test should pass"""
         self.assertTrue(submission.return_true())
@@ -17,11 +17,10 @@ class Test1(unittest.TestCase):
 
 
 class Test2(unittest.TestCase):
-
     def test_fails_and_outputs_json(self):
         """This test should fail and print json"""
         self.fail(submission.return_json())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

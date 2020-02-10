@@ -3,7 +3,7 @@ import sql_helper as sh
 
 class TestDataset1(sh.PSQLTest):
 
-    data_file = 'data1.sql'
+    data_file = "data1.sql"
     query = """
             SELECT table1.word, table2.number
             FROM table1 JOIN table2
@@ -16,19 +16,19 @@ class TestDataset1(sh.PSQLTest):
         # this means you only have to create a connection once for the whole test class
         cls.create_connection()
         # create a new schema named 'solution_schema' and switch the search path to that schema.
-        with cls.schema('solution_schema'):
+        with cls.schema("solution_schema"):
             # execute your files in this schema, they will populate the schema with some tables
-            cls.execute_files(['schema.ddl', cls.data_file])
+            cls.execute_files(["schema.ddl", cls.data_file])
             # execute the solution query in this schema, get the results and store them in a class variable
             with cls.cursor() as curr:
                 curr.execute(cls.query)
                 cls.solution_data = curr.fetchall()
             # create a new schema named 'test_schema' and switch the search path to that schema.
-            with cls.schema('test_schema'):
+            with cls.schema("test_schema"):
                 # copy all the tables in solution_schema to test_schema
-                cls.copy_schema('test_schema', from_schema='solution_schema')
+                cls.copy_schema("test_schema", from_schema="solution_schema")
                 # execute the student's file, this will create a table called correct_no_order
-                cls.execute_files(['submission.sql'])
+                cls.execute_files(["submission.sql"])
                 # get the contents of the correct_no_order table and store it in a class variable
                 with cls.cursor() as curr:
                     curr.execute("SELECT * FROM correct_no_order;")
@@ -63,9 +63,9 @@ class TestDataset1(sh.PSQLTest):
     def test_schema_gone(self):
         """ Test that demonstrates that the test_schema schema created in the setup_class method has been deleted """
         with self.cursor() as curr:
-            curr.execute(self.GET_TABLES_STR, ['test_schema'])
+            curr.execute(self.GET_TABLES_STR, ["test_schema"])
             assert len(curr.fetchall()) == 0
 
 
 class TestDataset2(TestDataset1):
-    data_file = 'data2.sql'
+    data_file = "data2.sql"

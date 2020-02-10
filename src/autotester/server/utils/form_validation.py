@@ -34,11 +34,11 @@ def extend_with_default(validator_class=Draft7Validator):
         """ Set defaults within an "array" context """
         if not validator.is_type(instance, "array"):
             return
-        
+
         if not instance:
             default_val = None
             if "default" in properties:
-                default_val = properties['default']
+                default_val = properties["default"]
             elif properties.get("type") == "array":
                 default_val = []
             elif properties.get("type") == "object":
@@ -75,7 +75,7 @@ def extend_with_default(validator_class=Draft7Validator):
                 good_instance = new_instance
 
         if len(good_properties) == 0:
-            msg = f'{instance} is not valid under any of the given schemas'
+            msg = f"{instance} is not valid under any of the given schemas"
             yield ValidationError(msg, context=all_errors)
         elif len(good_properties) > 1:
             msg = f'{instance} is valid under each of {", ".join(repr(p) for p in good_properties)}'
@@ -84,14 +84,18 @@ def extend_with_default(validator_class=Draft7Validator):
             instance.clear()
             instance.update(good_instance)
 
-    custom_validators = {"properties": set_defaults,
-                         "items": set_array_defaults,
-                         "oneOf": set_oneOf_defaults}
+    custom_validators = {
+        "properties": set_defaults,
+        "items": set_array_defaults,
+        "oneOf": set_oneOf_defaults,
+    }
 
     return validators.extend(validator_class, custom_validators)
 
 
-def validate_with_defaults(schema, obj, validator_class=Draft7Validator, best_only=True):
+def validate_with_defaults(
+    schema, obj, validator_class=Draft7Validator, best_only=True
+):
     """
     Return an iterator that yields errors from validating obj on schema 
     after first filling in defaults on obj.

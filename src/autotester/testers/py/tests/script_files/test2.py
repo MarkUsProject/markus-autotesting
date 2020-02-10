@@ -1,4 +1,5 @@
 import pytest
+
 try:
     import submission
 except ImportError:

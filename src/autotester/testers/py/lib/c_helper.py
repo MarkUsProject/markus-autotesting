@@ -10,17 +10,17 @@ from typing import Optional, List
 import unittest
 
 
-DEFAULT_LTRACE_LOG_FILE = 'ltrace_log.txt'
-DEFAULT_GCC_FLAGS = ['-std=gnu99', '-Wall', '-g']
-DEFAULT_LTRACE_FLAGS = ['-f', '-n', '2', '-o', DEFAULT_LTRACE_LOG_FILE]
+DEFAULT_LTRACE_LOG_FILE = "ltrace_log.txt"
+DEFAULT_GCC_FLAGS = ["-std=gnu99", "-Wall", "-g"]
+DEFAULT_LTRACE_FLAGS = ["-f", "-n", "2", "-o", DEFAULT_LTRACE_LOG_FILE]
 
 # Note that the keys of the dictionary correspond to the "type" of call it was
 regex_dict = OrderedDict(
-    resumed='([0-9]+)\s*<\.\.\. (.*) (?:resumed>(.*)=\s)(-?[0-9]+)$',
-    unfinished='([0-9]+)\s*(.*)\((.*)<unfinished.*$',
-    no_return='([0-9]+)\s*(.*)\((.*)<no return.*$',
-    special='([0-9]+)\s*[-+]*\s+(.*)\s*\((.*)\)\s+[-+]*$',
-    function_call='([0-9]+)\s*(.*?)\((.*)\).*?=\s+(.+)$'
+    resumed="([0-9]+)\s*<\.\.\. (.*) (?:resumed>(.*)=\s)(-?[0-9]+)$",
+    unfinished="([0-9]+)\s*(.*)\((.*)<unfinished.*$",
+    no_return="([0-9]+)\s*(.*)\((.*)<no return.*$",
+    special="([0-9]+)\s*[-+]*\s+(.*)\s*\((.*)\)\s+[-+]*$",
+    function_call="([0-9]+)\s*(.*?)\((.*)\).*?=\s+(.+)$",
 )
 
 
@@ -31,12 +31,13 @@ class TestExecutable(unittest.TestCase):
     inputs (either command-line arguments or stdin), and checking outputs
     on stdout and stderr.
     """
+
     source_files = []
-    executable_name = ''
+    executable_name = ""
     make = False
     make_targets = []
-    make_args = ['--silent']
-    
+    make_args = ["--silent"]
+
     @classmethod
     def setUpClass(cls) -> None:
         """Compile the program, storing stdout and stderr of compilation.
@@ -47,10 +48,11 @@ class TestExecutable(unittest.TestCase):
         """
         if not cls.make and not cls.source_files:
             raise ValueError(
-                'ERROR: TestExecutable subclasses must specify source_files or set make=True.')
+                "ERROR: TestExecutable subclasses must specify source_files or set make=True."
+            )
 
-        cls.compile_out = ''
-        cls.compile_err = ''
+        cls.compile_out = ""
+        cls.compile_err = ""
 
         # Default executable name is based on the first source file.
         if not cls.make and not cls.executable_name:
@@ -63,31 +65,33 @@ class TestExecutable(unittest.TestCase):
         try:
             if cls.make:
                 # Tuple (stdoutdata, stderrdata) is returned
-                cls.compile_out, cls.compile_err, _ = _make(cls.make_targets, cls.make_args)
+                cls.compile_out, cls.compile_err, _ = _make(
+                    cls.make_targets, cls.make_args
+                )
             else:
-                cls.compile_out, cls.compile_err, _ = _compile(cls.source_files, cls.executable_name)
+                cls.compile_out, cls.compile_err, _ = _compile(
+                    cls.source_files, cls.executable_name
+                )
         except subprocess.CalledProcessError:
             cls.compiled = False
         else:
             cls.compiled = True
 
-
     def setUp(self) -> None:
         """If the compilation was not successful, automatically fail every test.
         """
         if not self.compiled:
-            self.fail('Test did not run due to a compilation error.')
+            self.fail("Test did not run due to a compilation error.")
 
     def _check_compiler_warnings(self) -> None:
         """Assert that compilation occurred without errors or warnings.
         """
-        self.assertEqual(self.compile_out, '')
-        self.assertEqual(self.compile_err, '')
+        self.assertEqual(self.compile_out, "")
+        self.assertEqual(self.compile_err, "")
 
     def _run_exec(self, args: Optional[List[str]] = None, **kwargs) -> None:
         """Run this test class' executable with the given arguments and options."""
-        return _exec([os.path.join('.', self.executable_name)] + (args or []),
-                     **kwargs)
+        return _exec([os.path.join(".", self.executable_name)] + (args or []), **kwargs)
 
 
 def simple_run(args: List[str], **kwargs):
@@ -97,13 +101,26 @@ def simple_run(args: List[str], **kwargs):
     Returns a function which takes an object on which to call run_exec (hence this object must
     be a subclass of TestExecutable).
     """
-    def _t(self: 'TestExecutable') -> None:
+
+    def _t(self: "TestExecutable") -> None:
         self._run_exec(args=args, **kwargs)
 
     return _t
 
 
-def simple_test(args: List[str], expected_stdout='', *, expected_stderr='', expected_status=0, input_=None, timeout=2, check=True, rstrip=False, doc='', stderr_relax=False):
+def simple_test(
+    args: List[str],
+    expected_stdout="",
+    *,
+    expected_stderr="",
+    expected_status=0,
+    input_=None,
+    timeout=2,
+    check=True,
+    rstrip=False,
+    doc="",
+    stderr_relax=False
+):
     """Create a unittest test for fixed command-line arguments, expected stdout and stderr, and exit status.
 
     If rstrip is True, ignore trailing whitespace when doing text comparison.
@@ -116,8 +133,11 @@ def simple_test(args: List[str], expected_stdout='', *, expected_stderr='', expe
     (as a substring check) in addition to in stderr, passing the test if
     one of these succeeds.
     """
-    def _t(self: 'TestExecutable') -> None:
-        stdout, stderr, returncode = self._run_exec(args=args, input_=input_, timeout=timeout, check=check)
+
+    def _t(self: "TestExecutable") -> None:
+        stdout, stderr, returncode = self._run_exec(
+            args=args, input_=input_, timeout=timeout, check=check
+        )
 
         nonlocal expected_stderr
         nonlocal expected_stdout
@@ -148,7 +168,18 @@ def simple_test(args: List[str], expected_stdout='', *, expected_stderr='', expe
     _t.__doc__ = doc
     return _t
 
-def substr_test(args: List[str], expected_stdout='', *, expected_stderr='', expected_status=0, input_=None, timeout=2, check=True, doc=''):
+
+def substr_test(
+    args: List[str],
+    expected_stdout="",
+    *,
+    expected_stderr="",
+    expected_status=0,
+    input_=None,
+    timeout=2,
+    check=True,
+    doc=""
+):
     """Create a unittest test for fixed command-line arguments, expected stdout and stderr, and exit status.
 
     This test is more lenient that simple_test because it looks for expected
@@ -159,8 +190,11 @@ def substr_test(args: List[str], expected_stdout='', *, expected_stderr='', expe
 
     doc specifies the docstring of the test function.
     """
-    def _t(self: 'TestExecutable') -> None:
-        stdout, stderr, returncode = self._run_exec(args=args, input_=input_, timeout=timeout, check=check)
+
+    def _t(self: "TestExecutable") -> None:
+        stdout, stderr, returncode = self._run_exec(
+            args=args, input_=input_, timeout=timeout, check=check
+        )
 
         nonlocal expected_stderr
         nonlocal expected_stdout
@@ -177,6 +211,7 @@ def substr_test(args: List[str], expected_stdout='', *, expected_stderr='', expe
     _t.__doc__ = doc
     return _t
 
+
 class TestTrace(TestExecutable):
     """Test class to support checks with ltrace.
 
@@ -188,19 +223,28 @@ class TestTrace(TestExecutable):
     a Trace object, since it helps parse any additional arguments to ltrace
     args is a list of string arguments
     """
-    call_types = [] # The only call types to watch out for (see ltrace man page)
+
+    call_types = []  # The only call types to watch out for (see ltrace man page)
 
     @classmethod
-    def _check_trace(cls, args: Optional[List[str]] = None, ltrace_flags=None, **kwargs):
+    def _check_trace(
+        cls, args: Optional[List[str]] = None, ltrace_flags=None, **kwargs
+    ):
         if ltrace_flags is None:
             ltrace_flags = DEFAULT_LTRACE_FLAGS
         else:
             ltrace_flags = DEFAULT_LTRACE_FLAGS + ltrace_flags
         if cls.call_types:
-            ltrace_flags = ltrace_flags + ['-e', '+'.join(['__libc_start_main'] + cls.call_types)]
+            ltrace_flags = ltrace_flags + [
+                "-e",
+                "+".join(["__libc_start_main"] + cls.call_types),
+            ]
 
-        return Trace([os.path.join('.', cls.executable_name)] + (args or []),
-                     ltrace_flags, **kwargs)
+        return Trace(
+            [os.path.join(".", cls.executable_name)] + (args or []),
+            ltrace_flags,
+            **kwargs
+        )
 
 
 class Trace:
@@ -230,16 +274,18 @@ class Trace:
     this can be confirmed examining the regex
     """
 
-    def __init__(self, command: List[str], ltrace_flags: Optional[List[str]] = None, **kwargs):
+    def __init__(
+        self, command: List[str], ltrace_flags: Optional[List[str]] = None, **kwargs
+    ):
         ltrace_flags = ltrace_flags or []
         try:
-            _exec(['ltrace'] + ltrace_flags + command, **kwargs)
+            _exec(["ltrace"] + ltrace_flags + command, **kwargs)
         except subprocess.TimeoutExpired:  # allow for partial results to be reported
             pass
 
-        with open(DEFAULT_LTRACE_LOG_FILE, 'rb') as f:
+        with open(DEFAULT_LTRACE_LOG_FILE, "rb") as f:
             f_bytes = f.read()
-            self.raw = f_bytes.decode(errors='ignore')
+            self.raw = f_bytes.decode(errors="ignore")
 
         self.parent_first_process = None
         self.lines = []
@@ -247,7 +293,7 @@ class Trace:
         self.first_process = None
         self.split_lines = self.raw.splitlines()
         if len(self.split_lines) > 1:
-            parsed_line = parse_arbitrary(self.split_lines[0], r'([0-9]+)\s*.')
+            parsed_line = parse_arbitrary(self.split_lines[0], r"([0-9]+)\s*.")
             if parsed_line:
                 self.first_process = parsed_line[0]
             else:
@@ -267,10 +313,10 @@ class Trace:
             return None
 
         for calls in self.process_log[pid]:
-            if 'exited' in calls[0]:
+            if "exited" in calls[0]:
                 return int(calls[1].split()[-1])
 
-    def lines_for_pid(self, pid, match=''):
+    def lines_for_pid(self, pid, match=""):
         """Return the lines in this trace for the given pid.
 
         If match is not-empty, only return the lines whose function names
@@ -284,8 +330,7 @@ class Trace:
         if not match:
             return self.process_log[pid]
 
-        return [call for call in self.process_log[pid]
-                if call[0] == match]
+        return [call for call in self.process_log[pid] if call[0] == match]
 
 
 def run_through_regexes(regexes, trace_line):
@@ -305,21 +350,21 @@ def run_through_regexes(regexes, trace_line):
             # print("this is the len of final result " + str(len(final_result)))
             # print(final_result)
             # clean the line before putting it in
-            sep = '->'
+            sep = "->"
             rest = final_result[1].split(sep, 1)
-            if len(rest) > 1: #in case there were multiple
+            if len(rest) > 1:  # in case there were multiple
                 final_result[1] = rest[1]
             # print(final_result)
         else:
             raise ValueError("groups mismatch arity")
 
         while len(final_result) < 4:
-            final_result+=(None,)
+            final_result += (None,)
 
-        final_result += (key,) # append the type of the entry to the end
-        return final_result # stops as soon as a matching regex is encountered
+        final_result += (key,)  # append the type of the entry to the end
+        return final_result  # stops as soon as a matching regex is encountered
     # print("line did not have any mathces " + trace_line)
-    return ('','','','') # did not match with any of the regexes
+    return ("", "", "", "")  # did not match with any of the regexes
 
 
 def parse_arbitrary(trace_line, regex):
@@ -346,16 +391,19 @@ class TestGenerator:
 
     Note: silent failures can happen (e.g., if the executable is not found).
     """
+
     dict_of_tests = defaultdict(list)
     # TODO add support for command-line arguments
 
-    def __init__(self,
-                 input_dir=None,
-                 executable_path=None,
-                 out_dir=None,
-                 input_extension='txt',
-                 output_extension='stdout',
-                 error_extension='stderr'):
+    def __init__(
+        self,
+        input_dir=None,
+        executable_path=None,
+        out_dir=None,
+        input_extension="txt",
+        output_extension="stdout",
+        error_extension="stderr",
+    ):
         """
         `input_dir` specifies where the input files are found
         The extensions specify a pattern to look for in target files
@@ -371,30 +419,36 @@ class TestGenerator:
         self.output_extension = output_extension
         self.error_extension = error_extension
 
-    def build_outputs(self, args=''):
+    def build_outputs(self, args=""):
         """Generate all output files.
 
         `arg`s is optionally a string containing the command-line arguments given to the executable.
         """
-        print(os.path.join(self.input_dir, '*.' + self.input_extension))
-        for file in glob.glob(os.path.join(self.input_dir, '*.' + self.input_extension)):
+        print(os.path.join(self.input_dir, "*." + self.input_extension))
+        for file in glob.glob(
+            os.path.join(self.input_dir, "*." + self.input_extension)
+        ):
             print(file)
             name = os.path.splitext(os.path.basename(file))[0]
-            stdout_file = os.path.join(self.out_dir, name + '.' + self.output_extension)
-            stderr_file = os.path.join(self.out_dir, name + '.' + self.error_extension)
-            cmd = "{} {} < {} > {} 2> {}".format(self.executable_path, args, file, stdout_file, stderr_file)
-            print('Running:', cmd)
+            stdout_file = os.path.join(self.out_dir, name + "." + self.output_extension)
+            stderr_file = os.path.join(self.out_dir, name + "." + self.error_extension)
+            cmd = "{} {} < {} > {} 2> {}".format(
+                self.executable_path, args, file, stdout_file, stderr_file
+            )
+            print("Running:", cmd)
             try:
                 _exec_shell([cmd])
-            except subprocess.TimeoutExpired:     # TODO add handling for TimeoutExpired (error log file for example?)
+            except subprocess.TimeoutExpired:  # TODO add handling for TimeoutExpired (error log file for example?)
                 print("failed on {}".format(file))
 
     def clean(self):
         """Remove generated test files."""
-        for file in glob.glob(os.path.join(self.input_dir, '*.' + self.input_extension)):
+        for file in glob.glob(
+            os.path.join(self.input_dir, "*." + self.input_extension)
+        ):
             name = os.path.splitext(os.path.basename(file))[0]
-            stdout_file = os.path.join(self.out_dir, name + '.' + self.output_extension)
-            stderr_file = os.path.join(self.out_dir, name + '.' + self.error_extension)
+            stdout_file = os.path.join(self.out_dir, name + "." + self.output_extension)
+            stderr_file = os.path.join(self.out_dir, name + "." + self.error_extension)
             os.remove(stdout_file)
             os.remove(stderr_file)
 
@@ -404,32 +458,37 @@ class TestGenerator:
         This must be called *after* build_outputs has been called.
         """
         args = args or []
-        for file in glob.glob(os.path.join(self.input_dir, '*.' + self.input_extension)):
+        for file in glob.glob(
+            os.path.join(self.input_dir, "*." + self.input_extension)
+        ):
             name = os.path.splitext(os.path.basename(file))[0]
-            stdout_file = os.path.join(self.out_dir, name + '.' + self.output_extension)
-            stderr_file = os.path.join(self.out_dir, name + '.' + self.error_extension)
+            stdout_file = os.path.join(self.out_dir, name + "." + self.output_extension)
+            stderr_file = os.path.join(self.out_dir, name + "." + self.error_extension)
             with open(file) as in_, open(stdout_file) as out, open(stderr_file) as err:
                 test_in = in_.read()
                 test_out = out.read()
                 test_err = err.read()
 
-            setattr(test_klass, 'test_' + name,
-                    simple_test(args, test_out, test_err, test_in))
+            setattr(
+                test_klass,
+                "test_" + name,
+                simple_test(args, test_out, test_err, test_in),
+            )
 
 
 def _compile(files, exec_name=None, gcc_flags=DEFAULT_GCC_FLAGS, **kwargs):
     """Run gcc with the given flags on the given files."""
     if isinstance(files, str):
         files = [files]
-    args = ['gcc'] + gcc_flags
+    args = ["gcc"] + gcc_flags
     if exec_name:
-        args += ['-o', exec_name]
+        args += ["-o", exec_name]
     return _exec(args + files, **kwargs)
 
 
-def _make(targets=None, make_args=['--silent'], **kwargs):
+def _make(targets=None, make_args=["--silent"], **kwargs):
     """Run make on the given targets."""
-    return _exec(['make'] + make_args + (targets or []), timeout=60, **kwargs)
+    return _exec(["make"] + make_args + (targets or []), timeout=60, **kwargs)
 
 
 def _exec(args, *, input_=None, timeout=10, check=True, shell=False):
@@ -449,7 +508,8 @@ def _exec(args, *, input_=None, timeout=10, check=True, shell=False):
         stderr=subprocess.PIPE,
         encoding=locale.getpreferredencoding(False),
         preexec_fn=lambda: os.setsid(),
-        shell=shell)
+        shell=shell,
+    )
 
     try:
         stdout, stderr = proc.communicate(timeout=timeout, input=input_)
@@ -490,7 +550,7 @@ def ongoing_process(args, check_killed=True):
         raise proc.exception
 
     if check_killed:
-        assert proc.returncode == -9, 'server exited abnormally'
+        assert proc.returncode == -9, "server exited abnormally"
 
 
 def _exec_shell(args, *, input_=None, timeout=1, check=True):
@@ -510,7 +570,8 @@ def _exec_shell(args, *, input_=None, timeout=1, check=True):
         stderr=subprocess.PIPE,
         encoding=locale.getpreferredencoding(False),
         preexec_fn=lambda: os.setsid(),
-        shell=True)
+        shell=True,
+    )
     try:
         return proc.communicate(timeout=timeout, input=input_)
     except subprocess.TimeoutExpired as e:

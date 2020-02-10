@@ -7,18 +7,17 @@ from testers.markus_tester import MarkusTester, MarkusTest, MarkusTestError
 
 
 class MarkusHaskellTest(MarkusTest):
-
     def __init__(self, tester, test_file, result, feedback_open=None):
-        self._test_name = result.get('name')
+        self._test_name = result.get("name")
         self._file_name = test_file
-        self.status = result['status']
-        self.message = result['description']
+        self.status = result["status"]
+        self.message = result["description"]
         super().__init__(tester, feedback_open)
 
     @property
     def test_name(self):
         if self._test_name:
-            return '.'.join([self._file_name, self._test_name])
+            return ".".join([self._file_name, self._test_name])
         return self._file_name
 
     @MarkusTest.run_decorator
@@ -34,10 +33,7 @@ class MarkusHaskellTest(MarkusTest):
 class MarkusHaskellTester(MarkusTester):
     # column indexes of relevant data from tasty-stats csv
     # reference: http://hackage.haskell.org/package/tasty-stats
-    TASTYSTATS = {'name': 1,
-                  'time': 2,
-                  'result': 3,
-                  'description': -1}
+    TASTYSTATS = {"name": 1, "time": 2, "result": 3, "description": -1}
 
     def __init__(self, specs, test_class=MarkusHaskellTest):
         super().__init__(specs, test_class)
@@ -48,10 +44,12 @@ class MarkusHaskellTester(MarkusTester):
         """
         module_flag = f"--modules={os.path.basename(test_file)}"
         stats_flag = "--ingredient=Test.Tasty.Stats.consoleStatsReporter"
-        flags = [module_flag,
-                 stats_flag,
-                 f"--timeout={self.specs['test_data', 'test_timeout']}s",
-                 f"--quickcheck-tests={self.specs['test_data', 'test_cases']}"]
+        flags = [
+            module_flag,
+            stats_flag,
+            f"--timeout={self.specs['test_data', 'test_timeout']}s",
+            f"--quickcheck-tests={self.specs['test_data', 'test_cases']}",
+        ]
         return flags
 
     def _parse_test_results(self, reader):
@@ -62,10 +60,12 @@ class MarkusHaskellTester(MarkusTester):
         """
         test_results = []
         for line in reader:
-            result = {'status': line[self.TASTYSTATS['result']],
-                      'name': line[self.TASTYSTATS['name']],
-                      'description': line[self.TASTYSTATS['description']],
-                      'time': line[self.TASTYSTATS['time']]}
+            result = {
+                "status": line[self.TASTYSTATS["result"]],
+                "name": line[self.TASTYSTATS["name"]],
+                "description": line[self.TASTYSTATS["description"]],
+                "time": line[self.TASTYSTATS["time"]],
+            }
             test_results.append(result)
         return test_results
 
@@ -78,17 +78,23 @@ class MarkusHaskellTester(MarkusTester):
         """
         results = {}
         this_dir = os.getcwd()
-        for test_file in self.specs['test_data', 'script_files']:
+        for test_file in self.specs["test_data", "script_files"]:
             with tempfile.NamedTemporaryFile(dir=this_dir) as f:
-                cmd = ['tasty-discover', '.', '_', f.name] + self._test_run_flags(test_file)
-                subprocess.run(cmd, stdout=subprocess.DEVNULL, universal_newlines=True, check=True)
+                cmd = ["tasty-discover", ".", "_", f.name] + self._test_run_flags(
+                    test_file
+                )
+                subprocess.run(
+                    cmd, stdout=subprocess.DEVNULL, universal_newlines=True, check=True
+                )
                 with tempfile.NamedTemporaryFile(mode="w+", dir=this_dir) as sf:
-                    cmd = ['runghc', f.name, f"--stats={sf.name}"]
-                    subprocess.run(cmd,
-                                   stdout=subprocess.DEVNULL,
-                                   stderr=subprocess.PIPE,
-                                   universal_newlines=True,
-                                   check=True)
+                    cmd = ["runghc", f.name, f"--stats={sf.name}"]
+                    subprocess.run(
+                        cmd,
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.PIPE,
+                        universal_newlines=True,
+                        check=True,
+                    )
                     results[test_file] = self._parse_test_results(csv.reader(sf))
         return results
 

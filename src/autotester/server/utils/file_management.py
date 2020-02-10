@@ -7,12 +7,12 @@ from autotester.server.utils import redis_management
 from autotester.config import config
 from contextlib import contextmanager
 
-FILES_DIRNAME = config['_workspace_contents', '_files_dir']
+FILES_DIRNAME = config["_workspace_contents", "_files_dir"]
 
 
 def clean_dir_name(name):
     """ Return name modified so that it can be used as a unix style directory name """
-    return name.replace('/', '_')
+    return name.replace("/", "_")
 
 
 def random_tmpfile_name():
@@ -29,10 +29,10 @@ def recursive_iglob(root_dir):
     """
     if os.path.isdir(root_dir):
         for root, dirnames, filenames in os.walk(root_dir):
-            yield from (('d', os.path.join(root, d)) for d in dirnames)
-            yield from (('f', os.path.join(root, f)) for f in filenames)
+            yield from (("d", os.path.join(root, d)) for d in dirnames)
+            yield from (("f", os.path.join(root, f)) for f in filenames)
     else:
-        raise ValueError('directory does not exist: {}'.format(root_dir))
+        raise ValueError("directory does not exist: {}".format(root_dir))
 
 
 def copy_tree(src, dst, exclude=tuple()):
@@ -48,7 +48,7 @@ def copy_tree(src, dst, exclude=tuple()):
         if src_path in exclude:
             continue
         target = os.path.join(dst, src_path)
-        if fd == 'd':
+        if fd == "d":
             os.makedirs(target, exist_ok=True)
         else:
             os.makedirs(os.path.dirname(target), exist_ok=True)
@@ -111,7 +111,9 @@ def copy_test_script_files(markus_address, assignment_id, tests_path):
     directory if they exist. tests_path may already exist and contain
     files and subdirectories.
     """
-    test_script_outer_dir = redis_management.test_script_directory(markus_address, assignment_id)
+    test_script_outer_dir = redis_management.test_script_directory(
+        markus_address, assignment_id
+    )
     test_script_dir = os.path.join(test_script_outer_dir, FILES_DIRNAME)
     if os.path.isdir(test_script_dir):
         with fd_open(test_script_dir) as fd:
@@ -134,14 +136,14 @@ def setup_files(files_path, tests_path, markus_address, assignment_id):
     os.chmod(tests_path, 0o1770)
     student_files = move_tree(files_path, tests_path)
     for fd, file_or_dir in student_files:
-        if fd == 'd':
+        if fd == "d":
             os.chmod(file_or_dir, 0o777)
         else:
             os.chmod(file_or_dir, 0o666)
     script_files = copy_test_script_files(markus_address, assignment_id, tests_path)
     for fd, file_or_dir in script_files:
         permissions = 0o755
-        if fd == 'f':
+        if fd == "f":
             permissions -= 0o111
         os.chmod(file_or_dir, permissions)
     return student_files, script_files

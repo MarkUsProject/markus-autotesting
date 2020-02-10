@@ -9,4 +9,14 @@ It represents the test case where:
 
 import json
 
-print(json.dumps({'name': 'pass_test', 'output': 'NA', 'marks_earned': 2, 'marks_total': 2, 'status': 'pass'}))
+print(
+    json.dumps(
+        {
+            "name": "pass_test",
+            "output": "NA",
+            "marks_earned": 2,
+            "marks_total": 2,
+            "status": "pass",
+        }
+    )
+)
