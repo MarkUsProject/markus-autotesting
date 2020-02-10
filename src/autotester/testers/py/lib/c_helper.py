@@ -473,7 +473,12 @@ class TestGenerator:
             setattr(
                 test_klass,
                 "test_" + name,
-                simple_test(args, expected_stdout=test_out, expected_stderr=test_err, input_=test_in),
+                simple_test(
+                    args,
+                    expected_stdout=test_out,
+                    expected_stderr=test_err,
+                    input_=test_in,
+                ),
             )
 
 
