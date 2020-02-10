@@ -282,6 +282,6 @@ class Hooks:
         for hook_name, args, kwargs, tb in self.run_errors:
             error_list.append(
                 f"function_name: {hook_name}\n"
-                f"args: {self.args}\nkwargs: {self.kwargs},\ntraceback:\n{tb}"
+                f"args: {args}\nkwargs: {kwargs},\ntraceback:\n{tb}"
             )
         return "\n\n".join(error_list)
