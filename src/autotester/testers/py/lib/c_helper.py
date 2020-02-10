@@ -16,11 +16,11 @@ DEFAULT_LTRACE_FLAGS = ["-f", "-n", "2", "-o", DEFAULT_LTRACE_LOG_FILE]
 
 # Note that the keys of the dictionary correspond to the "type" of call it was
 regex_dict = OrderedDict(
-    resumed="([0-9]+)\s*<\.\.\. (.*) (?:resumed>(.*)=\s)(-?[0-9]+)$",
-    unfinished="([0-9]+)\s*(.*)\((.*)<unfinished.*$",
-    no_return="([0-9]+)\s*(.*)\((.*)<no return.*$",
-    special="([0-9]+)\s*[-+]*\s+(.*)\s*\((.*)\)\s+[-+]*$",
-    function_call="([0-9]+)\s*(.*?)\((.*)\).*?=\s+(.+)$",
+    resumed=r"([0-9]+)\s*<\.\.\. (.*) (?:resumed>(.*)=\s)(-?[0-9]+)$",
+    unfinished=r"([0-9]+)\s*(.*)\((.*)<unfinished.*$",
+    no_return=r"([0-9]+)\s*(.*)\((.*)<no return.*$",
+    special=r"([0-9]+)\s*[-+]*\s+(.*)\s*\((.*)\)\s+[-+]*$",
+    function_call=r"([0-9]+)\s*(.*?)\((.*)\).*?=\s+(.+)$",
 )
 
 
@@ -89,7 +89,7 @@ class TestExecutable(unittest.TestCase):
         self.assertEqual(self.compile_out, "")
         self.assertEqual(self.compile_err, "")
 
-    def _run_exec(self, args: Optional[List[str]] = None, **kwargs) -> None:
+    def _run_exec(self, args: Optional[List[str]] = None, **kwargs):
         """Run this test class' executable with the given arguments and options."""
         return _exec([os.path.join(".", self.executable_name)] + (args or []), **kwargs)
 
@@ -257,9 +257,10 @@ class Trace:
     Note that we can also view the dictionary as being constructed from these arity 5-tuples, namely:
     (PID, func_name, args, ret_val, type)
     Note that args is "junk" and needs some postprocessing (for example, splitting on ,) This was done because
-    parsing is a better approach when dealing with variable-number capture groups, as there will be with arguments to a function.
-    Note that for those that do not have certain fields, like ret_val for unfinished, we pad with None. However, the last
-    element of the tuple (tuple[-1]) is always the "type" of the call, as determined by the regex that classified it.
+    parsing is a better approach when dealing with variable-number capture groups, as there will be with arguments to a
+    function. Note that for those that do not have certain fields, like ret_val for unfinished, we pad with None.
+    However, the last element of the tuple (tuple[-1]) is always the "type" of the call, as determined by the regex that
+    classified it.
     Note 2: the "special" regex is a special case, corresponding to things like:
     --- SIGPIPE (Broken pipe) ---
     and
@@ -364,7 +365,7 @@ def run_through_regexes(regexes, trace_line):
         final_result += (key,)  # append the type of the entry to the end
         return final_result  # stops as soon as a matching regex is encountered
     # print("line did not have any mathces " + trace_line)
-    return ("", "", "", "")  # did not match with any of the regexes
+    return "", "", "", ""  # did not match with any of the regexes
 
 
 def parse_arbitrary(trace_line, regex):
@@ -472,12 +473,14 @@ class TestGenerator:
             setattr(
                 test_klass,
                 "test_" + name,
-                simple_test(args, test_out, test_err, test_in),
+                simple_test(args, expected_stdout=test_out, expected_stderr=test_err, input_=test_in),
             )
 
 
-def _compile(files, exec_name=None, gcc_flags=DEFAULT_GCC_FLAGS, **kwargs):
+def _compile(files, exec_name=None, gcc_flags=None, **kwargs):
     """Run gcc with the given flags on the given files."""
+    if gcc_flags is None:
+        gcc_flags = DEFAULT_GCC_FLAGS
     if isinstance(files, str):
         files = [files]
     args = ["gcc"] + gcc_flags
@@ -486,12 +489,14 @@ def _compile(files, exec_name=None, gcc_flags=DEFAULT_GCC_FLAGS, **kwargs):
     return _exec(args + files, **kwargs)
 
 
-def _make(targets=None, make_args=["--silent"], **kwargs):
+def _make(targets=None, make_args=None, **kwargs):
     """Run make on the given targets."""
+    if make_args is None:
+        make_args = ["--silent"]
     return _exec(["make"] + make_args + (targets or []), timeout=60, **kwargs)
 
 
-def _exec(args, *, input_=None, timeout=10, check=True, shell=False):
+def _exec(args, *, input_=None, timeout=10, shell=False):
     """Wrapper function that calls exec on the given args in a new subprocess.
 
     Return a triple (stdout, stderr, exit status) from the subprocess.
@@ -553,7 +558,7 @@ def ongoing_process(args, check_killed=True):
         assert proc.returncode == -9, "server exited abnormally"
 
 
-def _exec_shell(args, *, input_=None, timeout=1, check=True):
+def _exec_shell(args, *, input_=None, timeout=1):
     """Wrapper function that calls exec on the given args in a new subprocess with a shell.
 
     Returns a communicate method (like a pipe) to the exec process.

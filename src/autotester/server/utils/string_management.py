@@ -30,7 +30,7 @@ def loads_partial_json(json_string, expected_type=None):
             obj, ind = decoder.raw_decode(json_string[i:])
             if expected_type is None or isinstance(obj, expected_type):
                 results.append(obj)
-            elif json_string[i : i + ind].strip():
+            elif json_string[i:i + ind].strip():
                 malformed = True
             i += ind
         except json.JSONDecodeError:
