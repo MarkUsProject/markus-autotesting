@@ -353,24 +353,24 @@ def setup_files(files_path, tests_path, markus_address, assignment_id):
     then make it the current working directory.
     The following permissions are also set:
         - tests_path directory:     rwxrwx--T
-        - test subdirectories:      rwxr-xr-x
-        - test files:               rw-r--r--
-        - student subdirectories:   rwxrwxrwx
-        - student files:            rw-rw-rw-
+        - test subdirectories:      rwxrwx--T
+        - test files:               rw-r-----
+        - student subdirectories:   rwxrwx---
+        - student files:            rw-rw----
     """
     os.chmod(tests_path, 0o1770)
     student_files = move_tree(files_path, tests_path)
     for fd, file_or_dir in student_files:
         if fd == 'd':
-            os.chmod(file_or_dir, 0o777)
+            os.chmod(file_or_dir, 0o770)
         else:
-            os.chmod(file_or_dir, 0o666)
+            os.chmod(file_or_dir, 0o660)
     script_files = copy_test_script_files(markus_address, assignment_id, tests_path)
     for fd, file_or_dir in script_files:
         if fd == 'd':
-            os.chmod(file_or_dir, 0o1777)
+            os.chmod(file_or_dir, 0o1770)
         else:
-            os.chmod(file_or_dir, 0o644)
+            os.chmod(file_or_dir, 0o640)
     return student_files, script_files
 
 def test_run_command(test_username=None):
