@@ -136,13 +136,13 @@ def setup_files(files_path, tests_path, markus_address, assignment_id):
     os.chmod(tests_path, 0o1770)
     student_files = move_tree(files_path, tests_path)
     for fd, file_or_dir in student_files:
-        if fd == 'd':
+        if fd == "d":
             os.chmod(file_or_dir, 0o770)
         else:
             os.chmod(file_or_dir, 0o660)
     script_files = copy_test_script_files(markus_address, assignment_id, tests_path)
     for fd, file_or_dir in script_files:
-        if fd == 'd':
+        if fd == "d":
             os.chmod(file_or_dir, 0o1770)
         else:
             os.chmod(file_or_dir, 0o640)
