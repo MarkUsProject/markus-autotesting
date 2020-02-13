@@ -331,6 +331,7 @@ def run_test(
     files_path,
     assignment_id,
     group_id,
+    group_repo_name,
     submission_id,
     run_id,
     enqueue_time,
