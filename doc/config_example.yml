@@ -1,21 +1,21 @@
 workspace: !ENV ${HOME}/.markus-autotesting/workspace
 
+server_user: !ENV ${USER}
+
 workers:
-  - n: 1
+  - users:
+      - name: !ENV ${USER}
+        reaper: null
     queues:
       - student
       - single
       - batch
 
-users:
-  server:
-    name: !ENV ${USER}
-  workers:
-    - name: !ENV ${USER}
-      reaper: null
-
 redis:
   url: redis://127.0.0.1:6379/0
+
+supervisor:
+  url: '127.0.0.1:9001'
 
 rlimit_settings:
   nproc:

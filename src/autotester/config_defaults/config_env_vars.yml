@@ -3,12 +3,10 @@ workspace: !ENV ${HOME}/.markus-autotesting/
 redis:
   url: !ENV ${REDIS_URL}
 
-users:
-  server:
-    name: !ENV ${USER}
-  workers:
-    - name: !ENV ${USER}
-      reaper: null
+server_user: !ENV ${USER}
+
+supervisor:
+  url: !ENV ${SUPERVISOR_URL}
 
 resources:
   postgresql:

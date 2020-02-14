@@ -31,6 +31,6 @@ def tester_user():
 
 
 def get_reaper_username(test_username):
-    for worker_name, reaper_name in config["users", "workers"]:
-        if worker_name == test_username:
-            return reaper_name
+    for users in (users for conf in config['workers'] for users in conf['users']):
+        if users['name'] == test_username:
+            return users['reaper']

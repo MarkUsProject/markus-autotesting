@@ -9,7 +9,7 @@ TESTERSROOT="${PROJECTROOT}/src/autotester"
 SERVER_VENV="${PROJECTROOT}/venv"
 INSTALLABLE_TESTERS=(custom haskell java py pyta racket)
 TESTERS=()
-USAGE_MESSAGE="Usage: $0 [-p|--python_version python_version] [--non-interactive] [--docker] [-t|--testers tester ...]"
+USAGE_MESSAGE="Usage: $0 [-p|--python-version python-version] [--non-interactive] [--docker] [-a|--all-testers] [-t|--testers tester ...]"
 
 _check_python_version() {
   # check if the python3 is at least version 3.6
@@ -269,18 +269,16 @@ create_enqueuer_wrapper() {
 
 start_workers() {
   local supervisorconf
-  local worker_users
   local generate_script
   local rq
 
   supervisorconf="${WORKSPACE_SUBDIRS[LOGS]}/supervisord.conf"
-  worker_users=$(echo "${WORKER_USERS}" | tr '\n' ' ')
   generate_script="${BINDIR}/generate_supervisord_conf.py"
   rq="${SERVER_VENV}/bin/rq"
 
 
   echo "[AUTOTEST-INSTALL] Generating supervisor config at '${supervisorconf}' and starting rq workers"
-  sudo -u "${SERVER_USER}" -- bash -c "${PYTHON} ${generate_script} ${rq} ${supervisorconf} ${worker_users} &&
+  sudo -u "${SERVER_USER}" -- bash -c "${PYTHON} ${generate_script} ${rq} ${supervisorconf} &&
                                       ${BINDIR}/start-stop.sh start"
 }
 
@@ -310,8 +308,8 @@ load_config_settings() {
   local config_json
   config_json=$("${PYTHON}" -c "from autotester.config import config; print(config.to_json())")
 
-  SERVER_USER=$(echo "${config_json}" | jq --raw-output '.users.server.name')
-  WORKER_AND_REAPER_USERS=$(echo "${config_json}" | jq --raw-output '.users.workers | .[] | (.name, .reaper)')
+  SERVER_USER=$(echo "${config_json}" | jq --raw-output '.server_user')
+  WORKER_AND_REAPER_USERS=$(echo "${config_json}" | jq --raw-output '.workers | .[] | .users | .[] | (.name, .reaper)')
   REDIS_URL=$(echo "${config_json}" | jq --raw-output '.redis.url')
   REDIS_PORT=$(redis-cli --raw -u "${REDIS_URL}" CONFIG GET port | tail -1)
   WORKSPACE_DIR=$(echo "${config_json}" | jq --raw-output '.workspace')
@@ -346,7 +344,7 @@ _add_valid_tester() {
 while [[ $# -gt 0 ]]; do
   key="$1"
   case $key in
-    -p|--python_version)
+    -p|--python-version)
     SELECTING_TESTERS=
     PYTHON_VERSION="$2"
     shift 2

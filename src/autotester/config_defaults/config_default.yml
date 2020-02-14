@@ -11,7 +11,9 @@ queues:
     schema: {'type': 'object', 'properties': {'batch_id': {'type': 'null'}, 'user_type': {'const': 'Student'}}}
 
 workers:
-  - n: 1
+  - users:
+      - name: !ENV ${USER}
+        reaper: null
     queues:
       - student
       - single
@@ -23,25 +25,13 @@ redis:
   _current_test_script_hash: current_test_scripts
   _pop_interval_hash: pop_interval
 
+supervisor:
+  url: '127.0.0.1:9001'
 
 rlimit_settings:
   nproc:
     - 300
     - 300
-
-testers:
-  custom:
-    enable: true
-  haskell:
-    enable: true
-  java:
-    enable: true
-  py:
-    enable: true
-  pyta:
-    enable: true
-  racket:
-    enable: true
 
 resources:
   port:
