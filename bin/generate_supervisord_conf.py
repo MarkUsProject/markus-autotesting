@@ -43,9 +43,9 @@ def write_conf_file(rq, conf_filename):
         f.write(HEADER)
         for worker_data in config["workers"]:
             queues = worker_data["queues"]
-            queue_str = ' '.join(queues)
+            queue_str = " ".join(queues)
             for users in worker_data["users"]:
-                worker_user = users['name']
+                worker_user = users["name"]
                 c = CONTENT.format(
                     worker_user=worker_user,
                     rq=rq,
