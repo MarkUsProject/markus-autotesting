@@ -39,7 +39,7 @@ load_config_settings() {
   local config_json
   config_json=$("${PYTHON}" -c "from autotester.config import config; print(config.to_json())")
 
-  SERVER_USER=$(echo "${config_json}" | jq --raw-output '.users.server.name')
+  SERVER_USER=$(echo "${config_json}" | jq --raw-output '.server_user')
   WORKSPACE_DIR=$(echo "${config_json}" | jq --raw-output '.workspace')
   LOGS_DIR="${WORKSPACE_DIR}/"$(echo "${config_json}" | jq --raw-output '._workspace_contents._logs')
   REDIS_URL=$(echo "${config_json}" | jq --raw-output '.redis.url')
