@@ -299,7 +299,6 @@ install_testers() {
 suggest_next_steps() {
   echo "[AUTOTEST-INSTALL] You must add MarkUs web server's public key to ${SERVER_USER}'s '~/.ssh/authorized_keys'"
   echo "[AUTOTEST-INSTALL] You may want to add '${BINDIR}/start-stop.sh start' to ${SERVER_USER}'s crontab with a @reboot time"
-  echo "[AUTOTEST-INSTALL] You should install the individual testers you plan to use"
 }
 
 load_config_settings() {

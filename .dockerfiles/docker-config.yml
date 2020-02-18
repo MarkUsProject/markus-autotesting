@@ -1,12 +1,10 @@
 workers:
-  - n: 1
+  - users:
+      - name: autotst0
+      - name: autotst1
+      - name: autotst2
+      - name: autotst3
     queues:
       - student
       - single
       - batch
-users:
-  workers:
-    - name: autotst0
-    - name: autotst1
-    - name: autotst2
-    - name: autotst3
