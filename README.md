@@ -1,4 +1,4 @@
-[![Acceptance tests](https://layerci.com/github/MarkUsProject/markus-autotesting/badge)](https://layerci.com/github/MarkUsProject/markus-autotesting)
+[![Acceptance tests](https://layerci.com/github/MarkUsProject/markus-autotesting/badge)](https://layerci.com/jobs/github/MarkUsProject/markus-autotesting)
 
 Autotesting with Markus
 ==============================
@@ -17,54 +17,48 @@ The autotesting client component is already included in a MarkUs installation. S
 
 ### Server
 
-To install the autotesting server, run the `install.sh` script from the `server/bin` directory as:
+To install the autotesting server, run the `install.sh` script from the `bin` directory with options:
 
 ```
-$ server/bin/install.sh
+$ bin/install.sh [-p|--python-version python-version] [--non-interactive] [--docker] [--a|--all-testers] [-t|--testers tester ...]
 ```
+
+options: 
+
+- `--python_version` : version of python to install/use to run the autotester (default is 3.8).
+- `--non-interactive` : run the installer in non-interactive mode (all confirmations will be accepted without prompting the user).
+- `--docker` : run the installer for installing in docker. This installs in non-interactive mode and iptables, postgresql debian packages will not be installed.
+- `--all-testers` : install all testers as well as the server. See [Testers](#testers).
+- `--testers` : install the individual named testers (See [Testers](#testers)). This option will be ignored if the --all-testers flag is used.
 
 The server can be uninstalled by running the `uninstall.sh` script in the same directory.
 
 #### Dependencies
 
-Installing the server will also install the following packages:
+Installing the server will also install the following debian packages:
 
-- python3.X  (the python version can be configured in the config file; see below)
+- python3.X  (the python3 minor version can specified as an argument to the install script; see above)
 - python3.X-venv
 - redis-server 
 - jq 
-- postgresql
+- postgresql-client
+- libpq-dev
+- openssh-server
+- gcc
+- postgresql (if not running in a docker environment)
+- iptables (if not running in a docker environment)
 
-This script may also add new users and create new potgres databases. See the [configuration](#markus-autotesting-configuration-options) section for more details.
+This script may also add new users and create new postgres databases. See the [configuration](#markus-autotesting-configuration-options) section for more details.
 
 ### Testers
 
-After the server has been installed, one or more of the following testers should also be installed:
-
-- `haskell`
-- `java`
-- `py`
-- `pyta`
-- `racket`
-- `custom`
-
-Each tester may be installed by running install scripts:
-
-```
-$ testers/testers/${tester_name}/bin/install.sh
-```
-
-where `tester_name` is one of the tester names listed above.
-
-Each tester can be uninstalled by running the `uninstall.sh` script in the same directory.
-
-Each language specific tester can run test files written in the following frameworks:
+The markus autotester currently supports testers for the following languages and testing frameworks:
 
 - `haskell`
     - [QuickCheck](http://hackage.haskell.org/package/QuickCheck)
 - `java`
     - [JUnit](https://junit.org/junit4/)
-- `py`
+- `py` (python3)
     - [Unittest](https://docs.python.org/3/library/unittest.html)
     - [Pytest](https://docs.pytest.org/en/latest/)
 - `pyta`
@@ -85,7 +79,7 @@ Installing each tester will also install the following additional packages:
     - tasty-quickcheck (cabal package)
 - `java`
     - openjdk-8-jdk
-- `py` (python)
+- `py` (python3)
     - none
 - `pyta`
     - none
@@ -96,173 +90,162 @@ Installing each tester will also install the following additional packages:
 
 ## Markus-autotesting configuration options
 
-These settings can be set by editing the `server/config.py` file. If any changes are made to any of the options marked _restart required_, it is recommended that the server be uninstalled and reinstalled.
+These settings can be overridden or extended by including a configuration file in one of two locations:
 
-##### REDIS_CURRENT_TEST_SCRIPT_HASH
-_restart required_
-Name of redis hash used to store the locations of test script directories.
-There is no need to change this unless it would conflict with another redis key.
-Default: `'curr_test_scripts'`
+- `${HOME}/.markus_autotester_config` (where `${HOME}` is the home directory of the user running the markus server)
+- `/etc/markus_autotester_config` (for a system wide configuration)
 
-##### REDIS_POP_HASH
-Name of redis hash used to store pop interval data for each worker queue.
-There is no need to change this unless it would conflict with another redis key.
-Default: `'pop_intervals'`
+An example configuration file can be found in `doc/config_example.yml`. Please see below for a description of all options and defaults:
 
-##### REDIS_WORKERS_HASH
-_restart required_
-Name of redis hash used to store workers data (username and worker directory).
-There is no need to change this unless it would conflict with another redis key.
-Default: `'workers'`
+```yaml
+workspace: # an absolute path to a directory containing all files/workspaces required to run the autotester default is
+           # ${HOME}/.markus-autotesting/workspace where ${HOME} is the home directory of the user running the autotester
 
-##### REDIS_CONNECTION_KWARGS
-Dictionary containing keyword arguments to pass to rq.use_connection when connecting to a redis database
-Default: `{}`
+server_user: # the username of the user designated to run the autotester itself. Default is the current user
 
-##### REDIS_PREFIX
-Prefix to prepend to all redis keys generated by the autotester.
-There is no need to change this unless it would cause conflicts with other redis keys.
-Default: `'autotest:'`
+workers:
+  - users:
+      - name: # the username of a user designated to run tests for the autotester
+        reaper: # the username of a user used to clean up test processes. This value can be null (see details below)
+    queues: # a list of queue names that these users will monitor and select test jobs from. 
+            # The order of this list indicates which queues have priority when selecting tests to run
+            # default is ['student', 'single', 'batch'] (see the "queues:" setting option below) 
 
-##### POSTGRES_PREFIX
-Prefix to prepend to all postgres databases created.
-There is no need to change this unless it would cause conflicts with other postgres databases.
-Default: `'autotest_'`
+redis:
+  url: # url for the redis database. default is: redis://127.0.0.1:6379/0
 
-##### WORKSPACE_DIR
-_restart required_
-Absolute path to the workspace directory which will contain all directories and files generated by the autotester.
-If this directory does not exist before the server is installed it will be created.
-Default: None (you should set this before you install the server)
+supervisor:
+  url: # url used by the supervisor process. default is: '127.0.0.1:9001'
 
-##### SCRIPTS_DIR_NAME
-_restart required_
-Name of the directory containing test scripts (under `WORKSPACE_DIR`)
-If this directory does not exist before the server is installed it will be created.
-There is no need to change this assuming `WORKSPACE_DIR` is empty before installation.
-Default: `'scripts'`
+rlimit_settings: # RLIMIT settings (see details below)
+  nproc: # for example, this setting sets the hard and soft limits for the number of processes available to 300
+    - 300
+    - 300
 
-##### RESULTS_DIR_NAME
-_restart required_
-Name of the directory containing test results (under `WORKSPACE_DIR`)
-If this directory does not exist before the server is installed it will be created.
-There is no need to change this assuming `WORKSPACE_DIR` is empty before installation.
-Default: `'results'`
+resources:
+  port: # set a range of ports available for use by the tests (see details below).
+    min: 50000 # For example, this sets the range of ports from 50000 to 65535
+    max: 65535
+  postgresql:
+    port: # port the postgres server is running on
+    host: # host the postgres server is running on
 
-##### SPECS_DIR_NAME
-_restart required_
-Name of the directory containing tester environment specs (under `WORKSPACE_DIR`)
-If this directory does not exist before the server is installed it will be created.
-There is no need to change this assuming `WORKSPACE_DIR` is empty before installation.
-Default: `'specs'`
-
-##### WORKERS_DIR_NAME
-_restart required_
-Name of the directory containing secure workspace directories for each worker (under `WORKSPACE_DIR`)
-If this directory does not exist before the server is installed it will be created.
-There is no need to change this assuming `WORKSPACE_DIR` is empty before installation.
-Default: `'workers'`
-
-##### LOGS_DIR_NAME
-_restart required_
-Name of the directory containing log files (under `WORKSPACE_DIR`)
-If this directory does not exist before the server is installed it will be created.
-There is no need to change this assuming `WORKSPACE_DIR` is empty before installation.
-Default: `'logs'`
-
-##### SERVER_USER
-_restart required_
-Name of the user that enqueues and schedules each test job.
-If this user does not exist before the server is installed it will be created.
-If this is the empty string, the server user is assumed to be whichever user runs the server installation script.
-Default: `''`
-
-##### WORKER_USERS
-_restart required_
-String containing whitespace separated names of the users that run the test scripts themselves and report the results.
-If these users do not exist before the server is installed they will be created.
-If this is the empty string, a single worker user will be used and that user is the same as the SERVER_USER.
-Default: `'autotst0 autotst1 autotst2 autotst3 autotst4 autotst5 autotst6 autotst7'`
-
-##### REAPER_USER_PREFIX
-_restart required_
-Prefix to prepend to each username in WORKER_USERS to create a new user whose sole job is to safely kill any processes still running after a test has completed.
-If these users do not exist before the server is installed they will be created.
-If this is the empty string, no new users will be created and tests will be terminated in a slightly less secure way (though probably still good enough for most cases). 
-Default: `''`
-
-##### DEFAULT_ENV_NAME
-_restart required_
-Name of the environment used by default (if no custom environment is needed to run a given tester).
-There is no need to change this.
-Default: `'defaultenv'`
-
-##### WORKER_QUEUES
-A list of dictionaries containing the following keys/value pairs:
-- `'name'`: a string representing the unique name of this queue
-- `'filter'`: a function which takes the same keyword arguments as the `run_test` function in `autotest_enqueuer.py` and returns `True` if this queue should be used to schedule the test job
-See `config.py` for more details and to see defaults.
-
-##### WORKERS
-A list of tuples indicating the priority in which order a worker user should pop jobs off the end of each queue.
-Each tuple contains an integer indicating the number of worker users who should respect this priority order, followed by a list containing the names of queues in priority order.
-For example, the following indicates that two worker users should take jobs from queue `'A'` first and queue `'B'` second, and one worker user should take jobs from queue `'B'` first and queue `'A'` second and queue `'C'` third:
-
-```python
-WORKERS = [(2, ['A', 'B']),
-           (1, ['B', 'A', 'C'])]
+queues:
+  - name: # the name of a queue used to enqueue test jobs (see details below)
+    schema: # a json schema used to validate the json representation of the arguments passed to the test_enqueuer script
+            # by MarkUs (see details below)
 ```
 
-The number of workers specified in this way should be equal to the number of worker users specified in the WORKER_USERS config option.
-See `config.py` for more details and to see defaults.
+### Markus-autotesting configuration details
+
+#### reaper users
+
+Each reaper user is associated with a single worker user. The reaper user's sole job is to safely kill any processes 
+still running after a test has completed. If these users do not exist before the server is installed they will be created.
+If no reaper username is given in the configuration file, no new users will be created and tests will be terminated in a
+slightly less secure way (though probably still good enough for most cases). 
+
+#### rlimit settings
+
+Rlimit settings allow the user to specify how many system resources should be allocated to each worker user when
+running tests. These limits are enforced using python's [`resource`](https://docs.python.org/3/library/resource.html)
+library. 
+
+In the configuration file, limits can be set using the resource name as a key and a list of integers as a value. The
+list of integers should contain two values, the first being the soft limit and the second being the hard limit. For 
+example, if we wish to [limit the number of open file descriptors](https://docs.python.org/3/library/resource.html#resource.RLIMIT_NOFILE) 
+with a soft limit of 10 and a hard limit of 20, our configuration file would include:
+
+```yaml
+rlimit_settings:
+  nofile:
+    - 10
+    - 20
+```
+
+See python's [`resource`](https://docs.python.org/3/library/resource.html) library for all rlimit options.  
+
+#### allocated ports
+
+Some test require the use of a dedicated port that is guaranteed not to be in use by another process. This setting
+allows the user to specify a range from which these ports can be selected. When a test starts, the `PORT` environment
+variable will be set to the port number selected for this test run. Available port numbers will be different from test
+to test.  
+
+#### queue names and schemas
+
+When a test run is sent to the autotester from MarkUs, the test is not run immediately. Instead it is put in a queue and
+run only when a worker user becomes available. You can choose to just have a single queue or multiple. 
+
+If using multiple queues, you can set a priority order for each worker user (see the `workers:` setting). The workers
+will prioritize running tests from queues that appear earlier in the priority order. 
+
+When MarkUs sends the test to the autotester, in order to decide which queue to put the test in, we inspect the json 
+string passed as an argument to the `markus_autotester` command (using either the `-j` or `-f` flags). This inspection 
+involves validating that json string against a [json schema validation](https://json-schema.org/) for each queue. If the
+json string passes the validation for a certain queue, the test is added to that queue. 
+
+For example, the default queue settings in the configuration are:
+
+```yaml
+queues:
+  - name: batch
+    schema: {'type': 'object', 'properties': {'batch_id': {'type': 'number'}}}
+  - name: single
+    schema: {'type': 'object', 'properties': {'batch_id': {'type': 'null'}, 'user_type': {'const': 'Admin'}}}
+  - name: student
+    schema: {'type': 'object', 'properties': {'batch_id': {'type': 'null'}, 'user_type': {'const': 'Student'}}}
+```
+
+Under this default setup:
+ - a test with a non-null `batch_id` will be put in the `batch` queue.
+ - a test with a null `batch_id` and where `user_type == 'Admin'` will be put in the `single` queue
+ - a test with a null `batch_id` and where `user_type == 'Student'` will be put in the `student` queue
 
 ## MarkUs configuration options
 
+After installing the autotester, the next step is to update the configuration settings for MarkUs.
 These settings are in the MarkUs configuration files typically found in the `config/environments` directory of your MarkUs installation:
 
-##### AUTOTEST_ON
+##### config.x.autotest.enable
 Enables autotesting.
+Should be set to `true`
 
-##### AUTOTEST_STUDENT_TESTS_ON
-Allows the instructor to let students run tests on their own.
-
-##### AUTOTEST_STUDENT_TESTS_BUFFER_TIME
+##### config.x.autotest.student_test_buffer
 With student tests enabled, a student can't request a new test if they already have a test in execution, to prevent
 denial of service. If the test script fails unexpectedly and does not return a result, a student would effectively be
 locked out from further testing.
 
 This is the amount of time after which a student can request a new test anyway.
 
-(ignored if *AUTOTEST_STUDENT_TESTS_ON* is *false*)
-
-##### AUTOTEST_CLIENT_DIR
+##### config.x.autotest.client_dir
 The directory where the test files for assignments are stored.
 
 (the user running MarkUs must be able to write here)
 
-##### AUTOTEST_SERVER_HOST
+##### config.x.autotest.server_host
 The server host name that the markus-autotesting server is installed on.
 
-(use *localhost* if the server runs on the same machine)
+(use `localhost` if the server runs on the same machine)
 
-##### AUTOTEST_SERVER_FILES_USERNAME
+##### config.x.autotest.server_username
 The server user to copy the tester and student files over.
 
-This should be the same as the SERVER_USER in the markus-autotesting config file (see [above](#markus-autotesting-configuration-options)).
+This should be the same as the `server_user` in the markus-autotesting configuration file.
 
 (SSH passwordless login must be set up for the user running MarkUs to connect with this user on the server;
 multiple MarkUs instances can use the same user;
-can be *nil*, forcing *AUTOTEST_SERVER_HOST* to be *localhost* and local file system copy to be used)
+can be `nil`, forcing `config.x.autotest.server_host` to be `localhost` and local file system copy to be used)
 
-##### AUTOTEST_SERVER_DIR
-The directory on the server where temporary files are copied. 
+##### config.x.autotest.server_dir
+The directory on the autotest server where temporary files are copied. 
 
-This should be the same as the WORKSPACE_DIR in the markus-autotesting config file (see [above](#markus-autotesting-configuration-options)).
+This should be the same as the `workspace` directory in the markus-autotesting config file.
 
 (multiple MarkUs instances can use the same directory)
 
-##### AUTOTEST_SERVER_COMMAND
-The command to run on the markus-autotesting server that runs the script in `server/autotest_enqueuer.py` script.
+##### config.x.autotest.server_command
+The command to run on the markus-autotesting server that runs the wrapper script that calls `markus_autotester`.
 
 In most cases, this should be set to `'autotest_enqueuer'`
 
