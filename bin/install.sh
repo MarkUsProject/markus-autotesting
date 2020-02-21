@@ -56,7 +56,8 @@ install_packages() {
                                                                                     postgresql-client \
                                                                                     libpq-dev \
                                                                                     openssh-server \
-                                                                                    gcc
+                                                                                    gcc \
+                                                                                    rsync
   if [ -z "${DOCKER}" ]; then
     sudo DEBIAN_FRONTEND=${debian_frontend} apt-get ${apt_yes} "${apt_opts[@]}" install iptables postgresql
   fi
@@ -261,10 +262,10 @@ create_enqueuer_wrapper() {
   echo "[AUTOTEST-INSTALL] Creating enqueuer wrapper at '${enqueuer}'"
 
   echo "#!/usr/bin/env bash
+        source \${HOME}/.bash_profile
         ${SERVER_VENV}/bin/markus_autotester \"\$@\"" | sudo tee ${enqueuer} > /dev/null
   sudo chown "${SERVER_USER}:${SERVER_USER}" "${enqueuer}"
   sudo chmod u=rwx,go=r ${enqueuer}
-
 }
 
 start_workers() {
@@ -278,7 +279,7 @@ start_workers() {
 
 
   echo "[AUTOTEST-INSTALL] Generating supervisor config at '${supervisorconf}' and starting rq workers"
-  sudo -u "${SERVER_USER}" -- bash -c "${PYTHON} ${generate_script} ${rq} ${supervisorconf} &&
+  sudo -Eu "${SERVER_USER}" -- bash -c "${PYTHON} ${generate_script} ${rq} ${supervisorconf} &&
                                       ${BINDIR}/start-stop.sh start"
 }
 
@@ -292,7 +293,11 @@ install_testers() {
   fi
   for tester in "${to_install[@]}"; do
     echo "[AUTOTEST-INSTALL] installing tester: ${tester}"
-    "${TESTERSROOT}/testers/${tester}/bin/install.sh"
+    if [ -n "${NON_INTERACTIVE}" ]; then
+      "${TESTERSROOT}/testers/${tester}/bin/install.sh" --non-interactive
+    else
+      "${TESTERSROOT}/testers/${tester}/bin/install.sh"
+    fi
   done
 }
 

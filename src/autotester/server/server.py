@@ -147,7 +147,7 @@ def kill_without_reaper(test_username):
     Kill all processes that test_username is able to kill
     """
     kill_cmd = f"sudo -u {test_username} -- bash -c 'kill -KILL -1'"
-    subprocess.run(kill_cmd, shell=True)
+    subprocess.run(kill_cmd)
 
 
 def create_test_script_command(env_dir, tester_type):
@@ -375,7 +375,8 @@ def run_test(
             stop_tester_processes(test_username)
             clear_working_directory(tests_path, test_username)
     except Exception as e:
-        error = str(e)
+        import traceback
+        error = traceback.format_exc() + str(e)
     finally:
         results_data = finalize_results_data(
             results, error, hooks_error, time_to_service

@@ -10,6 +10,7 @@ POSTGRES_PREFIX = config["resources", "postgresql", "_prefix"]
 PGPASSFILE = os.path.join(
     config["workspace"], config["_workspace_contents", "_logs"], ".pgpass"
 )
+PGHOST = config["resources", "postgresql", "host"]
 
 
 def setup_database(test_username):
@@ -20,7 +21,7 @@ def setup_database(test_username):
         password = f.read().strip()
 
     with psycopg2.connect(
-        database=database, user=user, password=password, host="localhost"
+        database=database, user=user, password=password, host=PGHOST
     ) as conn:
         with conn.cursor() as cursor:
             cursor.execute("DROP OWNED BY CURRENT_USER;")

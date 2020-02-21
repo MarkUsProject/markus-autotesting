@@ -14,6 +14,7 @@ services:
     user: docker
     volumes:
       - .:/app:cached
+      - ssh_pub_key:/ssh_pub_key:ro
     environment:
       - USER=docker
       - REDIS_URL=redis://redis_autotest:6379/
@@ -21,6 +22,9 @@ services:
       - PGPORT=5432
       - EDITOR=vi
       - MARKUS_AUTOTESTER_CONFIG=/app/.dockerfiles/docker-config.yml
+    networks:
+      - default
+      - markus_dev
     depends_on:
       - postgres_autotest
       - redis_autotest
@@ -28,6 +32,7 @@ services:
   autotest:
     <<: *app
     entrypoint: .dockerfiles/entrypoint-dev.sh
+    container_name: autotest
     command: '/bin/bash'
 
   postgres_autotest:
@@ -51,3 +56,10 @@ services:
 volumes:
   postgres_autotest:
   redis_autotest:
+  ssh_pub_key:
+     name: ssh_pub_key
+
+networks:
+  markus_dev:
+    external:
+      name: markus_dev

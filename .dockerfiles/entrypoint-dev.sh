@@ -2,9 +2,17 @@
 
 set -e
 
-if [ ! -f /.installed ]; then
-  /app/bin/install.sh -p '3.8' --docker
-  sudo touch /.installed
+if [ ! -f /app/.installed ]; then
+  /app/bin/install.sh -p '3.8' --docker --all-testers
+
+  echo "export REDIS_URL=${REDIS_URL}
+        export PGHOST=${PGHOST}
+        export PGPORT=${PGPORT}
+        export MARKUS_AUTOTESTER_CONFIG=${MARKUS_AUTOTESTER_CONFIG}
+        " >> "${HOME}/.bash_profile"
+  touch /app/.installed
 fi
+
+sudo "$(command -v sshd)"
 
 exec "$@"

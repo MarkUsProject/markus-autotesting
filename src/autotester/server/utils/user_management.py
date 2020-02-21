@@ -33,4 +33,4 @@ def tester_user():
 def get_reaper_username(test_username):
     for users in (users for conf in config["workers"] for users in conf["users"]):
         if users["name"] == test_username:
-            return users["reaper"]
+            return users.get("reaper")

@@ -1,0 +1,7 @@
+**/.DS_Store
+.git/
+venv/
+.eggs/
+**/.pytest_cache
+**/*.egg-info
+.installed
