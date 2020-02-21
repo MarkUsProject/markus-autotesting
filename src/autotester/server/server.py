@@ -375,8 +375,7 @@ def run_test(
             stop_tester_processes(test_username)
             clear_working_directory(tests_path, test_username)
     except Exception as e:
-        import traceback
-        error = traceback.format_exc() + str(e)
+        error = str(e)
     finally:
         results_data = finalize_results_data(
             results, error, hooks_error, time_to_service
