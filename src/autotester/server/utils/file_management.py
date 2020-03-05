@@ -34,7 +34,6 @@ def recursive_iglob(root_dir):
     else:
         raise ValueError("directory does not exist: {}".format(root_dir))
 
-
 def copy_tree(src, dst, exclude=tuple()):
     """
     Recursively copy all files and subdirectories in the path
@@ -56,7 +55,6 @@ def copy_tree(src, dst, exclude=tuple()):
         copied.append((fd, target))
     return copied
 
-
 def ignore_missing_dir_error(_func, _path, excinfo):
     """ Used by shutil.rmtree to ignore a FileNotFoundError """
     err_type, err_inst, traceback = excinfo
@@ -76,7 +74,6 @@ def move_tree(src, dst):
     shutil.rmtree(src, onerror=ignore_missing_dir_error)
     return moved
 
-
 @contextmanager
 def fd_open(path, flags=os.O_RDONLY, *args, **kwargs):
     """
@@ -89,7 +86,6 @@ def fd_open(path, flags=os.O_RDONLY, *args, **kwargs):
         yield fd
     finally:
         os.close(fd)
-
 
 @contextmanager
 def fd_lock(file_descriptor, exclusive=True):
