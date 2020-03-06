@@ -1,4 +1,4 @@
-from src.autotester.server.utils.path_management import *
+from src.autotester.server.utils.path_management import current_directory, add_path
 import tempfile
 import os
 import sys
@@ -15,7 +15,7 @@ def test_current_directory():
 
 def test_add_path():
     path = tempfile.gettempdir()
-    with add_path(path, prepend = True):
+    with add_path(path, prepend=True):
         prep = sys.path[0]
     with add_path(path, prepend=False):
         app = sys.path[-1]
