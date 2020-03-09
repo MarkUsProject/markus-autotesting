@@ -4,11 +4,6 @@ python:
   - "3.6"
   - "3.7"
   - "3.8"
-# command to install dependencies
-install:
-  - pip install pytest
-  - pip install hypothesis
-  - pip install -r server/bin/requirements.txt
 # command to run tests
 script:
-  - pytest --ignore testers/testers/py/tests
+  - python setup.py test

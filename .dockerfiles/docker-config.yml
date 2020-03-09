@@ -1,0 +1,10 @@
+workers:
+  - users:
+      - name: autotst0
+      - name: autotst1
+      - name: autotst2
+      - name: autotst3
+    queues:
+      - student
+      - single
+      - batch

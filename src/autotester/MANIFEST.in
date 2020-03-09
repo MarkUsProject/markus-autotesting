@@ -1,0 +1,3 @@
+include testers/racket/lib/markus.rkt
+graft testers/java/lib
+include testers/*/specs/install_settings.json

@@ -1,0 +1,14 @@
+workspace: !ENV ${HOME}/.markus-autotesting/
+
+redis:
+  url: !ENV ${REDIS_URL}
+
+server_user: !ENV ${USER}
+
+supervisor:
+  url: !ENV ${SUPERVISOR_URL}
+
+resources:
+  postgresql:
+    port: !ENV ${PGPORT}
+    host: !ENV ${PGHOST}
