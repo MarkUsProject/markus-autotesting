@@ -2,6 +2,8 @@
 All notable changes to this project will be documented here.
 
 ## [unreleased]
+
+## [1.9.0]
 - allow tests to write to existing subdirectories but not overwrite existing test script files (#237).
 - add ability to create a docker container for the autotester in development mode (#236).
 - major reorganization of the structure of this package (#236).
