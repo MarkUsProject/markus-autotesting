@@ -122,7 +122,7 @@ def copy_test_script_files(markus_address, assignment_id, tests_path):
     return []
 
 
-def setup_files(files_path, tests_path, markus_address, assignment_id):
+def setup_files(files_path, tests_path, test_username, markus_address, assignment_id):
     """
     Copy test script files and student files to the working directory tests_path,
     then make it the current working directory.
@@ -140,10 +140,12 @@ def setup_files(files_path, tests_path, markus_address, assignment_id):
             os.chmod(file_or_dir, 0o770)
         else:
             os.chmod(file_or_dir, 0o660)
+        shutil.chown(file_or_dir, group=test_username)
     script_files = copy_test_script_files(markus_address, assignment_id, tests_path)
     for fd, file_or_dir in script_files:
         if fd == "d":
             os.chmod(file_or_dir, 0o1770)
         else:
             os.chmod(file_or_dir, 0o640)
+        shutil.chown(file_or_dir, group=test_username)
     return student_files, script_files
