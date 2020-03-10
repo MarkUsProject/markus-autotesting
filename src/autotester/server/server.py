@@ -366,7 +366,9 @@ def run_test(
         testers = {settings["tester_type"] for settings in test_specs["testers"]}
         hooks = Hooks(hooks_script_path, testers, cwd=tests_path, kwargs=hooks_kwargs)
         try:
-            setup_files(files_path, tests_path, test_username, markus_address, assignment_id)
+            setup_files(
+                files_path, tests_path, test_username, markus_address, assignment_id
+            )
             cmd = run_test_command(test_username=test_username)
             results, hooks_error = run_test_specs(
                 cmd, test_specs, test_categories, tests_path, test_username, hooks
