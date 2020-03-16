@@ -1,4 +1,3 @@
-from __future__ import annotations
 import os
 import unittest
 from typing import TextIO, Tuple, Optional, Type, Dict, IO, List
@@ -143,7 +142,7 @@ class MarkusPytestPlugin:
 class MarkusPythonTest(MarkusTest):
     def __init__(
         self,
-        tester: MarkusPythonTester,
+        tester: "MarkusPythonTester",
         test_file: str,
         result: Dict,
         feedback_open: Optional[IO] = None,

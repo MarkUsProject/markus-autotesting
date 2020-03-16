@@ -1,4 +1,3 @@
-from __future__ import annotations
 import os
 import sys
 import json
@@ -43,7 +42,7 @@ class MarkusPyTATest(MarkusTest):
 
     def __init__(
         self,
-        tester: MarkusPyTATester,
+        tester: "MarkusPyTATester",
         student_file_path: str,
         max_points: int,
         feedback_open: Optional[IO] = None,

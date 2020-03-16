@@ -1,4 +1,3 @@
-from __future__ import annotations
 from contextlib import contextmanager
 import json
 from abc import ABC, abstractmethod
@@ -22,7 +21,7 @@ class MarkusTest(ABC):
 
     @abstractmethod
     def __init__(
-        self, tester: MarkusTester, feedback_open: Optional[IO] = None
+        self, tester: "MarkusTester", feedback_open: Optional[IO] = None
     ) -> None:
         """ Initialize a MarkusTest """
         self.tester = tester

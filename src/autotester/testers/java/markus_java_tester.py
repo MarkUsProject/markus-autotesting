@@ -1,4 +1,3 @@
-from __future__ import annotations
 import enum
 import json
 import subprocess
@@ -20,7 +19,10 @@ class MarkusJavaTest(MarkusTest):
     }
 
     def __init__(
-        self, tester: MarkusJavaTester, result: Dict, feedback_open: Optional[IO] = None
+        self,
+        tester: "MarkusJavaTester",
+        result: Dict,
+        feedback_open: Optional[IO] = None,
     ) -> None:
         """
         Initialize a Java test created by tester.

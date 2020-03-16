@@ -1,4 +1,3 @@
-from __future__ import annotations
 import json
 from collections.abc import Mapping
 from typing import Any, Union, Tuple, Iterable, Optional
@@ -10,7 +9,7 @@ class MarkusTestSpecs(Mapping):
         self._specs = dict(*args, **kwargs)
 
     @classmethod
-    def from_json(cls, json_str: str) -> MarkusTestSpecs:
+    def from_json(cls, json_str: str) -> "MarkusTestSpecs":
         """ Return a MarkUsTestSpecs instance created from a json string """
         return cls(json.loads(json_str))
 

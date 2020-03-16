@@ -1,4 +1,3 @@
-from __future__ import annotations
 import json
 import subprocess
 import os
@@ -10,7 +9,7 @@ from testers.markus_tester import MarkusTester, MarkusTest, MarkusTestError
 class MarkusRacketTest(MarkusTest):
     def __init__(
         self,
-        tester: MarkusRacketTester,
+        tester: "MarkusRacketTester",
         result: Dict,
         feedback_open: Optional[IO] = None,
     ) -> None:

@@ -1,4 +1,3 @@
-from __future__ import annotations
 import subprocess
 import os
 import tempfile
@@ -12,7 +11,7 @@ from testers.markus_tester import MarkusTester, MarkusTest, MarkusTestError
 class MarkusHaskellTest(MarkusTest):
     def __init__(
         self,
-        tester: MarkusHaskellTester,
+        tester: "MarkusHaskellTester",
         test_file: str,
         result: Dict,
         feedback_open: Optional[IO] = None,
