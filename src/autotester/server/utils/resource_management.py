@@ -8,7 +8,7 @@ def rlimit_str2int(rlimit_string):
     return getattr(resource, f"RLIMIT_{rlimit_string.upper()}")
 
 
-def set_rlimits_before_test():
+def set_rlimits_before_test() -> None:
     """
     Sets rlimit settings specified in config file
     This function ensures that for specific limits (defined in RLIMIT_ADJUSTMENTS),
@@ -36,7 +36,7 @@ def set_rlimits_before_test():
         resource.setrlimit(limit, (soft, hard))
 
 
-def set_rlimits_before_cleanup():
+def set_rlimits_before_cleanup() -> None:
     """
     Sets the rlimit settings specified in RLIMIT_ADJUSTMENTS
     so that both the soft and hard limits are set as high as possible. This ensures

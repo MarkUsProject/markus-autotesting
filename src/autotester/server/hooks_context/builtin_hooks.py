@@ -6,6 +6,8 @@ import os
 import json
 import pkgutil
 import importlib
+from typing import Dict, Any, Callable
+from markusapi import Markus as MarkusApi
 from autotester import testers
 
 HOOKS = {
@@ -19,7 +21,7 @@ HOOKS = {
 }
 
 
-def clear_feedback_file(test_data, **_kwargs):
+def clear_feedback_file(test_data: Dict, **_kwargs: Any) -> None:
     """
     Remove any previous feedback file before the tests run.
     """
@@ -28,7 +30,9 @@ def clear_feedback_file(test_data, **_kwargs):
         os.remove(feedback_file)
 
 
-def upload_feedback_to_repo(api, assignment_id, group_id, test_data, **_kwargs):
+def upload_feedback_to_repo(
+    api: MarkusApi, assignment_id: int, group_id: int, test_data: Dict, **_kwargs: Any
+) -> None:
     """
     Upload the feedback file to the group's repo.
     """
@@ -40,7 +44,9 @@ def upload_feedback_to_repo(api, assignment_id, group_id, test_data, **_kwargs):
             )
 
 
-def upload_feedback_file(api, assignment_id, group_id, test_data, **_kwargs):
+def upload_feedback_file(
+    api: MarkusApi, assignment_id: int, group_id: int, test_data: Dict, **_kwargs: Any
+) -> None:
     """
     Upload the feedback file using MarkUs' api.
     """
@@ -52,7 +58,9 @@ def upload_feedback_file(api, assignment_id, group_id, test_data, **_kwargs):
             )
 
 
-def upload_annotations(api, assignment_id, group_id, test_data, **_kwargs):
+def upload_annotations(
+    api: MarkusApi, assignment_id: int, group_id: int, test_data: Dict, **_kwargs: Any
+) -> None:
     """
     Upload annotations using MarkUs' api.
     """
@@ -62,7 +70,7 @@ def upload_annotations(api, assignment_id, group_id, test_data, **_kwargs):
             api.upload_annotations(assignment_id, group_id, json.load(annotations_open))
 
 
-def _load_default_hooks():
+def _load_default_hooks() -> Dict[str, Callable]:
     """
     Return a dictionary containing all hooks loaded from any default_hooks.py in the testers package.
     """

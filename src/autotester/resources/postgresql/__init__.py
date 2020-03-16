@@ -3,6 +3,7 @@ import getpass
 import psycopg2
 import secrets
 import string
+from typing import Dict
 from psycopg2.extensions import AsIs
 from autotester.config import config
 
@@ -13,7 +14,15 @@ PGPASSFILE = os.path.join(
 PGHOST = config["resources", "postgresql", "host"]
 
 
-def setup_database(test_username):
+def setup_database(test_username: str) -> Dict[str, str]:
+    """
+    Return a dictionary containing all the information required
+    to connect to the dedicated postgres database for user
+    test_username.
+
+    This dictionary is meant to be used to set environment variables
+    for the process that will run the test.
+    """
     user = getpass.getuser()
     database = f"{POSTGRES_PREFIX}{test_username}"
 
