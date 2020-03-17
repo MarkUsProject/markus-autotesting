@@ -31,4 +31,3 @@ def test_add_path():
     assert sys_path == append, prepend
     assert sys_path in sys.path
     sys.path.pop(-1)
-
