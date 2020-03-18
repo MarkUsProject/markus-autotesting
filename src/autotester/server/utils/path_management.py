@@ -40,6 +40,6 @@ def add_path(path, prepend=True):
                 sys.path.pop(i)
             else:
                 i = (sys.path[::-1]).index(path)
-                sys.path.pop(-(i+1))
+                sys.path.pop(-(i + 1))
         except ValueError:
             pass
