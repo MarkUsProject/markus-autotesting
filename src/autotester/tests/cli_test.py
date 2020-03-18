@@ -208,11 +208,8 @@ class TestUpdateSpecs:
             return_value=DummyTestError("error"),
         ):
             with patch("autotester.cli.update_test_specs"):
-                try:
+                with pytest.raises(SystemExit):
                     cli.update_specs("", **self.get_kwargs(schema={}))
-                except DummyTestError:
-                    return
-        pytest.fail("should have failed because the form is invalid")
 
     def test_succeeds_when_schema_is_valid(self):
         with patch(
