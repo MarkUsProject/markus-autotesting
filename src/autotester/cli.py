@@ -161,7 +161,8 @@ def update_specs(test_specs, schema=None, **kw):
             schema, test_specs, best_only=True
         )
         if error:
-            raise error
+            sys.stderr.write(f'Form Validation Error: {str(error)}')
+            sys.exit(1)
     update_test_specs(test_specs=test_specs, **kw)
 
 
