@@ -1,9 +1,20 @@
-from src.autotester.server.utils.file_management import *
+from autotester.server.utils.file_management import (
+    clean_dir_name,
+    random_tmpfile_name,
+    recursive_iglob,
+    copy_tree,
+    copy_test_script_files,
+    ignore_missing_dir_error,
+    move_tree,
+    fd_open,
+    fd_lock,
+)
+from autotester.server.utils import redis_management
 import os.path
 import re
 import tempfile
 import shutil
-from src.autotester.config import config
+from autotester.config import config
 import subprocess
 
 FILES_DIRNAME = config["_workspace_contents", "_files_dir"]
@@ -59,7 +70,7 @@ def test_ignore_missing_dir_error():
     error = True
     try:
         shutil.rmtree(dir, onerror=ignore_missing_dir_error)
-    except:
+    except Exception:
         error = False
     assert error
 
@@ -99,7 +110,7 @@ def test_fd_lock_p1():
         with fd_lock(fd):
             try:
                 subprocess.run(["rm", {temp_file}])
-            except:
+            except Exception:
                 access = False
     assert not access
 

@@ -3,8 +3,8 @@ import uuid
 import tempfile
 import shutil
 import fcntl
-from src.autotester.server.utils import redis_management
-from src.autotester.config import config
+from autotester.server.utils import redis_management
+from autotester.config import config
 from contextlib import contextmanager
 
 FILES_DIRNAME = config["_workspace_contents", "_files_dir"]
