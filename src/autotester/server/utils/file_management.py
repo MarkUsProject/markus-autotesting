@@ -136,10 +136,10 @@ def copy_test_script_files(
 
 
 def setup_files(
-    files_path: str, 
+    files_path: str,
     tests_path: str,
     test_username: str,
-    markus_address: str, 
+    markus_address: str,
     assignment_id: int
 ) -> Tuple[List[Tuple[str, str]], List[Tuple[str, str]]]:
     """
