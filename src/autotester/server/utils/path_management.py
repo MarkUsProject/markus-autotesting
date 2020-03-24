@@ -36,7 +36,11 @@ def add_path(path: str, prepend: bool = True) -> Generator[None, None, None]:
         yield
     finally:
         try:
-            i = (sys.path if prepend else sys.path[::-1]).index(path)
-            sys.path.pop(i)
+            if prepend:
+                i = sys.path.index(path)
+                sys.path.pop(i)
+            else:
+                i = (sys.path[::-1]).index(path)
+                sys.path.pop(-(i + 1))
         except ValueError:
             pass
