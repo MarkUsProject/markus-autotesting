@@ -19,15 +19,17 @@ def test_add_path():
         prep = sys.path[0]
     with add_path(path, prepend=False):
         app = sys.path[-1]
-    assert path == app, prep
+    assert path == app == prep
     assert path not in sys.path
 
+
+def test_add_existing_path():
     sys_path = tempfile.gettempdir()
     sys.path.append(sys_path)
     with add_path(sys_path, prepend=True):
         prepend = sys.path[0]
     with add_path(sys_path, prepend=False):
         append = sys.path[-1]
-    assert sys_path == append, prepend
+    assert sys_path == append == prepend
     assert sys_path in sys.path
     sys.path.pop(-1)
