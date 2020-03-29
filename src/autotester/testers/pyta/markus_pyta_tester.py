@@ -1,7 +1,6 @@
 import os
 import sys
 import json
-from collections import defaultdict
 
 import python_ta
 from pylint.config import VALIDATORS
@@ -11,13 +10,12 @@ from testers.markus_tester import MarkusTester, MarkusTest
 
 
 class MarkusPyTAReporter(PositionReporter):
-    def __init__(self, *args, **kwargs):
-        super().__init__(self, *args, **kwargs)
-        self._sorted_error_messages = defaultdict(list)
 
     def print_messages(self, level="all"):
         # print to feedback file, then reset and generate data for annotations
         PlainReporter.print_messages(self, level)
+        self._sorted_error_messages.clear()
+        self._sorted_style_messages.clear()
         super().print_messages(level)
 
     def output_blob(self):
