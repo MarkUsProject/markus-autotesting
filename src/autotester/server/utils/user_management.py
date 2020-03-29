@@ -1,15 +1,20 @@
 import os
 import pwd
+from typing import Tuple
 from autotester.exceptions import TesterUserError
 from autotester.config import config
 from autotester.server.utils.string_management import decode_if_bytes
 
 
-def current_user():
+def current_user() -> str:
+    """
+    Return the name of the current user,
+    ie. the one running this python process
+    """
     return pwd.getpwuid(os.getuid()).pw_name
 
 
-def tester_user():
+def tester_user() -> Tuple[str, str]:
     """
     Get the workspace for the tester user specified by the MARKUSWORKERUSER
     environment variable, return the user_name and path to that user's workspace.
@@ -30,7 +35,13 @@ def tester_user():
     return user_name, decode_if_bytes(user_workspace)
 
 
-def get_reaper_username(test_username):
+def get_reaper_username(test_username: str) -> str:
+    """
+    Return the name of the user designated as the reaper for test_username.
+    A reaper user cleans up all remaining processes run by test_username.
+
+    Returns None if there is no associated reaper user.
+    """
     for users in (users for conf in config["workers"] for users in conf["users"]):
         if users["name"] == test_username:
             return users.get("reaper")

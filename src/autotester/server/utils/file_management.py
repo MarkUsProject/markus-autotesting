@@ -3,6 +3,8 @@ import uuid
 import tempfile
 import shutil
 import fcntl
+from typing import Generator, Tuple, List, Callable, Type, Optional, Any
+from types import TracebackType
 from autotester.server.utils import redis_management
 from autotester.config import config
 from contextlib import contextmanager
@@ -10,16 +12,17 @@ from contextlib import contextmanager
 FILES_DIRNAME = config["_workspace_contents", "_files_dir"]
 
 
-def clean_dir_name(name):
+def clean_dir_name(name: str) -> str:
     """ Return name modified so that it can be used as a unix style directory name """
     return name.replace("/", "_")
 
 
-def random_tmpfile_name():
+def random_tmpfile_name() -> str:
+    """ Return a path to a random filename in the system's temp directory """
     return os.path.join(tempfile.gettempdir(), uuid.uuid4().hex)
 
 
-def recursive_iglob(root_dir):
+def recursive_iglob(root_dir: str) -> Generator[Tuple[str, str], None, None]:
     """
     Walk breadth first over a directory tree starting at root_dir and
     yield the path to each directory or file encountered.
@@ -35,7 +38,7 @@ def recursive_iglob(root_dir):
         raise ValueError("directory does not exist: {}".format(root_dir))
 
 
-def copy_tree(src, dst, exclude=tuple()):
+def copy_tree(src: str, dst: str, exclude: Tuple = tuple()) -> List[Tuple[str, str]]:
     """
     Recursively copy all files and subdirectories in the path
     indicated by src to the path indicated by dst. If directories
@@ -57,7 +60,11 @@ def copy_tree(src, dst, exclude=tuple()):
     return copied
 
 
-def ignore_missing_dir_error(_func, _path, excinfo):
+def ignore_missing_dir_error(
+    _func: Callable,
+    _path: str,
+    excinfo: Tuple[Type[BaseException], BaseException, Optional[TracebackType]],
+) -> None:
     """ Used by shutil.rmtree to ignore a FileNotFoundError """
     err_type, err_inst, traceback = excinfo
     if err_type == FileNotFoundError:
@@ -65,7 +72,7 @@ def ignore_missing_dir_error(_func, _path, excinfo):
     raise err_inst
 
 
-def move_tree(src, dst):
+def move_tree(src: str, dst: str) -> List[Tuple[str, str]]:
     """
     Recursively move all files and subdirectories in the path
     indicated by src to the path indicated by dst. If directories
@@ -78,7 +85,9 @@ def move_tree(src, dst):
 
 
 @contextmanager
-def fd_open(path, flags=os.O_RDONLY, *args, **kwargs):
+def fd_open(
+    path: str, flags: int = os.O_RDONLY, *args: Any, **kwargs: Any
+) -> Generator[int, None, None]:
     """
     Open the file or directory at path, yield its
     file descriptor, and close it when finished.
@@ -92,7 +101,9 @@ def fd_open(path, flags=os.O_RDONLY, *args, **kwargs):
 
 
 @contextmanager
-def fd_lock(file_descriptor, exclusive=True):
+def fd_lock(
+    file_descriptor: int, exclusive: bool = True
+) -> Generator[None, None, None]:
     """
     Lock the object with the given file descriptor and unlock it
     when finished.  A lock can either be exclusive or shared by
@@ -105,7 +116,9 @@ def fd_lock(file_descriptor, exclusive=True):
         fcntl.flock(file_descriptor, fcntl.LOCK_UN)
 
 
-def copy_test_script_files(markus_address, assignment_id, tests_path):
+def copy_test_script_files(
+    markus_address: str, assignment_id: int, tests_path: str
+) -> List[Tuple[str, str]]:
     """
     Copy test script files for a given assignment to the tests_path
     directory if they exist. tests_path may already exist and contain
@@ -122,7 +135,13 @@ def copy_test_script_files(markus_address, assignment_id, tests_path):
     return []
 
 
-def setup_files(files_path, tests_path, test_username, markus_address, assignment_id):
+def setup_files(
+    files_path: str,
+    tests_path: str,
+    test_username: str,
+    markus_address: str,
+    assignment_id: int
+) -> Tuple[List[Tuple[str, str]], List[Tuple[str, str]]]:
     """
     Copy test script files and student files to the working directory tests_path,
     then make it the current working directory.

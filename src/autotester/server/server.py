@@ -9,6 +9,7 @@ import signal
 import rq
 import tempfile
 from markusapi import Markus
+from typing import Optional, Dict, Union, List, Tuple
 
 from autotester.exceptions import TesterCreationError
 from autotester.config import config
@@ -67,8 +68,10 @@ TESTER_IMPORT_LINE = {
     "racket": "from testers.racket.markus_racket_tester import MarkusRacketTester as Tester",
 }
 
+ResultData = Dict[str, Union[str, int, type(None), Dict]]
 
-def run_test_command(test_username=None):
+
+def run_test_command(test_username: Optional[str] = None) -> str:
     """
     Return a command used to run test scripts as a the test_username
     user, with the correct arguments. Set test_username to None to
@@ -90,7 +93,13 @@ def run_test_command(test_username=None):
     return cmd
 
 
-def create_test_group_result(stdout, stderr, run_time, extra_info, timeout=None):
+def create_test_group_result(
+    stdout: str,
+    stderr: str,
+    run_time: int,
+    extra_info: Dict,
+    timeout: Optional[int] = None,
+) -> ResultData:
     """
     Return the arguments passed to this function in a dictionary. If stderr is
     falsy, change it to None. Load the json string in stdout as a dictionary.
@@ -106,7 +115,7 @@ def create_test_group_result(stdout, stderr, run_time, extra_info, timeout=None)
     }
 
 
-def kill_with_reaper(test_username):
+def kill_with_reaper(test_username: str) -> bool:
     """
     Try to kill all processes currently being run by test_username using the method
     described in this article: https://lwn.net/Articles/754980/. Return True if this
@@ -125,24 +134,25 @@ def kill_with_reaper(test_username):
     if reaper_username is not None:
         cwd = os.path.dirname(os.path.abspath(__file__))
         kill_file_dst = random_tmpfile_name()
-        preexec_fn = set_rlimits_before_cleanup()
 
         copy_cmd = "sudo -u {0} -- bash -c 'cp kill_worker_procs {1} && chmod 4550 {1}'".format(
             test_username, kill_file_dst
         )
         copy_proc = subprocess.Popen(
-            copy_cmd, shell=True, preexec_fn=preexec_fn, cwd=cwd
+            copy_cmd, shell=True, preexec_fn=set_rlimits_before_cleanup, cwd=cwd
         )
         if copy_proc.wait() < 0:  # wait returns the return code of the proc
             return False
 
         kill_cmd = "sudo -u {} -- bash -c {}".format(reaper_username, kill_file_dst)
-        kill_proc = subprocess.Popen(kill_cmd, shell=True, preexec_fn=preexec_fn)
+        kill_proc = subprocess.Popen(
+            kill_cmd, shell=True, preexec_fn=set_rlimits_before_cleanup
+        )
         return kill_proc.wait() == 0
     return False
 
 
-def kill_without_reaper(test_username):
+def kill_without_reaper(test_username: str) -> None:
     """
     Kill all processes that test_username is able to kill
     """
@@ -150,7 +160,7 @@ def kill_without_reaper(test_username):
     subprocess.run(kill_cmd)
 
 
-def create_test_script_command(env_dir, tester_type):
+def create_test_script_command(env_dir: str, tester_type: str) -> str:
     """
     Return string representing a command line command to
     run tests.
@@ -169,20 +179,26 @@ def create_test_script_command(env_dir, tester_type):
     return f'{python_ex} -c "{python_str}"'
 
 
-def get_env_vars(test_username):
+def get_env_vars(test_username: str) -> Dict[str, str]:
     """ Return a dictionary containing all environment variables to pass to the next test """
     db_env_vars = setup_database(test_username)
     port_number = get_available_port()
     return {"PORT": port_number, **db_env_vars}
 
 
-def run_test_specs(cmd, test_specs, test_categories, tests_path, test_username, hooks):
+def run_test_specs(
+    cmd: str,
+    test_specs: Dict,
+    test_categories: List[str],
+    tests_path: str,
+    test_username: str,
+    hooks: Hooks,
+) -> Tuple[List[ResultData], str]:
     """
     Run each test script in test_scripts in the tests_path directory using the
     command cmd. Return the results.
     """
     results = []
-    preexec_fn = set_rlimits_before_test()
 
     with hooks.around("all"):
         for settings in test_specs["testers"]:
@@ -219,7 +235,7 @@ def run_test_specs(cmd, test_specs, test_categories, tests_path, test_username, 
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE,
                                     stdin=subprocess.PIPE,
-                                    preexec_fn=preexec_fn,
+                                    preexec_fn=set_rlimits_before_test,
                                     env={**os.environ, **env_vars},
                                 )
                                 try:
@@ -253,7 +269,13 @@ def run_test_specs(cmd, test_specs, test_categories, tests_path, test_username, 
     return results, hooks.format_errors()
 
 
-def store_results(results_data, markus_address, assignment_id, group_id, submission_id):
+def store_results(
+    results_data: Dict[str, Union[List[ResultData], str, int]],
+    markus_address: str,
+    assignment_id: int,
+    group_id: int,
+    submission_id: int,
+) -> None:
     """
     Write the results of multiple test script runs to an output file as a json string.
     The output file is located at:
@@ -276,7 +298,7 @@ def store_results(results_data, markus_address, assignment_id, group_id, submiss
         json.dump(results_data, f, indent=4)
 
 
-def clear_working_directory(tests_path, test_username):
+def clear_working_directory(tests_path: str, test_username: str) -> None:
     """
     Run commands that clear the tests_path working directory
     """
@@ -295,7 +317,7 @@ def clear_working_directory(tests_path, test_username):
     subprocess.run(clean_cmd, shell=True)
 
 
-def stop_tester_processes(test_username):
+def stop_tester_processes(test_username: str) -> None:
     """
     Run a command that kills all tester processes either by killing all
     user processes or killing with a reaper user (see https://lwn.net/Articles/754980/
@@ -306,7 +328,9 @@ def stop_tester_processes(test_username):
             kill_without_reaper(test_username)
 
 
-def finalize_results_data(results, error, all_hooks_error, time_to_service):
+def finalize_results_data(
+    results: List[ResultData], error: str, all_hooks_error: str, time_to_service: int
+) -> Dict[str, Union[List[ResultData], str, int]]:
     """ Return a dictionary of test script results combined with test run info """
     return {
         "test_groups": results,
@@ -316,7 +340,13 @@ def finalize_results_data(results, error, all_hooks_error, time_to_service):
     }
 
 
-def report(results_data, api, assignment_id, group_id, run_id):
+def report(
+    results_data: Dict[str, Union[List[ResultData], str, int]],
+    api: Markus,
+    assignment_id: int,
+    group_id: int,
+    run_id: int,
+) -> None:
     """ Post the results of running test scripts to the markus api """
     api.upload_test_group_results(
         assignment_id, group_id, run_id, json.dumps(results_data)
@@ -325,17 +355,17 @@ def report(results_data, api, assignment_id, group_id, run_id):
 
 @clean_after
 def run_test(
-    markus_address,
-    server_api_key,
-    test_categories,
-    files_path,
-    assignment_id,
-    group_id,
-    group_repo_name,
-    submission_id,
-    run_id,
-    enqueue_time,
-):
+    markus_address: str,
+    server_api_key: str,
+    test_categories: List[str],
+    files_path: str,
+    assignment_id: int,
+    group_id: int,
+    group_repo_name: str,
+    submission_id: int,
+    run_id: int,
+    enqueue_time: int,
+) -> None:
     """
     Run autotesting tests using the tests in the test_specs json file on the files in files_path.
 
@@ -388,7 +418,7 @@ def run_test(
         report(results_data, api, assignment_id, group_id, run_id)
 
 
-def get_tester_root_dir(tester_type):
+def get_tester_root_dir(tester_type: str) -> str:
     """
     Return the root directory of the tester named tester_type
     """
@@ -400,7 +430,7 @@ def get_tester_root_dir(tester_type):
     return tester_dir
 
 
-def update_settings(settings, specs_dir):
+def update_settings(settings: Dict, specs_dir: str) -> Dict:
     """
     Return a dictionary containing all the default settings and the installation settings
     contained in the tester's specs directory as well as the settings. The settings
@@ -416,7 +446,14 @@ def update_settings(settings, specs_dir):
     return full_settings
 
 
-def create_tester_environments(files_path, test_specs):
+def create_tester_environments(files_path: str, test_specs: Dict) -> Dict:
+    """
+    Return the test_specs dictionary updated with any additional data generated
+    from creating a new tester environment.
+
+    This function also creates a new tester environment if required based on the
+    values in test specs. Otherwise, the default environment is used.
+    """
     for i, settings in enumerate(test_specs["testers"]):
         tester_dir = get_tester_root_dir(settings["tester_type"])
         specs_dir = os.path.join(tester_dir, "specs")
@@ -442,7 +479,14 @@ def create_tester_environments(files_path, test_specs):
     return test_specs
 
 
-def destroy_tester_environments(old_test_script_dir):
+def destroy_tester_environments(old_test_script_dir: str) -> None:
+    """
+    Remove the tester environment specified in the settings file located
+    in the the old_test_script_dir directory.
+
+    Additionally, if the tester has an associated destroy_environment.sh
+    script, that script is run as well.
+    """
     test_specs_file = os.path.join(old_test_script_dir, SETTINGS_FILENAME)
     with open(test_specs_file) as f:
         test_specs = json.load(f)
@@ -463,7 +507,9 @@ def destroy_tester_environments(old_test_script_dir):
 
 
 @clean_after
-def update_test_specs(files_path, assignment_id, markus_address, test_specs):
+def update_test_specs(
+    files_path: str, assignment_id: int, markus_address: str, test_specs: Dict
+) -> None:
     """
     Copy new test scripts for a given assignment to from the files_path
     to a new location. Indicate that these new test scripts should be used instead of

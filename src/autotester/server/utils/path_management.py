@@ -1,10 +1,11 @@
 import os
 import sys
 from contextlib import contextmanager
+from typing import Generator
 
 
 @contextmanager
-def current_directory(path):
+def current_directory(path: str) -> Generator[None, None, None]:
     """
     Context manager that temporarily changes the working directory
     to the path argument.
@@ -21,7 +22,7 @@ def current_directory(path):
 
 
 @contextmanager
-def add_path(path, prepend=True):
+def add_path(path: str, prepend: bool = True) -> Generator[None, None, None]:
     """
     Context manager that temporarily adds a path to sys.path.
     If prepend is True, the path will be prepended otherwise

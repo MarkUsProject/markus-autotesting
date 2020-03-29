@@ -1,16 +1,19 @@
 import json
 from collections.abc import Mapping
+from typing import Any, Union, Tuple, Iterable, Optional
 
 
 class MarkusTestSpecs(Mapping):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """ Initialize a MarkUsTestSpecs instance """
         self._specs = dict(*args, **kwargs)
 
     @classmethod
-    def from_json(cls, json_str):
+    def from_json(cls, json_str: str) -> "MarkusTestSpecs":
+        """ Return a MarkUsTestSpecs instance created from a json string """
         return cls(json.loads(json_str))
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: Union[str, Tuple]) -> Any:
         """
         Behaves like a regular dict.__getitem__ except
         if the key is not found and the key is a tuple
@@ -18,11 +21,11 @@ class MarkusTestSpecs(Mapping):
         using each element in the tuple as a key in the next
         nested dictionary
 
-        >>> my_dict = {'a':{'b':{'c':123}}}
+        >>> my_dict = MarkusTestSpecs({'a':{'b':{'c': 123}}})
         >>> my_dict['a','b','c']
         123
         >>> my_dict['a','b']
-        {'c':123}
+        {'c': 123}
         """
         try:
             return self._specs[key]
@@ -34,13 +37,15 @@ class MarkusTestSpecs(Mapping):
                 return d
             raise
 
-    def __iter__(self):
+    def __iter__(self) -> Iterable:
+        """ Return an iterator over self._specs """
         return iter(self._specs)
 
-    def __len__(self):
+    def __len__(self) -> int:
+        """ Return the length of self._specs """
         return len(self._specs)
 
-    def get(self, *keys, default=None):
+    def get(self, *keys: str, default: Optional[Any] = None) -> Any:
         """
         Behaves like a regular dict.get except if there
         are multiple keys it will use __getitem__ to

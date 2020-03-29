@@ -1,7 +1,9 @@
 import enum
 import json
 import subprocess
+from typing import Dict, Optional, IO, Type
 
+from testers.markus_test_specs import MarkusTestSpecs
 from testers.markus_tester import MarkusTester, MarkusTest, MarkusTestError
 
 
@@ -16,7 +18,18 @@ class MarkusJavaTest(MarkusTest):
         "bad_java": 'Java runtime error: "{}"',
     }
 
-    def __init__(self, tester, result, feedback_open=None):
+    def __init__(
+        self,
+        tester: "MarkusJavaTester",
+        result: Dict,
+        feedback_open: Optional[IO] = None,
+    ) -> None:
+        """
+        Initialize a Java test created by tester.
+
+        The result was created after running some junit tests.
+        Test feedback will be written to feedback_open.
+        """
         self.class_name, _sep, self.method_name = result["name"].partition(".")
         self.description = result.get("description")
         self.status = MarkusJavaTest.JUnitStatus[result["status"]]
@@ -24,14 +37,18 @@ class MarkusJavaTest(MarkusTest):
         super().__init__(tester, feedback_open)
 
     @property
-    def test_name(self):
+    def test_name(self) -> str:
+        """ The name of this test """
         name = f"{self.class_name}.{self.method_name}"
         if self.description:
             name += f" ({self.description})"
         return name
 
     @MarkusTest.run_decorator
-    def run(self):
+    def run(self) -> str:
+        """
+        Return a json string containing all test result information.
+        """
         if self.status == MarkusJavaTest.JUnitStatus.SUCCESSFUL:
             return self.passed()
         elif self.status == MarkusJavaTest.JUnitStatus.FAILED:
@@ -44,11 +61,21 @@ class MarkusJavaTester(MarkusTester):
 
     JAVA_TESTER_CLASS = "edu.toronto.cs.teach.MarkusJavaTester"
 
-    def __init__(self, specs, test_class=MarkusJavaTest):
+    def __init__(
+        self, specs: MarkusTestSpecs, test_class: Type[MarkusJavaTest] = MarkusJavaTest
+    ) -> None:
+        """
+        Initialize a Java tester using the specifications in specs.
+
+        This tester will create tests of type test_class.
+        """
         super().__init__(specs, test_class)
         self.java_classpath = f'.:{self.specs["install_data", "path_to_tester_jars"]}/*'
 
-    def compile(self):
+    def compile(self) -> None:
+        """
+        Compile the junit tests specified in the self.specs specifications.
+        """
         javac_command = ["javac", "-cp", self.java_classpath]
         javac_command.extend(self.specs["test_data", "script_files"])
         # student files imported by tests will be compiled on cascade
@@ -60,7 +87,10 @@ class MarkusJavaTester(MarkusTester):
             check=True,
         )
 
-    def run_junit(self):
+    def run_junit(self) -> subprocess.CompletedProcess:
+        """
+        Run the junit tests specified in the self.specs specifications.
+        """
         java_command = [
             "java",
             "-cp",
@@ -78,7 +108,10 @@ class MarkusJavaTester(MarkusTester):
         return java
 
     @MarkusTester.run_decorator
-    def run(self):
+    def run(self) -> None:
+        """
+        Runs all tests in this tester.
+        """
         # check that the submission compiles against the tests
         try:
             self.compile()

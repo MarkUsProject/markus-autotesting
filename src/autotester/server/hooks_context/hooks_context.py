@@ -6,6 +6,8 @@ default_hooks.py files in testers/testers/*/bin directories.
 
 import os
 import traceback
+from typing import Optional, List, Dict, Any, Tuple, Generator, Collection
+from types import ModuleType
 from collections import defaultdict, deque
 from collections.abc import Callable
 from contextlib import contextmanager
@@ -49,7 +51,12 @@ class Hooks:
     HOOK_BASENAMES = ["before_all", "before_each", "after_all", "after_each"]
 
     def __init__(
-        self, custom_hooks_path=None, testers=None, cwd=None, args=None, kwargs=None
+        self,
+        custom_hooks_path: Optional[str] = None,
+        testers: Optional[Collection[str]] = None,
+        cwd: Optional[str] = None,
+        args: Optional[List[Any]] = None,
+        kwargs: Optional[Dict[str, Any]] = None,
     ):
         """
         Create a new Hooks object instance with args:
@@ -72,7 +79,7 @@ class Hooks:
         self._context = deque()
 
     @staticmethod
-    def _select_builtins(tester_info, _info=None):
+    def _select_builtins(tester_info: Dict, _info: Optional[Dict] = None) -> Dict:
         """
         Return a nested dictionary containing the hooks to apply based
         based on tester_info. Hook functions are included in the output
@@ -110,7 +117,9 @@ class Hooks:
         return _info
 
     @staticmethod
-    def _merge_hook_dicts(*hook_dicts):
+    def _merge_hook_dicts(
+        *hook_dicts: Dict[str, List[Callable]]
+    ) -> Dict[str, List[Callable]]:
         """
         Return a dictionary created by merging all dictionaries in hook_dicts. 
         hook_dicts are merged by concatenating all value lists together. These 
@@ -130,7 +139,7 @@ class Hooks:
             )
         return merged
 
-    def _load_all(self):
+    def _load_all(self) -> Dict[str, Dict[str, Dict[str, List[Callable]]]]:
         """
         Return a dictionary containing all hooks that may be run over the course of a test run. 
         This dictionary contains three nested levels: The key at the first level indicates the 
@@ -163,7 +172,7 @@ class Hooks:
                 )
         return hooks
 
-    def _load_module(self, hooks_script_path):
+    def _load_module(self, hooks_script_path: str) -> Optional[ModuleType]:
         """
         Return module loaded from hook_script_path. Log any error
         messages that were raised when trying to import the module
@@ -182,7 +191,7 @@ class Hooks:
                 self.load_errors.append((module_name, f"{traceback.format_exc()}\n{e}"))
         return None
 
-    def _load_hook(self, module, function_name):
+    def _load_hook(self, module: ModuleType, function_name: str) -> Optional[Callable]:
         """
         Return function named function_name from module or None if the function
         doesn't exist in that module's namespace or if the function is not a
@@ -199,7 +208,12 @@ class Hooks:
         except AttributeError:
             return
 
-    def _run(self, func, extra_args=None, extra_kwargs=None):
+    def _run(
+        self,
+        func: Callable,
+        extra_args: Optional[List] = None,
+        extra_kwargs: Optional[Dict] = None,
+    ) -> None:
         """
         Run the function func with positional and keyword arguments obtained by 
         merging self.args with extra_args and self.kwargs with extra_kwargs.
@@ -213,7 +227,9 @@ class Hooks:
                 (func.__name__, args, kwargs, f"{traceback.format_exc()}\n{e}")
             )
 
-    def _get_hooks(self, tester_type, builtin_selector=None):
+    def _get_hooks(
+        self, tester_type: str, builtin_selector: Optional[Dict] = None
+    ) -> Tuple[List[Callable], List[Callable]]:
         """
         Return list of hooks to run before and after a given block of code according
         to the tester_type and the builtin_selector dictionary. tester_type should be 
@@ -240,12 +256,12 @@ class Hooks:
     @contextmanager
     def around(
         self,
-        tester_type,
-        builtin_selector=None,
-        extra_args=None,
-        extra_kwargs=None,
-        cwd=None,
-    ):
+        tester_type: str,
+        builtin_selector: Optional[Dict] = None,
+        extra_args: Optional[List] = None,
+        extra_kwargs: Optional[Dict] = None,
+        cwd: Optional[str] = None,
+    ) -> Generator[None, None, None]:
         """
         Context manager used to run hooks around any block of code. Hooks are selected based on the tester type (one
         of 'all', 'each', or the name of a tester), a builtin_selector (usually the test settings for a given test
@@ -272,7 +288,7 @@ class Hooks:
             if tester_type not in {"all", "each"}:
                 self._context.pop()
 
-    def format_errors(self):
+    def format_errors(self) -> str:
         """
         Return a string containing the data from self.load_errors and self.run_errors.
         """

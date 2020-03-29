@@ -9,6 +9,7 @@ import inspect
 import glob
 import time
 import shutil
+from typing import TypeVar, Callable, Optional, List, Dict
 from rq.exceptions import NoSuchJobError
 from functools import wraps
 from autotester.exceptions import (
@@ -30,8 +31,10 @@ from autotester.server.server import run_test, update_test_specs
 
 SETTINGS_FILENAME = config["_workspace_contents", "_settings_file"]
 
+ExtraArgType = TypeVar("ExtraArgType", str, int, float)
 
-def _format_job_id(markus_address, run_id, **_kw):
+
+def _format_job_id(markus_address: str, run_id: int, **_kw: ExtraArgType) -> str:
     """
     Return a unique job id for each enqueued job
     based on the markus_address and the run_id
@@ -39,10 +42,14 @@ def _format_job_id(markus_address, run_id, **_kw):
     return "{}_{}".format(markus_address, run_id)
 
 
-def _check_args(func, args=None, kwargs=None):
+def _check_args(
+    func: Callable,
+    args: Optional[List[ExtraArgType]] = None,
+    kwargs: Optional[Dict[str, ExtraArgType]] = None,
+) -> None:
     """
     Raises an error if calling the function func with args and
-    kwargs would raise an error.
+    kwargs would raise a TypeError.
     """
     args = args or []
     kwargs = kwargs or {}
@@ -54,7 +61,7 @@ def _check_args(func, args=None, kwargs=None):
         )
 
 
-def _get_queue(**kw):
+def _get_queue(**kw: ExtraArgType) -> rq.Queue:
     """
     Return a queue. The returned queue is one whose condition function
     returns True when called with the arguments in **kw.
@@ -67,7 +74,7 @@ def _get_queue(**kw):
     )
 
 
-def _print_queue_info(queue):
+def _print_queue_info(queue: rq.Queue) -> None:
     """
     Print to stdout the estimated time to service for a new job being added
     to the queue. This is calculated based on the average pop interval
@@ -78,16 +85,23 @@ def _print_queue_info(queue):
     print(avg_pop_interval * count)
 
 
-def _check_test_script_files_exist(markus_address, assignment_id, **_kw):
+def _check_test_script_files_exist(
+    markus_address: str, assignment_id: int, **_kw: ExtraArgType
+) -> None:
+    """
+    Raise a TestScriptFilesError if the tests script files do not exist for a given assignment.
+    The assignment is determined based on the markus_address and assignment_id.
+    """
     if test_script_directory(markus_address, assignment_id) is None:
         raise TestScriptFilesError(
             "cannot find test script files: please upload some before running tests"
         )
 
 
-def _clean_on_error(func):
+def _clean_on_error(func: Callable) -> Callable:
     """
-    Remove files_path directories from the working dir if a function raises an error.
+    Function decorator that removes files_path directories from the working dir if
+    func raises an error.
 
     Note: the files_path directory must be passed to the function as a keyword argument.
     """
@@ -105,25 +119,23 @@ def _clean_on_error(func):
     return wrapper
 
 
-def _get_job_timeout(test_specs, test_categories, multiplier=1.5):
+def _get_job_timeout(
+    test_specs: Dict, test_categories: List[str], multiplier: float = 1.5
+) -> int:
     """
-    Return multiplier times the sum of all timeouts in the
-    <test_specs> dictionary
+    Return an integer equal to multiplier times the sum of all timeouts in the
+    test_specs dictionary
 
-    Raises a RuntimeError if there are no elements in test_data that
-    have the category <test_category>
+    Raises a RuntimeError if there are no elements in test_specs that
+    have the category test_categories
     """
     total_timeout = 0
     test_data_count = 0
     for settings in test_specs["testers"]:
         for test_data in settings["test_data"]:
             test_category = test_data.get("category", [])
-            if set(test_category) & set(
-                test_categories
-            ):  # TODO: ensure test_categories is non-string collection type
-                total_timeout += test_data.get(
-                    "timeout", 30
-                )  # TODO: don't hardcode default timeout
+            if set(test_category) & set(test_categories):
+                total_timeout += test_data.get("timeout", 30)
                 test_data_count += 1
     if test_data_count:
         return int(total_timeout * multiplier)
@@ -133,9 +145,14 @@ def _get_job_timeout(test_specs, test_categories, multiplier=1.5):
 
 
 @_clean_on_error
-def enqueue_test(user_type, batch_id, **kw):
+def enqueue_test(user_type: str, batch_id: Optional[int], **kw: ExtraArgType) -> None:
     """
-    Enqueue a test run job with keyword arguments specified in **kw
+    Enqueue a test run job with keyword arguments specified in **kw.
+
+    The user_type and batch_id arguments are used to determine which
+    queue to enqueue the job to (see _get_queue).
+
+    Prints the queue information to stdout (see _print_queue_info).
     """
     kw["enqueue_time"] = time.time()
     queue = _get_queue(user_type=user_type, batch_id=batch_id, **kw)
@@ -152,9 +169,16 @@ def enqueue_test(user_type, batch_id, **kw):
 
 
 @_clean_on_error
-def update_specs(test_specs, schema=None, **kw):
+def update_specs(
+    test_specs: Dict[str, ExtraArgType],
+    schema: Optional[Dict] = None,
+    **kw: ExtraArgType,
+) -> None:
     """
-    Run test spec update function after validating the <schema> form data.
+    Run the test update_test_specs function (from the server module) after validating
+    the <schema> form data.
+
+    Raises an error if the test_specs is not valid according to schema.
     """
     if schema is not None:
         error = form_validation.validate_with_defaults(
@@ -166,7 +190,7 @@ def update_specs(test_specs, schema=None, **kw):
     update_test_specs(test_specs=test_specs, **kw)
 
 
-def cancel_test(markus_address, run_ids, **_kw):
+def cancel_test(markus_address: str, run_ids: List[int], **_kw: ExtraArgType) -> None:
     """
     Cancel a test run job with the job_id defined using
     markus_address and run_id.
@@ -185,7 +209,7 @@ def cancel_test(markus_address, run_ids, **_kw):
                 job.cancel()
 
 
-def get_schema(**_kw):
+def get_schema(**_kw: ExtraArgType) -> None:
     """
     Print a json to stdout representing a json schema that indicates
     the required specs for each installed tester type.
@@ -211,7 +235,7 @@ def get_schema(**_kw):
     print(json.dumps(schema_skeleton))
 
 
-def parse_arg_file(arg_file):
+def parse_arg_file(arg_file: str) -> Dict[str, ExtraArgType]:
     """
     Load arg_file as a json and return a dictionary
     containing the keyword arguments to be pased to
@@ -242,7 +266,13 @@ COMMANDS = {
 }
 
 
-def cli():
+def cli() -> None:
+    """
+    Entrypoint for the command line interface for the autotester package.
+
+    This function is invoked when the markus_autotester command is called
+    from the command line.
+    """
     parser = argparse.ArgumentParser()
 
     parser.add_argument("command", choices=COMMANDS)

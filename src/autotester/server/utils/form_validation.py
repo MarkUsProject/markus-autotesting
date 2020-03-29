@@ -1,9 +1,14 @@
 from jsonschema import Draft7Validator, validators, ValidationError
 from jsonschema.exceptions import best_match
 from copy import deepcopy
+from typing import Type, Generator, Dict, Union, List
+
+ValidatorType = type(Draft7Validator)
 
 
-def extend_with_default(validator_class=Draft7Validator):
+def extend_with_default(
+    validator_class: Type[ValidatorType] = Draft7Validator,
+) -> ValidatorType:
     """
     Extends a validator class to add defaults before validation.
     From: https://github.com/Julian/jsonschema/blob/master/docs/faq.rst
@@ -11,7 +16,12 @@ def extend_with_default(validator_class=Draft7Validator):
     validate_props = validator_class.VALIDATORS["properties"]
     validate_array = validator_class.VALIDATORS["items"]
 
-    def set_defaults(validator, properties, instance, schema):
+    def set_defaults(
+        validator: ValidatorType,
+        properties: Dict,
+        instance: Union[Dict, List],
+        schema: Dict,
+    ) -> Generator[BaseException, None, None]:
         """ Set defaults within a "properties" context """
         if not validator.is_type(instance, "object"):
             return
@@ -30,7 +40,9 @@ def extend_with_default(validator_class=Draft7Validator):
         for error in validate_props(validator, properties, instance, schema):
             yield error
 
-    def set_array_defaults(validator, properties, instance, schema):
+    def set_array_defaults(
+        validator: ValidatorType, properties: Dict, instance: List, schema: Dict
+    ) -> Generator[ValidationError, None, None]:
         """ Set defaults within an "array" context """
         if not validator.is_type(instance, "array"):
             return
@@ -48,7 +60,9 @@ def extend_with_default(validator_class=Draft7Validator):
         for error in validate_array(validator, properties, instance, schema):
             yield error
 
-    def set_oneOf_defaults(validator, properties, instance, schema):
+    def set_oneof_defaults(
+        validator: ValidatorType, properties: Dict, instance: Dict, schema: Dict
+    ) -> Generator[ValidationError, None, None]:
         """ 
         Set defaults within a "oneOf" context. This ensures that only
         defaults from the matching subschema are set on the instance.
@@ -87,15 +101,18 @@ def extend_with_default(validator_class=Draft7Validator):
     custom_validators = {
         "properties": set_defaults,
         "items": set_array_defaults,
-        "oneOf": set_oneOf_defaults,
+        "oneOf": set_oneof_defaults,
     }
 
     return validators.extend(validator_class, custom_validators)
 
 
 def validate_with_defaults(
-    schema, obj, validator_class=Draft7Validator, best_only=True
-):
+    schema: Dict,
+    obj: Union[Dict, List],
+    validator_class: ValidatorType = Draft7Validator,
+    best_only: bool = True,
+) -> Union[ValidationError, List[ValidationError]]:
     """
     Return an iterator that yields errors from validating obj on schema 
     after first filling in defaults on obj.
@@ -110,7 +127,11 @@ def validate_with_defaults(
     return errors
 
 
-def is_valid(obj, schema, validator_class=Draft7Validator):
+def is_valid(
+    obj: Union[Dict, List],
+    schema: Dict,
+    validator_class: ValidatorType = Draft7Validator,
+) -> bool:
     """
     Return True if <obj> is valid for schema <schema> using the
     validator <validator_class>.

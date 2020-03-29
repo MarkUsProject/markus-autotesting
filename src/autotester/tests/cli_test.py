@@ -218,7 +218,7 @@ class TestUpdateSpecs:
         ):
             with patch("autotester.cli.update_test_specs"):
                 try:
-                    cli.update_specs("", **self.get_kwargs(schema={}))
+                    cli.update_specs({}, **self.get_kwargs(schema={}))
                 except DummyTestError:
                     pytest.fail("should not have failed because the form is valid")
 
@@ -228,7 +228,7 @@ class TestUpdateSpecs:
             return_value=[],
         ):
             with patch("autotester.cli.update_test_specs") as update_test_specs:
-                cli.update_specs("", **self.get_kwargs(schema={}))
+                cli.update_specs({}, **self.get_kwargs(schema={}))
                 update_test_specs.assert_called_once()
 
     def test_cleans_up_files_on_error(self, mock_rmtree):
