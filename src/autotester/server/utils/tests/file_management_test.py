@@ -16,8 +16,32 @@ import tempfile
 import shutil
 from autotester.config import config
 import subprocess
+import pytest
 
 FILES_DIRNAME = config["_workspace_contents", "_files_dir"]
+
+@pytest.fixture
+def input1():
+    dir1 = tempfile.mkdtemp()
+    fd, file1 = tempfile.mkstemp(dir=dir1)
+    dir2 = tempfile.mkdtemp()
+    sub_dir = tempfile.mkdtemp(dir=dir2)
+    dir3 = tempfile.mkdtemp()
+    sub_dir1 = tempfile.mkdtemp(dir=dir3)
+    sub_dir2 = tempfile.mkdtemp(dir=sub_dir1)
+    fd, file3 = tempfile.mkstemp(dir=sub_dir2)
+    yield dir1, file1, dir2, sub_dir, dir3, sub_dir1, sub_dir2, file3
+    if os.path.exists(dir1): shutil.rmtree(dir1)
+    if os.path.exists(dir2): shutil.rmtree(dir2)
+    if os.path.exists(dir3): shutil.rmtree(dir3)
+
+
+def list_of_fd(file_or_dir):
+    dir = []
+    files = []
+    for i in file_or_dir:
+        dir.append(i[1]) if i[0] == "d" else files.append(i[1])
+    return dir, files
 
 
 def test_clean_dir_name():
@@ -35,33 +59,80 @@ def test_random_tmpfile_name():
     )
 
 
-def test_recursive_iglob():
-    root_dir = tempfile.mkdtemp()
-    fd, file = tempfile.mkstemp(dir=root_dir)
-    sub_dir = tempfile.mkdtemp(dir=root_dir)
+# When the Directory is empty
+def test_recursive_iglob_1(input1):
+    _,_,_,empty_dir, *_ = input1
+    file_or_dir = list(recursive_iglob(empty_dir))
+    dir, files = list_of_fd(file_or_dir)
+    assert not dir and not files
+
+
+# When the Directory has only one file
+def test_recursive_iglob_2(input1):
+    root_dir, file, *_ = input1
     file_or_dir = list(recursive_iglob(root_dir))
-    dir = []
-    files = []
-    for i in file_or_dir:
-        dir.append(i[1]) if i[0] == "d" else files.append(i[1])
-    assert all([os.path.exists(d) for d in dir])
-    assert all([os.path.exists(f) for f in files])
-    assert sub_dir == dir[0]
-    assert file == files[0]
-    shutil.rmtree(root_dir)
-    os.close(fd)
+    dir, files = list_of_fd(file_or_dir)
+    assert not dir
+    assert len(files) == 1 and file in files
+    assert os.path.exists(files[0])
 
 
-def test_copy_tree():
-    source_dir = tempfile.mkdtemp()
-    fd, source_file = tempfile.mkstemp(dir=source_dir)
-    dest_dir = tempfile.mkdtemp()
+# When the Dirctory has only one sub directory
+def test_recursive_iglob_3(input1):
+    _,_, root_dir, sub_dir, *_ = input1
+    file_or_dir = list(recursive_iglob(root_dir))
+    dir, files = list_of_fd(file_or_dir)
+    assert not files
+    assert len(dir) == 1 and sub_dir in dir
+    assert os.path.exists(dir[0])
+
+
+# When the files are nested in subdirectories more than 2 directories deep
+def test_recursive_iglob_4(input1):
+    *_, root_dir, sub_dir1, sub_dir2, file = input1
+    file_or_dir = list(recursive_iglob(root_dir))
+    dir, files = list_of_fd(file_or_dir)
+    assert all(os.path.exists(d) for d in dir)
+    assert all(os.path.exists(f) for f in files)
+    assert sub_dir1 in dir and sub_dir2 in dir
+    assert file in files
+
+
+# When the Source Directory is empty
+def test_copy_tree_1(input1):
+    dest_dir, _, _, source_dir, *_ = input1
+    list_fd_bef_copy = os.listdir(dest_dir)
     copy_tree(source_dir, dest_dir)
-    copied_file = os.path.join(dest_dir, source_file)
+    list_fd_after_copy = os.listdir(dest_dir)
+    assert len(list_fd_bef_copy) == len(list_fd_after_copy)
+
+
+# When the Source Directory has only one file
+def test_copy_tree_2(input1):
+    source_dir, source_file, _, dest_dir, *_ = input1
+    copy_tree(source_dir, dest_dir)
+    copied_file = os.path.join(dest_dir, os.path.basename(source_file))
     assert os.path.exists(copied_file)
-    os.close(fd)
-    shutil.rmtree(source_dir)
-    shutil.rmtree(dest_dir)
+
+
+# When the Dirctory has only one sub directory
+def test_copy_tree_3(input1):
+    dest_dir, _, source_dir, sub_dir, *_ = input1
+    copy_tree(source_dir, dest_dir)
+    copied_dir = os.path.join(dest_dir, os.path.basename(sub_dir))
+    assert os.path.exists(copied_dir)
+
+
+# When the files are nested in subdirectories more than 2 directories deep
+def test_copy_tree_4(input1):
+    _, _, dest_dir, _, source_dir, sub_dir1, sub_dir2, source_file = input1
+    copy_tree(source_dir, dest_dir)
+    copied_dir1 = os.path.join(dest_dir, os.path.basename(sub_dir1))
+    copied_dir2 = os.path.join(copied_dir1, os.path.basename(sub_dir2))
+    copied_file = os.path.join(copied_dir2, os.path.basename(source_file))
+    assert os.path.exists(copied_dir1)
+    assert os.path.exists(copied_dir2)
+    assert os.path.exists(copied_file)
 
 
 def test_ignore_missing_dir_error():
@@ -70,21 +141,46 @@ def test_ignore_missing_dir_error():
     error = True
     try:
         shutil.rmtree(dir, onerror=ignore_missing_dir_error)
-    except Exception:
+    except FileNotFoundError:
         error = False
     assert error
 
 
-def test_move_tree():
-    source_dir = tempfile.mkdtemp()
-    fd, source_file = tempfile.mkstemp(dir=source_dir)
-    dest_dir = tempfile.mkdtemp()
-    os.close(fd)
+# When the Source Directory is empty
+def test_move_tree_1(input1):
+    dest_dir, _, _, source_dir, *_ = input1
+    list_fd_bef_move = os.listdir(dest_dir)
     move_tree(source_dir, dest_dir)
-    file_name = os.path.basename(source_file)
-    moved_file = os.path.join(dest_dir, file_name)
+    list_fd_after_move = os.listdir(dest_dir)
+    assert len(list_fd_bef_move) == len(list_fd_after_move)
+
+
+# When the Source Directory has only one file
+def test_move_tree_2(input1):
+    source_dir, source_file, _, dest_dir, *_ = input1
+    move_tree(source_dir, dest_dir)
+    moved_file = os.path.join(dest_dir, os.path.basename(source_file))
     assert os.path.exists(moved_file) and not os.path.exists(source_file)
-    shutil.rmtree(dest_dir)
+
+
+# When the Dirctory has only one sub directory
+def test_move_tree_3(input1):
+    dest_dir, _, source_dir, sub_dir, *_ = input1
+    move_tree(source_dir, dest_dir)
+    moved_dir = os.path.join(dest_dir, os.path.basename(sub_dir))
+    assert os.path.exists(moved_dir) and not os.path.exists(sub_dir)
+
+
+# When the files are nested in subdirectories more than 2 directories deep
+def test_move_tree_4(input1):
+    _, _, dest_dir, _, source_dir, sub_dir1, sub_dir2, source_file = input1
+    move_tree(source_dir, dest_dir)
+    moved_dir1 = os.path.join(dest_dir, os.path.basename(sub_dir1))
+    moved_dir2 = os.path.join(moved_dir1, os.path.basename(sub_dir2))
+    moved_file = os.path.join(moved_dir2, os.path.basename(source_file))
+    assert os.path.exists(moved_dir1) and not os.path.exists(sub_dir1)
+    assert os.path.exists(moved_dir2)
+    assert os.path.exists(moved_file)
 
 
 def test_fd_open():
@@ -96,15 +192,12 @@ def test_fd_open():
     with fd_open(file) as fdf:
         same_file = os.path.sameopenfile(fdf, file_fd)
     assert same_dir and same_file
-    assert type(fdd) is int
-    assert type(fdf) is int
     os.close(dir_fd)
     os.close(file_fd)
 
 
-def test_fd_lock_p1():
-    temp_dir = tempfile.mkdtemp()
-    fd, temp_file = tempfile.mkstemp(dir=temp_dir)
+def test_fd_lock(input1):
+    temp_dir, temp_file, *_ = input1
     access = True
     with fd_open(temp_dir) as fd:
         with fd_lock(fd):
@@ -115,11 +208,10 @@ def test_fd_lock_p1():
     assert not access
 
 
-def test_copy_test_script_files():
+def test_copy_test_script_files(input1):
     markus_address = "http://localhost:3000/csc108/en/main"
     assignment_id = 1
-    tests_path = tempfile.mkdtemp()
-    file_fd, test_file = tempfile.mkstemp(dir=tests_path)
+    tests_path, test_file, *_ = input1
     copy_test_script_files(markus_address, assignment_id, tests_path)
     test_script_outer_dir = redis_management.test_script_directory(
         markus_address, assignment_id
@@ -127,5 +219,3 @@ def test_copy_test_script_files():
     test_script_dir = os.path.join(test_script_outer_dir, FILES_DIRNAME)
     copied_file = os.path.join(test_script_dir, test_file)
     assert os.path.exists(copied_file)
-    os.close(file_fd)
-    shutil.rmtree(tests_path)
