@@ -14,7 +14,6 @@ import os.path
 import tempfile
 import shutil
 from autotester.config import config
-import subprocess
 import pytest
 
 FILES_DIRNAME = config["_workspace_contents", "_files_dir"]
@@ -163,8 +162,7 @@ class TestCopyTree:
 def test_ignore_missing_dir_error():
     dir = tempfile.mkdtemp()
     shutil.rmtree(dir)
-    with pytest.raises(FileNotFoundError) as excinfo:
-        assert shutil.rmtree(dir, onerror=ignore_missing_dir_error)
+    shutil.rmtree(dir, onerror=ignore_missing_dir_error)
 
 
 class TestMoveTree:
@@ -238,17 +236,7 @@ class TestFdOpen:
             with fd_open(dir) as fdd:
                 dir_fd = fdd
             with pytest.raises(Exception):
-                assert os.close(dir_fd)
-
-
-def test_fd_lock(dir_has_onefile, empty_dir):
-    temp_dir, temp_file = dir_has_onefile
-    dest_dir = empty_dir
-    access = True
-    with fd_open(temp_dir) as fd:
-        with fd_lock(fd):
-            with pytest.raises(Exception) as excinfo:
-                assert subprocess.run(["cp", temp_file, dest_dir])
+                os.close(dir_fd)
 
 
 def test_copy_test_script_files(dir_has_onefile):
