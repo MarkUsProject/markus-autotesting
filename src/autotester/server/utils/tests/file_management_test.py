@@ -7,7 +7,6 @@ from autotester.server.utils.file_management import (
     ignore_missing_dir_error,
     move_tree,
     fd_open,
-    fd_lock,
 )
 from autotester.server.utils import redis_management
 import os.path
@@ -170,7 +169,7 @@ class TestMoveTree:
         """
         When the Source Directory is empty
         """
-        source_dir = empty_dir
+        source_dir = tempfile.mkdtemp()
         dest_dir, sub_dir = dir_has_onedir
         list_fd_bef_move = os.listdir(dest_dir)
         move_tree(source_dir, dest_dir)
@@ -192,7 +191,8 @@ class TestMoveTree:
         """
         When the Dirctory has only one sub directory
         """
-        source_dir, sub_dir = dir_has_onedir
+        source_dir = tempfile.mkdtemp()
+        sub_dir = tempfile.mkdtemp(dir=source_dir)
         dest_dir = empty_dir
         move_tree(source_dir, dest_dir)
         moved_dir = os.path.join(dest_dir, os.path.basename(sub_dir))
