@@ -157,7 +157,7 @@ def kill_without_reaper(test_username: str) -> None:
     Kill all processes that test_username is able to kill
     """
     kill_cmd = f"sudo -u {test_username} -- bash -c 'kill -KILL -1'"
-    subprocess.run(kill_cmd)
+    subprocess.run(kill_cmd, shell=True)
 
 
 def create_test_script_command(env_dir: str, tester_type: str) -> str:
@@ -539,7 +539,7 @@ def update_test_specs(
     old_test_script_dir = test_script_directory(markus_address, assignment_id)
     test_script_directory(markus_address, assignment_id, set_to=new_dir)
 
-    if old_test_script_dir is not None:
+    if old_test_script_dir is not None and os.path.isdir(old_test_script_dir):
         with fd_open(old_test_script_dir) as fd:
             with fd_lock(fd, exclusive=True):
                 destroy_tester_environments(old_test_script_dir)

@@ -120,6 +120,7 @@ _create_unprivileged_user() {
     echo "[AUTOTEST-INSTALL] worker users are not restricted from accessing redis in a docker installation"
   fi
   echo "${SERVER_USER} ALL=(${username}) NOPASSWD:ALL" | sudo EDITOR="tee -a" visudo
+  sudo usermod -a -G "${username}" "${SERVER_USER}"
 }
 
 _create_worker_and_reaper_users() {
