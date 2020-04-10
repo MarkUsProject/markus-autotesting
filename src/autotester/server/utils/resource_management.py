@@ -23,9 +23,10 @@ def set_rlimits_before_test() -> None:
         )
         curr_soft, curr_hard = resource.getrlimit(limit)
         # account for the fact that resource.RLIM_INFINITY == -1
-        if (soft := min(curr_soft, config_soft)) < 0:
+        soft, hard = min(curr_soft, config_soft), min(curr_hard, config_hard)
+        if soft < 0:
             soft = max(curr_soft, config_soft)
-        if (hard := min(curr_hard, config_hard)) < 0:
+        if hard < 0:
             hard = max(curr_hard, config_hard)
         # reduce the hard limit so that cleanup scripts will have at least adj more resources to use.
         adj = RLIMIT_ADJUSTMENTS.get(limit_str, 0)
