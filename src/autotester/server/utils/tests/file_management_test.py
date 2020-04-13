@@ -3,19 +3,23 @@ from autotester.server.utils.file_management import (
     random_tmpfile_name,
     recursive_iglob,
     copy_tree,
-    copy_test_script_files,
     ignore_missing_dir_error,
     move_tree,
+    fd_lock,
     fd_open,
 )
-from autotester.server.utils import redis_management
 import os.path
 import tempfile
 import shutil
 from autotester.config import config
 import pytest
+import fakeredis
+
+from autotester.server.utils import string_management
+from autotester.server.utils.redis_management import get_test_script_key
 
 FILES_DIRNAME = config["_workspace_contents", "_files_dir"]
+CURRENT_TEST_SCRIPT_HASH = config["redis", "_current_test_script_hash"]
 
 
 @pytest.fixture
@@ -244,9 +248,35 @@ def test_copy_test_script_files(dir_has_onefile):
     assignment_id = 1
     tests_path, test_file = dir_has_onefile
     copy_test_script_files(markus_address, assignment_id, tests_path)
-    test_script_outer_dir = redis_management.test_script_directory(
+    test_script_outer_dir = test_script_directory(
         markus_address, assignment_id
     )
     test_script_dir = os.path.join(test_script_outer_dir, FILES_DIRNAME)
     copied_file = os.path.join(test_script_dir, test_file)
     assert os.path.exists(copied_file)
+
+
+def copy_test_script_files(markus_address, assignment_id, tests_path):
+    """
+        Copy test script files for a given assignment to the tests_path
+        directory if they exist. tests_path may already exist and contain
+        files and subdirectories.
+        """
+    test_script_outer_dir = test_script_directory(
+        markus_address, assignment_id
+    )
+    test_script_dir = os.path.join(test_script_outer_dir, FILES_DIRNAME)
+    if os.path.isdir(test_script_dir):
+        with fd_open(test_script_dir) as fd:
+            with fd_lock(fd, exclusive=False):
+                return copy_tree(test_script_dir, tests_path)
+    return []
+
+
+def test_script_directory(markus_address, assignment_id, set_to=None):
+    key = get_test_script_key(markus_address, assignment_id)
+    r = fakeredis.FakeStrictRedis()
+    if set_to is not None:
+        r.hset(CURRENT_TEST_SCRIPT_HASH, key, set_to)
+    out = r.hget(CURRENT_TEST_SCRIPT_HASH, key)
+    return string_management.decode_if_bytes(out)
