@@ -273,15 +273,21 @@ start_workers() {
   local supervisorconf
   local generate_script
   local rq
+  local worker_cmd
 
   supervisorconf="${WORKSPACE_SUBDIRS[LOGS]}/supervisord.conf"
   generate_script="${BINDIR}/generate_supervisord_conf.py"
   rq="${SERVER_VENV}/bin/rq"
+  worker_cmd="${PYTHON} ${generate_script} ${rq} ${supervisorconf}"
 
 
   echo "[AUTOTEST-INSTALL] Generating supervisor config at '${supervisorconf}' and starting rq workers"
-  sudo -Eu "${SERVER_USER}" -- bash -c "${PYTHON} ${generate_script} ${rq} ${supervisorconf} &&
-                                      ${BINDIR}/start-stop.sh start"
+  if [ -z "${DOCKER}" ]; then
+    echo "[AUTOTEST-INSTALL] Starting rq workers"
+    worker_cmd="${worker_cmd} && ${BINDIR}/start-stop.sh start"
+  fi
+
+  sudo -Eu "${SERVER_USER}" -- bash -c "${worker_cmd}"
 }
 
 install_testers() {

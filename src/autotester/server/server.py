@@ -303,17 +303,15 @@ def clear_working_directory(tests_path: str, test_username: str) -> None:
     Run commands that clear the tests_path working directory
     """
     if test_username != current_user():
-        chmod_cmd = "sudo -u {} -- bash -c 'chmod -Rf ugo+rwX {}'".format(
-            test_username, tests_path
-        )
+        chmod_cmd = f"sudo -u {test_username} -- bash -c 'chmod -Rf ugo+rwX {tests_path}'"
     else:
-        chmod_cmd = "chmod -Rf ugo+rwX {}".format(tests_path)
+        chmod_cmd = f"chmod -Rf ugo+rwX {tests_path}"
 
     subprocess.run(chmod_cmd, shell=True)
 
     # be careful not to remove the tests_path dir itself since we have to
     # set the group ownership with sudo (and that is only done in ../install.sh)
-    clean_cmd = "rm -rf {0}/.[!.]* {0}/*".format(tests_path)
+    clean_cmd = f"rm -rf {tests_path}/.[!.]* {tests_path}/*"
     subprocess.run(clean_cmd, shell=True)
 
 

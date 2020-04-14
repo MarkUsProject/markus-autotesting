@@ -10,7 +10,7 @@ RQ="${PROJECTROOT}/venv/bin/rq"
 SUPERVISORD="${PROJECTROOT}/venv/bin/supervisord"
 
 start_supervisor() {
-	(cd "${LOGS_DIR}" && ${SUPERVISORD} -c supervisord.conf)
+	(cd "${LOGS_DIR}" && ${SUPERVISORD} -c supervisord.conf "$@")
 }
 
 stop_supervisor() {
@@ -48,14 +48,14 @@ fi
 
 case $1 in 
 	start)
-		start_supervisor
+		start_supervisor "${@:2}"
 		;;
 	stop)
 		stop_supervisor
 		;;
 	restart)
 		stop_supervisor
-		start_supervisor
+		start_supervisor "${@:2}"
 		;;
 	stat)
 		"${RQ}" info --url "${REDIS_URL}" "${@:2}"

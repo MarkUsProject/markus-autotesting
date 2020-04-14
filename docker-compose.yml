@@ -33,7 +33,7 @@ services:
     <<: *app
     entrypoint: .dockerfiles/entrypoint-dev.sh
     container_name: autotest
-    command: '/bin/bash'
+    command: './bin/start-stop.sh start --nodaemon --logfile -'
 
   postgres_autotest:
     image: postgres:10
@@ -53,6 +53,15 @@ services:
     - redis_autotest:/data
     ports:
     - 6379
+
+  rq_dashboard:
+    image: eoranged/rq-dashboard
+    environment:
+      - RQ_DASHBOARD_REDIS_URL=redis://redis_autotest:6379/
+    ports:
+      - '9181:9181'
+    depends_on:
+      - redis_autotest
 
 volumes:
   postgres_autotest:
