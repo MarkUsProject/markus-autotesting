@@ -1,3 +1,5 @@
+from contextlib import contextmanager
+
 from autotester.server.utils.file_management import (
     clean_dir_name,
     random_tmpfile_name,
@@ -5,7 +7,7 @@ from autotester.server.utils.file_management import (
     copy_tree,
     ignore_missing_dir_error,
     move_tree,
-    fd_lock,
+    copy_test_script_files,
     fd_open,
 )
 import os.path
@@ -13,10 +15,10 @@ import tempfile
 import shutil
 from autotester.config import config
 import pytest
-import fakeredis
+from fakeredis import FakeStrictRedis
+from unittest.mock import patch
 
-from autotester.server.utils import string_management
-from autotester.server.utils.redis_management import get_test_script_key
+from autotester.server.utils import redis_management
 
 FILES_DIRNAME = config["_workspace_contents", "_files_dir"]
 CURRENT_TEST_SCRIPT_HASH = config["redis", "_current_test_script_hash"]
@@ -49,6 +51,28 @@ def nested_fd():
             with tempfile.TemporaryDirectory(dir=sub_dir1) as sub_dir2:
                 with tempfile.NamedTemporaryFile(dir=sub_dir2) as file:
                     yield root_dir, sub_dir1, sub_dir2, file.name
+
+
+@pytest.fixture(autouse=True)
+def redis():
+    fake_redis = FakeStrictRedis()
+    with patch(
+        "autotester.server.utils.redis_management.redis_connection",
+        return_value=fake_redis,
+    ):
+        yield fake_redis
+
+
+@pytest.fixture(autouse=True)
+def tmp_script_dir():
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        files_dir = os.path.join(tmp_dir, "files")
+        os.mkdir(files_dir)
+        with patch(
+            "autotester.server.utils.redis_management.test_script_directory",
+            return_value=tmp_dir,
+        ):
+            yield tmp_dir
 
 
 def list_of_fd(file_or_dir):
@@ -243,40 +267,14 @@ class TestFdOpen:
                 os.close(dir_fd)
 
 
-def test_copy_test_script_files(dir_has_onefile):
+def test_copy_test_script_files(dir_has_onefile, redis, tmp_script_dir):
     markus_address = "http://localhost:3000/csc108/en/main"
     assignment_id = 1
     tests_path, test_file = dir_has_onefile
     copy_test_script_files(markus_address, assignment_id, tests_path)
-    test_script_outer_dir = test_script_directory(
+    test_script_outer_dir = redis_management.test_script_directory(
         markus_address, assignment_id
     )
     test_script_dir = os.path.join(test_script_outer_dir, FILES_DIRNAME)
     copied_file = os.path.join(test_script_dir, test_file)
     assert os.path.exists(copied_file)
-
-
-def copy_test_script_files(markus_address, assignment_id, tests_path):
-    """
-        Copy test script files for a given assignment to the tests_path
-        directory if they exist. tests_path may already exist and contain
-        files and subdirectories.
-        """
-    test_script_outer_dir = test_script_directory(
-        markus_address, assignment_id
-    )
-    test_script_dir = os.path.join(test_script_outer_dir, FILES_DIRNAME)
-    if os.path.isdir(test_script_dir):
-        with fd_open(test_script_dir) as fd:
-            with fd_lock(fd, exclusive=False):
-                return copy_tree(test_script_dir, tests_path)
-    return []
-
-
-def test_script_directory(markus_address, assignment_id, set_to=None):
-    key = get_test_script_key(markus_address, assignment_id)
-    r = fakeredis.FakeStrictRedis()
-    if set_to is not None:
-        r.hset(CURRENT_TEST_SCRIPT_HASH, key, set_to)
-    out = r.hget(CURRENT_TEST_SCRIPT_HASH, key)
-    return string_management.decode_if_bytes(out)
