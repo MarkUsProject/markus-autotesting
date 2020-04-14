@@ -1,5 +1,3 @@
-from contextlib import contextmanager
-
 from autotester.server.utils.file_management import (
     clean_dir_name,
     random_tmpfile_name,
