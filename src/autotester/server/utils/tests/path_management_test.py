@@ -7,6 +7,10 @@ import pytest
 
 @pytest.fixture
 def change_work_dir():
+    """
+    Temporarily changes the working directory to a temporary directory and
+    yield the temporary directory and temporary working directory
+    """
     temp_dir = tempfile.gettempdir()
     with current_directory(temp_dir):
         temp_work_dir = os.getcwd()
@@ -15,6 +19,10 @@ def change_work_dir():
 
 @pytest.fixture
 def add_path_ap():
+    """
+    Creates a temporary directory, append and prepend the path to sys.path.
+    Yield temporary directory, appended and prepended path
+    """
     path = tempfile.gettempdir()
     with add_path(path, prepend=True):
         prep = sys.path[0]
