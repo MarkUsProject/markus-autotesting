@@ -121,6 +121,10 @@ def test_random_tmpfile_name():
 
 
 class TestRecursiveIglob:
+    """
+    Checks that all the files and directories of a given path are listed
+    """
+
     def test_empty_dir(self, empty_dir):
         """
         When the Directory is empty
@@ -168,6 +172,7 @@ class TestCopyTree:
     """
     Checks that all the contents are copied from source to destination
     """
+
     def test_empty_dir(self, empty_dir, dir_has_onefile):
         """
         When the Source Directory is empty
@@ -228,6 +233,7 @@ class TestMoveTree:
     """
     Checks that all the contents are moved from source to destination
     """
+
     def test_empty_dir(self, empty_dir, dir_has_onedir):
         """
         When the Source Directory is empty
