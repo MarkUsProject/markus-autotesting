@@ -15,6 +15,7 @@ services:
     volumes:
       - .:/app:cached
       - ssh_pub_key:/ssh_pub_key:ro
+      - workspace:/home/docker/.markus-autotesting:rw
     environment:
       - USER=docker
       - REDIS_URL=redis://redis_autotest:6379/
@@ -66,6 +67,7 @@ services:
 volumes:
   postgres_autotest:
   redis_autotest:
+  workspace:
   ssh_pub_key:
      name: ssh_pub_key
 
