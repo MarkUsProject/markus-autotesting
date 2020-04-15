@@ -24,12 +24,18 @@ CURRENT_TEST_SCRIPT_HASH = config["redis", "_current_test_script_hash"]
 
 @pytest.fixture
 def empty_dir():
+    """
+    Yields an empty directory
+    """
     with tempfile.TemporaryDirectory() as empty_directory:
         yield empty_directory
 
 
 @pytest.fixture
 def dir_has_onefile():
+    """
+    Yields a directory which has only one file
+    """
     with tempfile.TemporaryDirectory() as dir:
         with tempfile.NamedTemporaryFile(dir=dir) as file:
             yield dir, file.name
@@ -37,6 +43,9 @@ def dir_has_onefile():
 
 @pytest.fixture
 def dir_has_onedir():
+    """
+    Yields a directory with one sub directory
+    """
     with tempfile.TemporaryDirectory() as dir:
         with tempfile.TemporaryDirectory(dir=dir) as sub_dir:
             yield dir, sub_dir
@@ -44,6 +53,9 @@ def dir_has_onedir():
 
 @pytest.fixture
 def nested_fd():
+    """
+    Yields a nested file structure
+    """
     with tempfile.TemporaryDirectory() as root_dir:
         with tempfile.TemporaryDirectory(dir=root_dir) as sub_dir1:
             with tempfile.TemporaryDirectory(dir=sub_dir1) as sub_dir2:
@@ -53,6 +65,9 @@ def nested_fd():
 
 @pytest.fixture(autouse=True)
 def redis():
+    """
+    Mock the redis connection with fake redis and yield the fake redis
+    """
     fake_redis = FakeStrictRedis()
     with patch(
         "autotester.server.utils.redis_management.redis_connection",
@@ -63,6 +78,9 @@ def redis():
 
 @pytest.fixture(autouse=True)
 def tmp_script_dir():
+    """
+    Mock the test_script_directory method and yield a temporary directory
+    """
     with tempfile.TemporaryDirectory() as tmp_dir:
         files_dir = os.path.join(tmp_dir, "files")
         os.mkdir(files_dir)
@@ -74,6 +92,9 @@ def tmp_script_dir():
 
 
 def list_of_fd(file_or_dir):
+    """
+    Gets a list of files and directories and returns two separate list for files and directories
+    """
     dir = []
     files = []
     for i in file_or_dir:
@@ -82,12 +103,18 @@ def list_of_fd(file_or_dir):
 
 
 def test_clean_dir_name():
+    """
+    Checks whether '/' is replaced by '_' for a given path
+    """
     a = "markus/address"
     b = a.replace("/", "_")
     assert clean_dir_name(a) == b
 
 
 def test_random_tmpfile_name():
+    """
+    Checks the temporary file name is random
+    """
     tmp_file_1 = random_tmpfile_name()
     tmp_file_2 = random_tmpfile_name()
     assert not tmp_file_1 == tmp_file_2
@@ -115,7 +142,7 @@ class TestRecursiveIglob:
 
     def test_dir_has_onedir(self, dir_has_onedir):
         """
-        When the Dirctory has only one sub directory
+        When the Directory has only one sub directory
         """
         root_dir, sub_dir = dir_has_onedir
         file_or_dir = list(recursive_iglob(root_dir))
@@ -138,6 +165,9 @@ class TestRecursiveIglob:
 
 
 class TestCopyTree:
+    """
+    Checks that all the contents are copied from source to destination
+    """
     def test_empty_dir(self, empty_dir, dir_has_onefile):
         """
         When the Source Directory is empty
@@ -161,7 +191,7 @@ class TestCopyTree:
 
     def test_dir_has_onedir(self, dir_has_onedir, empty_dir):
         """
-        When the Source Dirctory has only one sub directory
+        When the Source Directory has only one sub directory
         """
         source_dir, sub_dir = dir_has_onedir
         dest_dir = empty_dir
@@ -185,12 +215,19 @@ class TestCopyTree:
 
 
 def test_ignore_missing_dir_error():
+    """
+    Checks whether the missing directory error is ignored
+    when we try to remove a directory which is not exist
+    """
     dir = tempfile.mkdtemp()
     shutil.rmtree(dir)
     shutil.rmtree(dir, onerror=ignore_missing_dir_error)
 
 
 class TestMoveTree:
+    """
+    Checks that all the contents are moved from source to destination
+    """
     def test_empty_dir(self, empty_dir, dir_has_onedir):
         """
         When the Source Directory is empty
@@ -244,6 +281,9 @@ class TestMoveTree:
 
 class TestFdOpen:
     def test_open_dir(self):
+        """
+        Checks whether two file descriptors are pointing to the same directory
+        """
         with tempfile.TemporaryDirectory() as dir:
             dir_fd = os.open(dir, os.O_RDONLY)
             with fd_open(dir) as fdd:
@@ -251,6 +291,9 @@ class TestFdOpen:
             assert same_dir
 
     def test_open_file(self):
+        """
+        Checks whether two file descriptors are pointing to the same file
+        """
         with tempfile.NamedTemporaryFile() as file:
             file_fd = os.open(file.name, os.O_RDONLY)
             with fd_open(file.name) as fdf:
@@ -258,6 +301,9 @@ class TestFdOpen:
             assert same_file
 
     def test_close(self):
+        """
+        Checks whether the file or directory is closed
+        """
         with tempfile.TemporaryDirectory() as dir:
             with fd_open(dir) as fdd:
                 dir_fd = fdd
@@ -266,6 +312,9 @@ class TestFdOpen:
 
 
 def test_copy_test_script_files(dir_has_onefile, redis, tmp_script_dir):
+    """
+    Checks whether the test script files are copied to the destination directory
+    """
     markus_address = "http://localhost:3000/csc108/en/main"
     assignment_id = 1
     tests_path, test_file = dir_has_onefile
