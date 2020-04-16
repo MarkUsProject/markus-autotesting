@@ -3,9 +3,40 @@ import stat
 import tempfile
 
 import pytest
+from fakeredis import FakeStrictRedis
+from unittest.mock import patch
 from autotester.server.utils.file_management import setup_files
 
 from pathlib import Path
+
+
+@pytest.fixture(autouse=True)
+def redis():
+    """
+    Mock the redis connection with fake redis and yield the fake redis
+    """
+    fake_redis = FakeStrictRedis()
+    with patch(
+        "autotester.server.utils.redis_management.redis_connection",
+        return_value=fake_redis,
+    ):
+        yield fake_redis
+
+
+@pytest.fixture(autouse=True)
+def tmp_script_dir():
+    """
+    Mock the test_script_directory method and yield a temporary directory
+    """
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        files_dir = os.path.join(tmp_dir, "files")
+        os.mkdir(files_dir)
+        with tempfile.NamedTemporaryFile(dir=files_dir) as file:
+            with patch(
+                "autotester.server.utils.redis_management.test_script_directory",
+                return_value=tmp_dir,
+            ):
+                yield tmp_dir
 
 
 @pytest.fixture
