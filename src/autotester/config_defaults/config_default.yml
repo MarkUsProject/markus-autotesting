@@ -10,6 +10,10 @@ queues:
   - name: student
     schema: {'type': 'object', 'properties': {'batch_id': {'type': 'null'}, 'user_type': {'const': 'Student'}}}
 
+server_user: !ENV ${USER}
+
+workspace: !ENV ${HOME}/.markus-autotesting/
+
 workers:
   - users:
       - name: !ENV ${USER}

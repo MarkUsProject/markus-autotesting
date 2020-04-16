@@ -8,7 +8,7 @@ if [ ! -f "${HOME}/.installed" ]; then
   echo "export REDIS_URL=${REDIS_URL}
         export PGHOST=${PGHOST}
         export PGPORT=${PGPORT}
-        export MARKUS_AUTOTESTER_CONFIG=${MARKUS_AUTOTESTER_CONFIG}
+        export AUTOTESTER_CONFIG=${AUTOTESTER_CONFIG}
         " >> "${HOME}/.bash_profile"
   touch "${HOME}/.installed"
 fi

@@ -22,7 +22,7 @@ services:
       - PGHOST=postgres_autotest
       - PGPORT=5432
       - EDITOR=vi
-      - MARKUS_AUTOTESTER_CONFIG=/app/.dockerfiles/docker-config.yml
+      - AUTOTESTER_CONFIG=/app/.dockerfiles/docker-config.yml
     networks:
       - default
       - markus_dev

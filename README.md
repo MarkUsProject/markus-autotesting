@@ -98,7 +98,7 @@ These settings can be overridden or extended by including a configuration file i
 An example configuration file can be found in `doc/config_example.yml`. Please see below for a description of all options and defaults:
 
 ```yaml
-workspace: # an absolute path to a directory containing all files/workspaces required to run the autotester default is
+workspace: # an absolute path to a directory containing all files/workspaces required to run the autotester. Default is
            # ${HOME}/.markus-autotesting/workspace where ${HOME} is the home directory of the user running the autotester
 
 server_user: # the username of the user designated to run the autotester itself. Default is the current user
@@ -134,6 +134,28 @@ queues:
   - name: # the name of a queue used to enqueue test jobs (see details below)
     schema: # a json schema used to validate the json representation of the arguments passed to the test_enqueuer script
             # by MarkUs (see details below)
+```
+
+### Environment variables
+
+Certain settings can be specified with environment variables. If these environment variables are set, they will override
+the corresponding setting in the configuration files:
+
+```yaml
+workspace: # AUTOTESTER_WORKSPACE
+
+redis:
+  url: # REDIS_URL
+
+server_user: # AUTOTESTER_SERVER_USER
+
+supervisor:
+  url: # AUTOTESTER_SUPERVISOR_URL
+
+resources:
+  postgresql:
+    port: # PGPORT
+    host: # PGHOST
 ```
 
 ### Markus-autotesting configuration details

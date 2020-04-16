@@ -20,7 +20,7 @@ import yaml
 
 DEFAULT_ROOT = os.path.join(os.path.dirname(__file__), "config_defaults")
 CONFIG_FILENAME = "markus_autotester_config"
-CONFIG_ENV_VAR = "MARKUS_AUTOTESTER_CONFIG"
+CONFIG_ENV_VAR = "AUTOTESTER_CONFIG"
 
 
 ConfigValues = TypeVar("ConfigValues", List, Dict, str, int, float, type(None))
@@ -30,7 +30,7 @@ def _find_local_config() -> Optional[str]:
     """
     Return the file name of the local configuration file if it exists.
 
-    Returns the file specified by the MARKUS_AUTOTESTER_CONFIG environment variable,
+    Returns the file specified by the AUTOTESTER_CONFIG environment variable,
     otherwise returns the file at $HOME/.markus_autotester_config,
     otherwise returns the file at /etc/markus_autotester_config
     """
