@@ -31,7 +31,7 @@ def tmp_script_dir():
     with tempfile.TemporaryDirectory() as tmp_dir:
         files_dir = os.path.join(tmp_dir, "files")
         os.mkdir(files_dir)
-        with tempfile.NamedTemporaryFile(dir=files_dir) as file:
+        with tempfile.NamedTemporaryFile(dir=files_dir):
             with patch(
                 "autotester.server.utils.redis_management.test_script_directory",
                 return_value=tmp_dir,
@@ -45,7 +45,7 @@ def t_path():
     Returns a temporary directory with one sub directory
     """
     with tempfile.TemporaryDirectory() as tests_path:
-        with tempfile.NamedTemporaryFile(dir=tests_path) as test_file:
+        with tempfile.NamedTemporaryFile(dir=tests_path):
             yield tests_path
 
 
@@ -93,9 +93,9 @@ class TestSetupFiles:
         )
         group_stfile = []
         group_scfile = []
-        for fd, file_or_dir in student_files:
+        for _fd, file_or_dir in student_files:
             group_stfile.append(Path(file_or_dir).group())
-        for fd, file_or_dir in script_files:
+        for _fd, file_or_dir in script_files:
             group_scfile.append(Path(file_or_dir).group())
         assert all(test_username == i for i in group_scfile)
         assert all(test_username == i for i in group_stfile)
