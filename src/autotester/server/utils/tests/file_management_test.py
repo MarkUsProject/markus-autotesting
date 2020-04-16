@@ -77,9 +77,9 @@ def redis():
 
 
 @pytest.fixture(autouse=True)
-def tmp_script_dir():
+def empty_tmp_script_dir():
     """
-    Mock the test_script_directory method and yield a temporary directory
+    Mock the test_script_directory method and yield an empty temporary directory
     """
     with tempfile.TemporaryDirectory() as tmp_dir:
         files_dir = os.path.join(tmp_dir, "files")
@@ -89,6 +89,56 @@ def tmp_script_dir():
             return_value=tmp_dir,
         ):
             yield tmp_dir
+
+
+@pytest.fixture
+def tmp_script_dir_with_onefile():
+    """
+    Mock the test_script_directory method and yield a temporary directory and a file
+    """
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        files_dir = os.path.join(tmp_dir, "files")
+        os.mkdir(files_dir)
+        with tempfile.NamedTemporaryFile(dir=files_dir) as file:
+            with patch(
+                "autotester.server.utils.redis_management.test_script_directory",
+                return_value=tmp_dir,
+            ):
+                yield tmp_dir, file.name
+
+
+@pytest.fixture
+def tmp_script_dir_with_onedir():
+    """
+    Mock the test_script_directory method and yield a temporary directory and a sub directory
+    """
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        files_dir = os.path.join(tmp_dir, "files")
+        os.mkdir(files_dir)
+        with tempfile.TemporaryDirectory(dir=files_dir) as sub_sir:
+            with patch(
+                "autotester.server.utils.redis_management.test_script_directory",
+                return_value=tmp_dir,
+            ):
+                yield tmp_dir, sub_sir
+
+
+@pytest.fixture
+def nested_tmp_script_dir():
+    """
+    Mock the test_script_directory method and yield a temporary directory and nested file structure
+    """
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        files_dir = os.path.join(tmp_dir, "files")
+        os.mkdir(files_dir)
+        with tempfile.TemporaryDirectory(dir=files_dir) as sub_dir1:
+            with tempfile.TemporaryDirectory(dir=sub_dir1) as sub_dir2:
+                with tempfile.NamedTemporaryFile(dir=sub_dir2) as file:
+                    with patch(
+                        "autotester.server.utils.redis_management.test_script_directory",
+                        return_value=tmp_dir,
+                    ):
+                        yield tmp_dir, sub_dir1, sub_dir2, file.name
 
 
 def list_of_fd(file_or_dir):
@@ -317,17 +367,59 @@ class TestFdOpen:
                 os.close(dir_fd)
 
 
-def test_copy_test_script_files(dir_has_onefile, redis, tmp_script_dir):
+class TestCopyTestScriptFiles:
     """
-    Checks whether the test script files are copied to the destination directory
+    Checks whether all the test script directory contents are copied into tests_path
     """
-    markus_address = "http://localhost:3000/csc108/en/main"
-    assignment_id = 1
-    tests_path, test_file = dir_has_onefile
-    copy_test_script_files(markus_address, assignment_id, tests_path)
-    test_script_outer_dir = redis_management.test_script_directory(
-        markus_address, assignment_id
-    )
-    test_script_dir = os.path.join(test_script_outer_dir, FILES_DIRNAME)
-    copied_file = os.path.join(test_script_dir, test_file)
-    assert os.path.exists(copied_file)
+
+    def test_empty_dir(self, dir_has_onefile):
+        """
+        When the test script directory is empty has only one file
+        """
+        markus_address = "http://localhost:3000/csc108/en/main"
+        assignment_id = 1
+        tests_path, test_file = dir_has_onefile
+        list_fd_bef_copy = os.listdir(tests_path)
+        copy_test_script_files(markus_address, assignment_id, tests_path)
+        list_fd_after_copy = os.listdir(tests_path)
+        assert len(list_fd_bef_copy) == len(list_fd_after_copy)
+
+    def test_dir_has_onefile(self, dir_has_onefile, tmp_script_dir_with_onefile):
+        """
+        When the test script directory has only one file
+        """
+        markus_address = "http://localhost:3000/csc108/en/main"
+        assignment_id = 1
+        tests_path, test_file = dir_has_onefile
+        tmp_script_dir, file = tmp_script_dir_with_onefile
+        copy_test_script_files(markus_address, assignment_id, tests_path)
+        copied_file = os.path.join(tests_path, file)
+        assert os.path.exists(copied_file)
+
+    def test_dir_has_onedir(self, dir_has_onefile, tmp_script_dir_with_onedir):
+        """
+        When the test script directory has only one sub directory
+        """
+        markus_address = "http://localhost:3000/csc108/en/main"
+        assignment_id = 1
+        tests_path, test_file = dir_has_onefile
+        tmp_script_dir, sub_dir = tmp_script_dir_with_onedir
+        copy_test_script_files(markus_address, assignment_id, tests_path)
+        copied_dir = os.path.join(tests_path, sub_dir)
+        assert os.path.exists(copied_dir)
+
+    def test_dir_has_nested_fd(self, dir_has_onefile, nested_tmp_script_dir):
+        """
+        When the files are nested in subdirectories more than 2 directories deep
+        """
+        markus_address = "http://localhost:3000/csc108/en/main"
+        assignment_id = 1
+        tests_path, test_file = dir_has_onefile
+        tmp_script_dir, sub_dir1, sub_dir2, file = nested_tmp_script_dir
+        copy_test_script_files(markus_address, assignment_id, tests_path)
+        copied_dir1 = os.path.join(tests_path, os.path.basename(sub_dir1))
+        copied_dir2 = os.path.join(copied_dir1, os.path.basename(sub_dir2))
+        copied_file = os.path.join(copied_dir2, os.path.basename(file))
+        assert os.path.exists(copied_dir1)
+        assert os.path.exists(copied_dir2)
+        assert os.path.exists(copied_file)
