@@ -16,7 +16,6 @@ import pytest
 from fakeredis import FakeStrictRedis
 from unittest.mock import patch
 
-from autotester.server.utils import redis_management
 
 FILES_DIRNAME = config["_workspace_contents", "_files_dir"]
 CURRENT_TEST_SCRIPT_HASH = config["redis", "_current_test_script_hash"]
