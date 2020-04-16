@@ -65,9 +65,16 @@ class TestAddPath:
         assert sys_path in sys.path
         sys.path.pop(-1)
 
-    def test_path_ap(self, add_path_ap):
+    def test_path_append(self, add_path_ap):
         """
-        Checks the path is appended and prepended to sys.path
+        Checks the path is appended to sys.path
         """
-        prep, app, path = add_path_ap
-        assert path == app == prep
+        _, app, path = add_path_ap
+        assert path == app
+
+    def test_path_prepend(self, add_path_ap):
+        """
+        Checks the path is prepended to sys.path
+        """
+        prep, _, path = add_path_ap
+        assert path == prep
