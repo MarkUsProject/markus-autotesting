@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import sys
 import shutil
 import time
 import json
@@ -11,7 +12,7 @@ import tempfile
 from markusapi import Markus
 from typing import Optional, Dict, Union, List, Tuple
 
-from autotester.exceptions import TesterCreationError
+from autotester.exceptions import TesterCreationError, TestScriptFilesError
 from autotester.config import config
 from autotester.server.hooks_context.hooks_context import Hooks
 from autotester.server.utils.string_management import (
@@ -31,7 +32,8 @@ from autotester.server.utils.file_management import (
     ignore_missing_dir_error,
     fd_open,
     fd_lock,
-    move_tree,
+    extract_zip_stream,
+    recursive_iglob
 )
 from autotester.server.utils.resource_management import (
     set_rlimits_before_cleanup,
@@ -42,6 +44,7 @@ from autotester.server.utils.redis_management import (
     test_script_directory,
     update_pop_interval_stat,
 )
+from autotester.server.utils.form_management import validate_against_schema
 from autotester.resources.ports import get_available_port
 from autotester.resources.postgresql import setup_database
 
@@ -351,6 +354,18 @@ def report(
     )
 
 
+def download_test_files(assignment_id: int, api: Markus, destination: str) -> None:
+    """
+    Download the assignment test files for the assignment with id <assignment_id> for
+    the MarkUs instance with url <markus_address>.
+    Download the files to <destination> which is a path to a (possibly non-existant) directory.
+    """
+    zip_content = api.get_test_files(assignment_id)
+    if zip_content is None:
+        raise TestScriptFilesError('No test files found')
+    extract_zip_stream(zip_content, destination, ignore_root_dir=True)
+
+
 @clean_after
 def run_test(
     markus_address: str,
@@ -359,7 +374,6 @@ def run_test(
     files_path: str,
     assignment_id: int,
     group_id: int,
-    group_repo_name: str,
     submission_id: int,
     run_id: int,
     enqueue_time: int,
@@ -505,16 +519,12 @@ def destroy_tester_environments(old_test_script_dir: str) -> None:
 
 
 @clean_after
-def update_test_specs(
-    files_path: str, assignment_id: int, markus_address: str, test_specs: Dict
-) -> None:
+def update_test_specs(assignment_id: int, markus_address: str, server_api_key: str) -> None:
     """
-    Copy new test scripts for a given assignment to from the files_path
-    to a new location. Indicate that these new test scripts should be used instead of
-    the old ones. And remove the old ones when it is safe to do so (they are not in the
+    Download test script files and test specs for the given assignment at the given
+    MarkUs instance. Indicate that these new test scripts should be used instead of
+    the old ones. Remove the old ones when it is safe to do so (they are not in the
     process of being copied to a working directory).
-
-    This function should be used by an rq worker.
     """
     # TODO: catch and log errors
     test_script_dir_name = "test_scripts_{}".format(int(time.time()))
@@ -524,8 +534,18 @@ def update_test_specs(
             TEST_SCRIPT_DIR, clean_markus_address, assignment_id, test_script_dir_name
         )
     )
+    api = Markus(server_api_key, markus_address)
+    test_specs = api.get_test_specs(assignment_id)
+
     new_files_dir = os.path.join(new_dir, FILES_DIRNAME)
-    move_tree(files_path, new_files_dir)
+    download_test_files(assignment_id, api, new_files_dir)
+    filenames = [os.path.relpath(path, new_files_dir) for fd, path in recursive_iglob(new_files_dir) if fd == 'f']
+    try:
+        validate_against_schema(test_specs, filenames)
+    except Exception as e:
+        sys.stderr.write(f"Form Validation Error: {str(e)}")
+        sys.exit(1)
+
     if "hooks_file" in test_specs:
         src = os.path.join(new_files_dir, test_specs["hooks_file"])
         if os.path.isfile(src):

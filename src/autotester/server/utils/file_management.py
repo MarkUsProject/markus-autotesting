@@ -3,6 +3,8 @@ import uuid
 import tempfile
 import shutil
 import fcntl
+import zipfile
+from io import BytesIO
 from typing import Generator, Tuple, List, Callable, Type, Optional, Any
 from types import TracebackType
 from autotester.server.utils import redis_management
@@ -133,6 +135,22 @@ def copy_test_script_files(
             with fd_lock(fd, exclusive=False):
                 return copy_tree(test_script_dir, tests_path)
     return []
+
+
+def extract_zip_stream(zip_byte_stream: bytes, destination: str, ignore_root_dir: bool = True) -> None:
+    """
+    Extract files in a zip archive's content <zip_byte_stream> to <destination>, a path to a local directory.
+
+    If ignore_root_dir is True, the files in the zip archive will be extracted and written as if the root directory
+    of the zip archive was not in their path.
+    """
+    with zipfile.ZipFile(BytesIO(zip_byte_stream)) as zf:
+        for fname in zf.namelist():
+            *dpaths, bname = os.path.split(fname)
+            dest = os.path.join(destination, *dpaths[ignore_root_dir:])
+            os.makedirs(dest, exist_ok=True)
+            with open(os.path.join(dest, bname), 'wb') as f:
+                f.write(zf.read(fname))
 
 
 def setup_files(

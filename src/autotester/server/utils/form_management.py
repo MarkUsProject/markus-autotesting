@@ -1,3 +1,7 @@
+import os
+import json
+import glob
+import autotester
 from jsonschema import Draft7Validator, validators, ValidationError
 from jsonschema.exceptions import best_match
 from copy import deepcopy
@@ -137,3 +141,38 @@ def is_valid(
     validator <validator_class>.
     """
     return validator_class(schema).is_valid(obj)
+
+
+def get_schema() -> Dict:
+    package_root = autotester.__path__[0]
+
+    with open(os.path.join(package_root, "lib", "tester_schema_skeleton.json")) as f:
+        schema_skeleton = json.load(f)
+
+    glob_pattern = os.path.join(package_root, "testers", "*", "specs", ".installed")
+    for path in sorted(glob.glob(glob_pattern)):
+        tester_type = os.path.basename(os.path.dirname(os.path.dirname(path)))
+        specs_dir = os.path.dirname(path)
+        with open(os.path.join(specs_dir, "settings_schema.json")) as f:
+            tester_schema = json.load(f)
+
+        schema_skeleton["definitions"]["installed_testers"]["enum"].append(tester_type)
+        schema_skeleton["definitions"]["tester_schemas"]["oneOf"].append(tester_schema)
+
+    return schema_skeleton
+
+
+def validate_against_schema(test_specs: Dict, filenames: List[str]) -> None:
+    """
+    Check if test_specs is valid according to the schema from calling get_schema.
+    Raise an error if it is not valid.
+    """
+    schema = get_schema()
+    if schema is not None:
+        schema["definitions"]["files_list"]["enum"] = filenames
+        # don't validate based on categories
+        schema["definitions"]["test_data_categories"].pop("enum")
+        schema["definitions"]["test_data_categories"].pop("enumNames")
+        error = validate_with_defaults(schema, test_specs, best_only=True)
+        if error:
+            raise error

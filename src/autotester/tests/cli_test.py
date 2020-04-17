@@ -204,7 +204,7 @@ class TestUpdateSpecs:
 
     def test_fails_when_schema_is_invalid(self):
         with patch(
-            "autotester.server.utils.form_validation.validate_with_defaults",
+            "autotester.server.utils.form_management.validate_with_defaults",
             return_value=DummyTestError("error"),
         ):
             with patch("autotester.cli.update_test_specs"):
@@ -213,7 +213,7 @@ class TestUpdateSpecs:
 
     def test_succeeds_when_schema_is_valid(self):
         with patch(
-            "autotester.server.utils.form_validation.validate_with_defaults",
+            "autotester.server.utils.form_management.validate_with_defaults",
             return_value=[],
         ):
             with patch("autotester.cli.update_test_specs"):
@@ -224,7 +224,7 @@ class TestUpdateSpecs:
 
     def test_calls_update_test_specs(self):
         with patch(
-            "autotester.server.utils.form_validation.validate_with_defaults",
+            "autotester.server.utils.form_management.validate_with_defaults",
             return_value=[],
         ):
             with patch("autotester.cli.update_test_specs") as update_test_specs:
@@ -233,7 +233,7 @@ class TestUpdateSpecs:
 
     def test_cleans_up_files_on_error(self, mock_rmtree):
         with patch(
-            "autotester.server.utils.form_validation.validate_with_defaults",
+            "autotester.server.utils.form_management.validate_with_defaults",
             return_value=DummyTestError("error"),
         ):
             with patch("autotester.cli.update_test_specs"):

@@ -6,7 +6,6 @@ import argparse
 import rq
 import json
 import inspect
-import glob
 import time
 import shutil
 from typing import TypeVar, Callable, Optional, List, Dict
@@ -26,7 +25,7 @@ from autotester.server.utils.redis_management import (
 )
 from autotester.server.utils.file_management import ignore_missing_dir_error
 from autotester.config import config
-from autotester.server.utils import form_validation
+from autotester.server.utils import form_management
 from autotester.server.server import run_test, update_test_specs
 
 SETTINGS_FILENAME = config["_workspace_contents", "_settings_file"]
@@ -67,7 +66,7 @@ def _get_queue(**kw: ExtraArgType) -> rq.Queue:
     returns True when called with the arguments in **kw.
     """
     for queue in config["queues"]:
-        if form_validation.is_valid(kw, queue["schema"]):
+        if form_management.is_valid(kw, queue["schema"]):
             return rq.Queue(queue["name"], connection=redis_connection())
     raise InvalidQueueError(
         "cannot enqueue job: unable to determine correct queue type"
@@ -168,28 +167,6 @@ def enqueue_test(user_type: str, batch_id: Optional[int], **kw: ExtraArgType) ->
     )
 
 
-@_clean_on_error
-def update_specs(
-    test_specs: Dict[str, ExtraArgType],
-    schema: Optional[Dict] = None,
-    **kw: ExtraArgType,
-) -> None:
-    """
-    Run the test update_test_specs function (from the server module) after validating
-    the <schema> form data.
-
-    Raises an error if the test_specs is not valid according to schema.
-    """
-    if schema is not None:
-        error = form_validation.validate_with_defaults(
-            schema, test_specs, best_only=True
-        )
-        if error:
-            sys.stderr.write(f"Form Validation Error: {str(error)}")
-            sys.exit(1)
-    update_test_specs(test_specs=test_specs, **kw)
-
-
 def cancel_test(markus_address: str, run_ids: List[int], **_kw: ExtraArgType) -> None:
     """
     Cancel a test run job with the job_id defined using
@@ -217,22 +194,7 @@ def get_schema(**_kw: ExtraArgType) -> None:
     This json schema should be used to generate a UI with react-jsonschema-form
     (https://github.com/mozilla-services/react-jsonschema-form) or similar.
     """
-    this_dir = os.path.dirname(os.path.abspath(__file__))
-
-    with open(os.path.join(this_dir, "lib", "tester_schema_skeleton.json")) as f:
-        schema_skeleton = json.load(f)
-
-    glob_pattern = os.path.join(this_dir, "testers", "*", "specs", ".installed")
-    for path in sorted(glob.glob(glob_pattern)):
-        tester_type = os.path.basename(os.path.dirname(os.path.dirname(path)))
-        specs_dir = os.path.dirname(path)
-        with open(os.path.join(specs_dir, "settings_schema.json")) as f:
-            tester_schema = json.load(f)
-
-        schema_skeleton["definitions"]["installed_testers"]["enum"].append(tester_type)
-        schema_skeleton["definitions"]["tester_schemas"]["oneOf"].append(tester_schema)
-
-    print(json.dumps(schema_skeleton))
+    print(json.dumps(form_management.get_schema()))
 
 
 def parse_arg_file(arg_file: str) -> Dict[str, ExtraArgType]:
@@ -260,7 +222,7 @@ def parse_arg_file(arg_file: str) -> Dict[str, ExtraArgType]:
 
 COMMANDS = {
     "run": enqueue_test,
-    "specs": update_specs,
+    "specs": update_test_specs,
     "cancel": cancel_test,
     "schema": get_schema,
 }
