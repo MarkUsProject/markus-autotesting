@@ -33,18 +33,17 @@ def get_test_script_key(markus_address: str, assignment_id: int) -> str:
 
 
 def test_script_directory(
-    markus_address: str, assignment_id: int, set_to: Optional[str] = None
+    unique_script_str: str, set_to: Optional[str] = None
 ):
     """
     Return the directory containing the test scripts for a specific assignment.
     Optionally updates the location of the test script directory to the value
     of the set_to keyword argument (if it is not None)
     """
-    key = get_test_script_key(markus_address, assignment_id)
     r = redis_connection()
     if set_to is not None:
-        r.hset(CURRENT_TEST_SCRIPT_HASH, key, set_to)
-    out = r.hget(CURRENT_TEST_SCRIPT_HASH, key)
+        r.hset(CURRENT_TEST_SCRIPT_HASH, unique_script_str, set_to)
+    out = r.hget(CURRENT_TEST_SCRIPT_HASH, unique_script_str)
     return string_management.decode_if_bytes(out)
 
 

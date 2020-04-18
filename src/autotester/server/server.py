@@ -47,6 +47,7 @@ from autotester.server.utils.redis_management import (
 from autotester.server.utils.form_management import validate_against_schema
 from autotester.resources.ports import get_available_port
 from autotester.resources.postgresql import setup_database
+from autotester.server.client_customizations import CLIENTS
 
 DEFAULT_ENV_DIR = config["_workspace_contents", "_default_venv_name"]
 TEST_RESULT_DIR = os.path.join(
@@ -519,7 +520,7 @@ def destroy_tester_environments(old_test_script_dir: str) -> None:
 
 
 @clean_after
-def update_test_specs(assignment_id: int, markus_address: str, server_api_key: str) -> None:
+def update_test_specs(client_type: str, **kwargs: Dict) -> None:
     """
     Download test script files and test specs for the given assignment at the given
     MarkUs instance. Indicate that these new test scripts should be used instead of
@@ -527,18 +528,14 @@ def update_test_specs(assignment_id: int, markus_address: str, server_api_key: s
     process of being copied to a working directory).
     """
     # TODO: catch and log errors
+    client = CLIENTS[client_type](**kwargs)
     test_script_dir_name = "test_scripts_{}".format(int(time.time()))
-    clean_markus_address = clean_dir_name(markus_address)
-    new_dir = os.path.join(
-        *stringify(
-            TEST_SCRIPT_DIR, clean_markus_address, assignment_id, test_script_dir_name
-        )
-    )
-    api = Markus(server_api_key, markus_address)
-    test_specs = api.get_test_specs(assignment_id)
+    unique_script_str = client.unique_script_str()
+    new_dir = os.path.join(TEST_SCRIPT_DIR, unique_script_str, test_script_dir_name)
+    test_specs = client.get_test_specs()
 
     new_files_dir = os.path.join(new_dir, FILES_DIRNAME)
-    download_test_files(assignment_id, api, new_files_dir)
+    client.write_test_files(new_files_dir)
     filenames = [os.path.relpath(path, new_files_dir) for fd, path in recursive_iglob(new_files_dir) if fd == 'f']
     try:
         validate_against_schema(test_specs, filenames)
@@ -554,8 +551,8 @@ def update_test_specs(assignment_id: int, markus_address: str, server_api_key: s
     settings_filename = os.path.join(new_dir, SETTINGS_FILENAME)
     with open(settings_filename, "w") as f:
         json.dump(test_specs, f)
-    old_test_script_dir = test_script_directory(markus_address, assignment_id)
-    test_script_directory(markus_address, assignment_id, set_to=new_dir)
+    old_test_script_dir = test_script_directory(unique_script_str)
+    test_script_directory(unique_script_str, set_to=new_dir)
 
     if old_test_script_dir is not None and os.path.isdir(old_test_script_dir):
         with fd_open(old_test_script_dir) as fd:
