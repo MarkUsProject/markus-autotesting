@@ -43,7 +43,6 @@ from autotester.server.utils.redis_management import (
     test_script_directory,
     update_pop_interval_stat,
 )
-from autotester.server.utils.path_management import current_directory
 from autotester.server.utils.form_management import validate_against_schema
 from autotester.resources.ports import get_available_port
 from autotester.resources.postgresql import setup_database
@@ -53,7 +52,6 @@ DEFAULT_ENV_DIR = config["_workspace_contents", "_default_venv_name"]
 TEST_RESULT_DIR = os.path.join(
     config["workspace"], config["_workspace_contents", "_results"]
 )
-HOOKS_FILENAME = config["_workspace_contents", "_hooks_file"]
 SETTINGS_FILENAME = config["_workspace_contents", "_settings_file"]
 FILES_DIRNAME = config["_workspace_contents", "_files_dir"]
 TEST_SPECS_DIR = os.path.join(
@@ -262,9 +260,7 @@ def run_test_specs(
                         env={**os.environ, **env_vars},
                     )
                     try:
-                        settings_json = json.dumps(
-                            {**settings, "test_data": test_data}
-                        ).encode("utf-8")
+                        settings_json = json.dumps({**settings, "test_data": test_data}).encode("utf-8")
                         out, err = proc.communicate(
                             input=settings_json, timeout=timeout
                         )
@@ -403,14 +399,14 @@ def _setup_files(client: ClientType, tests_path: str, test_username: str) -> Non
         if fd == "d":
             os.chmod(file_or_dir, 0o770)
         else:
-            os.chmod(file_or_dir, 0o660)
+            os.chmod(file_or_dir, 0o770)
         shutil.chown(file_or_dir, group=test_username)
     script_files = _copy_test_script_files(client, tests_path)
     for fd, file_or_dir in script_files:
         if fd == "d":
             os.chmod(file_or_dir, 0o1770)
         else:
-            os.chmod(file_or_dir, 0o640)
+            os.chmod(file_or_dir, 0o750)
         shutil.chown(file_or_dir, group=test_username)
 
 
@@ -560,10 +556,6 @@ def update_test_specs(client_type: str, client_data: Dict) -> None:
         sys.stderr.write(f"Form Validation Error: {str(e)}")
         sys.exit(1)
 
-    if "hooks_file" in test_specs:
-        src = os.path.join(new_files_dir, test_specs["hooks_file"])
-        if os.path.isfile(src):
-            os.rename(src, os.path.join(new_dir, HOOKS_FILENAME))
     test_specs = create_tester_environments(new_files_dir, test_specs)
     settings_filename = os.path.join(new_dir, SETTINGS_FILENAME)
     with open(settings_filename, "w") as f:

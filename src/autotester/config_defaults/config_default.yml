@@ -48,4 +48,3 @@ _workspace_contents:
   _default_venv_name: defaultvenv
   _settings_file: settings.json
   _files_dir: files
-  _hooks_file: hooks.py
