@@ -10,15 +10,14 @@ import signal
 import rq
 import tempfile
 from markusapi import Markus
-from typing import Optional, Dict, Union, List, Tuple
+from typing import Optional, Dict, Union, List, Tuple, Callable
+from functools import wraps
 
 from autotester.exceptions import TesterCreationError, TestScriptFilesError
 from autotester.config import config
-from autotester.server.hooks_context.hooks_context import Hooks
 from autotester.server.utils.string_management import (
     loads_partial_json,
-    decode_if_bytes,
-    stringify,
+    decode_if_bytes
 )
 from autotester.server.utils.user_management import (
     get_reaper_username,
@@ -27,13 +26,13 @@ from autotester.server.utils.user_management import (
 )
 from autotester.server.utils.file_management import (
     random_tmpfile_name,
-    clean_dir_name,
-    setup_files,
+    copy_tree,
     ignore_missing_dir_error,
     fd_open,
     fd_lock,
     extract_zip_stream,
-    recursive_iglob
+    recursive_iglob,
+    clean_dir_name
 )
 from autotester.server.utils.resource_management import (
     set_rlimits_before_cleanup,
@@ -44,10 +43,11 @@ from autotester.server.utils.redis_management import (
     test_script_directory,
     update_pop_interval_stat,
 )
+from autotester.server.utils.path_management import current_directory
 from autotester.server.utils.form_management import validate_against_schema
 from autotester.resources.ports import get_available_port
 from autotester.resources.postgresql import setup_database
-from autotester.server.client_customizations import CLIENTS
+from autotester.server.client_customizations import CLIENTS, ClientType
 
 DEFAULT_ENV_DIR = config["_workspace_contents", "_default_venv_name"]
 TEST_RESULT_DIR = os.path.join(
@@ -190,115 +190,111 @@ def get_env_vars(test_username: str) -> Dict[str, str]:
     return {"PORT": port_number, **db_env_vars}
 
 
+def _return_error_str(f: Callable):
+    @wraps(f)
+    def return_error_str(*args, **kwargs):
+        try:
+            f(*args, **kwargs)
+        except Exception as e:
+            return str(e)
+        return ""
+    return return_error_str
+
+
+def _run_feedback_hooks(client: ClientType, test_data: Dict, cwd: str) -> str:
+    hooks_error = ""
+
+    feedback_file = test_data.get("feedback_file_name")
+    annotation_file = test_data.get("annotation_file")
+    if feedback_file:
+        feedback_file = os.path.join(cwd, feedback_file)
+        if test_data.get("upload_feedback_file"):
+            hooks_error += _return_error_str(client.upload_feedback_file)(feedback_file)
+        if test_data.get("upload_feedback_to_repo"):
+            hooks_error += _return_error_str(client.upload_feedback_to_repo)(feedback_file)
+    if annotation_file and test_data.get("upload_annotations"):
+        annotation_file = os.path.join(cwd, annotation_file)
+        hooks_error += _return_error_str(client.upload_annotations)(annotation_file)
+    return hooks_error
+
+
 def run_test_specs(
     cmd: str,
-    test_specs: Dict,
+    client: ClientType,
     test_categories: List[str],
     tests_path: str,
     test_username: str,
-    hooks: Hooks,
 ) -> Tuple[List[ResultData], str]:
     """
     Run each test script in test_scripts in the tests_path directory using the
     command cmd. Return the results.
     """
     results = []
+    hook_errors = ""
 
-    with hooks.around("all"):
-        for settings in test_specs["testers"]:
-            tester_type = settings["tester_type"]
-            extra_hook_kwargs = {"settings": settings}
-            with hooks.around(tester_type, extra_kwargs=extra_hook_kwargs):
-                env_dir = settings.get("env_loc", DEFAULT_ENV_DIR)
+    test_specs = _get_test_specs(client)
 
-                cmd_str = create_test_script_command(env_dir, tester_type)
-                args = cmd.format(cmd_str)
+    for settings in test_specs["testers"]:
+        tester_type = settings["tester_type"]
+        env_dir = settings.get("env_loc", DEFAULT_ENV_DIR)
 
-                for test_data in settings["test_data"]:
-                    test_category = test_data.get("category", [])
-                    if set(test_category) & set(
-                        test_categories
-                    ):  # TODO: make sure test_categories is non-string collection type
-                        extra_hook_kwargs = {"test_data": test_data}
-                        with hooks.around(
-                            "each",
-                            builtin_selector=test_data,
-                            extra_kwargs=extra_hook_kwargs,
-                        ):
-                            start = time.time()
-                            out, err = "", ""
-                            timeout_expired = None
-                            timeout = test_data.get("timeout")
-                            try:
-                                env_vars = get_env_vars(test_username)
-                                proc = subprocess.Popen(
-                                    args,
-                                    start_new_session=True,
-                                    cwd=tests_path,
-                                    shell=True,
-                                    stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE,
-                                    stdin=subprocess.PIPE,
-                                    preexec_fn=set_rlimits_before_test,
-                                    env={**os.environ, **env_vars},
-                                )
-                                try:
-                                    settings_json = json.dumps(
-                                        {**settings, "test_data": test_data}
-                                    ).encode("utf-8")
-                                    out, err = proc.communicate(
-                                        input=settings_json, timeout=timeout
-                                    )
-                                except subprocess.TimeoutExpired:
-                                    if test_username == current_user():
-                                        pgrp = os.getpgid(proc.pid)
-                                        os.killpg(pgrp, signal.SIGKILL)
-                                    else:
-                                        if not kill_with_reaper(test_username):
-                                            kill_without_reaper(test_username)
-                                    out, err = proc.communicate()
-                                    timeout_expired = timeout
-                            except Exception as e:
-                                err += "\n\n{}".format(e)
-                            finally:
-                                out = decode_if_bytes(out)
-                                err = decode_if_bytes(err)
-                                duration = int(round(time.time() - start, 3) * 1000)
-                                extra_info = test_data.get("extra_info", {})
-                                results.append(
-                                    create_test_group_result(
-                                        out, err, duration, extra_info, timeout_expired
-                                    )
-                                )
-    return results, hooks.format_errors()
+        cmd_str = create_test_script_command(env_dir, tester_type)
+        args = cmd.format(cmd_str)
+
+        for test_data in settings["test_data"]:
+            test_category = test_data.get("category", [])
+            if set(test_category) & set(test_categories):
+                start = time.time()
+                out, err = "", ""
+                timeout_expired = None
+                timeout = test_data.get("timeout")
+                try:
+                    env_vars = get_env_vars(test_username)
+                    proc = subprocess.Popen(
+                        args,
+                        start_new_session=True,
+                        cwd=tests_path,
+                        shell=True,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        stdin=subprocess.PIPE,
+                        preexec_fn=set_rlimits_before_test,
+                        env={**os.environ, **env_vars},
+                    )
+                    try:
+                        settings_json = json.dumps(
+                            {**settings, "test_data": test_data}
+                        ).encode("utf-8")
+                        out, err = proc.communicate(
+                            input=settings_json, timeout=timeout
+                        )
+                    except subprocess.TimeoutExpired:
+                        if test_username == current_user():
+                            pgrp = os.getpgid(proc.pid)
+                            os.killpg(pgrp, signal.SIGKILL)
+                        else:
+                            if not kill_with_reaper(test_username):
+                                kill_without_reaper(test_username)
+                        out, err = proc.communicate()
+                        timeout_expired = timeout
+                    hook_errors += _run_feedback_hooks(client, test_data, tests_path)
+                except Exception as e:
+                    err += "\n\n{}".format(e)
+                finally:
+                    out = decode_if_bytes(out)
+                    err = decode_if_bytes(err)
+                    duration = int(round(time.time() - start, 3) * 1000)
+                    extra_info = test_data.get("extra_info", {})
+                    results.append(create_test_group_result(out, err, duration, extra_info, timeout_expired))
+    return results, hook_errors
 
 
-def store_results(
-    results_data: Dict[str, Union[List[ResultData], str, int]],
-    markus_address: str,
-    assignment_id: int,
-    group_id: int,
-    submission_id: int,
-) -> None:
+def store_results(client: ClientType, results_data: Dict[str, Union[List[ResultData], str, int]]) -> None:
     """
     Write the results of multiple test script runs to an output file as a json string.
-    The output file is located at:
-        {TEST_RESULT_DIR}/{markus_address}/{assignment_id}/{group_id}/{submission_id}/ouput.json
     """
-    clean_markus_address = clean_dir_name(markus_address)
-    run_time = "run_{}".format(int(time.time()))
-    destination = os.path.join(
-        *stringify(
-            TEST_RESULT_DIR,
-            clean_markus_address,
-            assignment_id,
-            group_id,
-            "s{}".format(submission_id or ""),
-            run_time,
-        )
-    )
-    os.makedirs(destination, exist_ok=True)
-    with open(os.path.join(destination, "output.json"), "w") as f:
+    destination = os.path.join(TEST_RESULT_DIR, clean_dir_name(client.unique_run_str())) + '.json'
+    with open(destination, "w") as f:
         json.dump(results_data, f, indent=4)
 
 
@@ -367,18 +363,59 @@ def download_test_files(assignment_id: int, api: Markus, destination: str) -> No
     extract_zip_stream(zip_content, destination, ignore_root_dir=True)
 
 
+def _get_test_specs(client: ClientType) -> Dict:
+    test_script_path = test_script_directory(client.unique_script_str())
+    test_specs_path = os.path.join(test_script_path, SETTINGS_FILENAME)
+
+    with open(test_specs_path) as f:
+        return json.load(f)
+
+
+def _copy_test_script_files(client: ClientType, tests_path: str) -> List[Tuple[str, str]]:
+    """
+    Copy test script files for a given assignment to the tests_path
+    directory if they exist. tests_path may already exist and contain
+    files and subdirectories.
+    """
+    test_script_outer_dir = test_script_directory(client.unique_script_str())
+    test_script_dir = os.path.join(test_script_outer_dir, FILES_DIRNAME)
+    if os.path.isdir(test_script_dir):
+        with fd_open(test_script_dir) as fd:
+            with fd_lock(fd, exclusive=False):
+                return copy_tree(test_script_dir, tests_path)
+    return []
+
+
+def _setup_files(client: ClientType, tests_path: str, test_username: str) -> None:
+    """
+    Copy test script files and student files to the working directory tests_path,
+    then make it the current working directory.
+    The following permissions are also set:
+        - tests_path directory:     rwxrwx--T
+        - test subdirectories:      rwxrwx--T
+        - test files:               rw-r-----
+        - student subdirectories:   rwxrwx---
+        - student files:            rw-rw----
+    """
+    os.chmod(tests_path, 0o1770)
+    client.write_student_files(tests_path)
+    for fd, file_or_dir in recursive_iglob(tests_path):
+        if fd == "d":
+            os.chmod(file_or_dir, 0o770)
+        else:
+            os.chmod(file_or_dir, 0o660)
+        shutil.chown(file_or_dir, group=test_username)
+    script_files = _copy_test_script_files(client, tests_path)
+    for fd, file_or_dir in script_files:
+        if fd == "d":
+            os.chmod(file_or_dir, 0o1770)
+        else:
+            os.chmod(file_or_dir, 0o640)
+        shutil.chown(file_or_dir, group=test_username)
+
+
 @clean_after
-def run_test(
-    markus_address: str,
-    server_api_key: str,
-    test_categories: List[str],
-    files_path: str,
-    assignment_id: int,
-    group_id: int,
-    submission_id: int,
-    run_id: int,
-    enqueue_time: int,
-) -> None:
+def run_test(client_type: str, test_data: Dict, enqueue_time: int, test_categories: List[str]) -> None:
     """
     Run autotesting tests using the tests in the test_specs json file on the files in files_path.
 
@@ -388,33 +425,17 @@ def run_test(
     error = None
     hooks_error = None
     time_to_service = int(round(time.time() - enqueue_time, 3) * 1000)
-
-    test_script_path = test_script_directory(markus_address, assignment_id)
-    hooks_script_path = os.path.join(test_script_path, HOOKS_FILENAME)
-    test_specs_path = os.path.join(test_script_path, SETTINGS_FILENAME)
-    api = Markus(server_api_key, markus_address)
-
-    with open(test_specs_path) as f:
-        test_specs = json.load(f)
+    client = CLIENTS[client_type](**test_data)
 
     try:
         job = rq.get_current_job()
         update_pop_interval_stat(job.origin)
         test_username, tests_path = tester_user()
-        hooks_kwargs = {
-            "api": api,
-            "assignment_id": assignment_id,
-            "group_id": group_id,
-        }
-        testers = {settings["tester_type"] for settings in test_specs["testers"]}
-        hooks = Hooks(hooks_script_path, testers, cwd=tests_path, kwargs=hooks_kwargs)
         try:
-            setup_files(
-                files_path, tests_path, test_username, markus_address, assignment_id
-            )
+            _setup_files(client, tests_path, test_username)
             cmd = run_test_command(test_username=test_username)
             results, hooks_error = run_test_specs(
-                cmd, test_specs, test_categories, tests_path, test_username, hooks
+                cmd, client, test_categories, tests_path, test_username
             )
         finally:
             stop_tester_processes(test_username)
@@ -422,13 +443,9 @@ def run_test(
     except Exception as e:
         error = str(e)
     finally:
-        results_data = finalize_results_data(
-            results, error, hooks_error, time_to_service
-        )
-        store_results(
-            results_data, markus_address, assignment_id, group_id, submission_id
-        )
-        report(results_data, api, assignment_id, group_id, run_id)
+        results_data = finalize_results_data(results, error, hooks_error, time_to_service)
+        store_results(client, results_data)
+        client.send_test_results(results_data)
 
 
 def get_tester_root_dir(tester_type: str) -> str:
@@ -520,7 +537,7 @@ def destroy_tester_environments(old_test_script_dir: str) -> None:
 
 
 @clean_after
-def update_test_specs(client_type: str, **kwargs: Dict) -> None:
+def update_test_specs(client_type: str, client_data: Dict) -> None:
     """
     Download test script files and test specs for the given assignment at the given
     MarkUs instance. Indicate that these new test scripts should be used instead of
@@ -528,10 +545,10 @@ def update_test_specs(client_type: str, **kwargs: Dict) -> None:
     process of being copied to a working directory).
     """
     # TODO: catch and log errors
-    client = CLIENTS[client_type](**kwargs)
+    client = CLIENTS[client_type](**client_data)
     test_script_dir_name = "test_scripts_{}".format(int(time.time()))
     unique_script_str = client.unique_script_str()
-    new_dir = os.path.join(TEST_SCRIPT_DIR, unique_script_str, test_script_dir_name)
+    new_dir = os.path.join(TEST_SCRIPT_DIR, clean_dir_name(unique_script_str), test_script_dir_name)
     test_specs = client.get_test_specs()
 
     new_files_dir = os.path.join(new_dir, FILES_DIRNAME)

@@ -5,6 +5,6 @@ workers:
       - name: autotst2
       - name: autotst3
     queues:
-      - student
-      - single
+      - high
+      - low
       - batch

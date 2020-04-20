@@ -53,7 +53,7 @@ class MarkUs(Client):
         if os.path.isfile(feedback_file):
             with open(feedback_file) as feedback_open:
                 self._api.upload_file_to_repo(
-                    self.assignment_id, self.group_id, feedback_file, feedback_open.read()
+                    self.assignment_id, self.group_id, os.path.basename(feedback_file), feedback_open.read()
                 )
 
     def upload_feedback_file(self, feedback_file: str) -> None:
@@ -63,7 +63,7 @@ class MarkUs(Client):
         if os.path.isfile(feedback_file):
             with open(feedback_file) as feedback_open:
                 self._api.upload_feedback_file(
-                    self.assignment_id, self.group_id, feedback_file, feedback_open.read()
+                    self.assignment_id, self.group_id, os.path.basename(feedback_file), feedback_open.read()
                 )
 
     def upload_annotations(self, annotation_file: str) -> None:

@@ -7,11 +7,7 @@ import zipfile
 from io import BytesIO
 from typing import Generator, Tuple, List, Callable, Type, Optional, Any
 from types import TracebackType
-from autotester.server.utils import redis_management
-from autotester.config import config
 from contextlib import contextmanager
-
-FILES_DIRNAME = config["_workspace_contents", "_files_dir"]
 
 
 def clean_dir_name(name: str) -> str:
@@ -118,25 +114,6 @@ def fd_lock(
         fcntl.flock(file_descriptor, fcntl.LOCK_UN)
 
 
-def copy_test_script_files(
-    markus_address: str, assignment_id: int, tests_path: str
-) -> List[Tuple[str, str]]:
-    """
-    Copy test script files for a given assignment to the tests_path
-    directory if they exist. tests_path may already exist and contain
-    files and subdirectories.
-    """
-    test_script_outer_dir = redis_management.test_script_directory(
-        markus_address, assignment_id
-    )
-    test_script_dir = os.path.join(test_script_outer_dir, FILES_DIRNAME)
-    if os.path.isdir(test_script_dir):
-        with fd_open(test_script_dir) as fd:
-            with fd_lock(fd, exclusive=False):
-                return copy_tree(test_script_dir, tests_path)
-    return []
-
-
 def extract_zip_stream(zip_byte_stream: bytes, destination: str, ignore_root_dir: bool = True) -> None:
     """
     Extract files in a zip archive's content <zip_byte_stream> to <destination>, a path to a local directory.
@@ -151,38 +128,3 @@ def extract_zip_stream(zip_byte_stream: bytes, destination: str, ignore_root_dir
             os.makedirs(dest, exist_ok=True)
             with open(os.path.join(dest, bname), 'wb') as f:
                 f.write(zf.read(fname))
-
-
-def setup_files(
-    files_path: str,
-    tests_path: str,
-    test_username: str,
-    markus_address: str,
-    assignment_id: int
-) -> Tuple[List[Tuple[str, str]], List[Tuple[str, str]]]:
-    """
-    Copy test script files and student files to the working directory tests_path,
-    then make it the current working directory.
-    The following permissions are also set:
-        - tests_path directory:     rwxrwx--T
-        - test subdirectories:      rwxrwx--T
-        - test files:               rw-r-----
-        - student subdirectories:   rwxrwx---
-        - student files:            rw-rw----
-    """
-    os.chmod(tests_path, 0o1770)
-    student_files = move_tree(files_path, tests_path)
-    for fd, file_or_dir in student_files:
-        if fd == "d":
-            os.chmod(file_or_dir, 0o770)
-        else:
-            os.chmod(file_or_dir, 0o660)
-        shutil.chown(file_or_dir, group=test_username)
-    script_files = copy_test_script_files(markus_address, assignment_id, tests_path)
-    for fd, file_or_dir in script_files:
-        if fd == "d":
-            os.chmod(file_or_dir, 0o1770)
-        else:
-            os.chmod(file_or_dir, 0o640)
-        shutil.chown(file_or_dir, group=test_username)
-    return student_files, script_files

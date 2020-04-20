@@ -2,14 +2,6 @@
 # Settings prefixed with an underscore are technically overwritable by
 # a local settings file but it is not recommended.
 
-queues:
-  - name: batch
-    schema: {'type': 'object', 'properties': {'batch_id': {'type': 'number'}}}
-  - name: single
-    schema: {'type': 'object', 'properties': {'batch_id': {'type': 'null'}, 'user_type': {'const': 'Admin'}}}
-  - name: student
-    schema: {'type': 'object', 'properties': {'batch_id': {'type': 'null'}, 'user_type': {'const': 'Student'}}}
-
 server_user: !ENV ${USER}
 
 workspace: !ENV ${HOME}/.markus-autotesting/
@@ -19,8 +11,8 @@ workers:
       - name: !ENV ${USER}
         reaper: null
     queues:
-      - student
-      - single
+      - high
+      - low
       - batch
 
 redis:

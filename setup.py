@@ -20,7 +20,7 @@ setup(
         "supervisor==4.1.0",
         "PyYAML==5.1.2",
         "psycopg2-binary==2.8.4",
-        "markusapi==0.0.1",
+        "markusapi==0.1.1",
         "jsonschema==3.0.2",
     ],
     tests_require=["pytest==5.3.1", "hypothesis==4.47.3", "fakeredis==1.1.0"],

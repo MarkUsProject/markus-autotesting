@@ -27,6 +27,7 @@ from autotester.server.utils.file_management import ignore_missing_dir_error
 from autotester.config import config
 from autotester.server.utils import form_management
 from autotester.server.server import run_test, update_test_specs
+from autotester.server.client_customizations import CLIENTS, ClientType
 
 SETTINGS_FILENAME = config["_workspace_contents", "_settings_file"]
 
@@ -84,14 +85,11 @@ def _print_queue_info(queue: rq.Queue) -> None:
     print(avg_pop_interval * count)
 
 
-def _check_test_script_files_exist(
-    markus_address: str, assignment_id: int, **_kw: ExtraArgType
-) -> None:
+def _check_test_script_files_exist(client: ClientType) -> None:
     """
-    Raise a TestScriptFilesError if the tests script files do not exist for a given assignment.
-    The assignment is determined based on the markus_address and assignment_id.
+    Raise a TestScriptFilesError if the tests script files for this test cannot be found.
     """
-    if test_script_directory(markus_address, assignment_id) is None:
+    if test_script_directory(client.unique_script_str()) is None:
         raise TestScriptFilesError(
             "cannot find test script files: please upload some before running tests"
         )
@@ -118,71 +116,70 @@ def _clean_on_error(func: Callable) -> Callable:
     return wrapper
 
 
-def _get_job_timeout(
-    test_specs: Dict, test_categories: List[str], multiplier: float = 1.5
-) -> int:
+def _get_job_timeouts(client: ClientType, multiplier: float = 1.5) -> int:
     """
     Return an integer equal to multiplier times the sum of all timeouts in the
-    test_specs dictionary
-
-    Raises a RuntimeError if there are no elements in test_specs that
-    have the category test_categories
+    test_specs dictionary.
     """
+    test_files_dir = test_script_directory(client.unique_script_str())
+    with open(os.path.join(test_files_dir, SETTINGS_FILENAME)) as f:
+        test_specs = json.load(f)
     total_timeout = 0
-    test_data_count = 0
     for settings in test_specs["testers"]:
         for test_data in settings["test_data"]:
-            test_category = test_data.get("category", [])
-            if set(test_category) & set(test_categories):
-                total_timeout += test_data.get("timeout", 30)
-                test_data_count += 1
-    if test_data_count:
+            total_timeout += test_data["timeout"]
+    if total_timeout:
         return int(total_timeout * multiplier)
-    raise TestParameterError(
-        f"there are no tests of the given categories: {test_categories}"
-    )
+    raise TestParameterError(f"There are no tests to run")
 
 
-@_clean_on_error
-def enqueue_test(user_type: str, batch_id: Optional[int], **kw: ExtraArgType) -> None:
+def _select_queue(is_batch: bool, request_high_priority: bool) -> rq.Queue:
     """
-    Enqueue a test run job with keyword arguments specified in **kw.
+    Return a queue.
 
-    The user_type and batch_id arguments are used to determine which
-    queue to enqueue the job to (see _get_queue).
+    Return the batch queue iff is_batch is True.
+    Otherwise return the high queue if request_high_priority is True and return the low queue otherwise.
+    """
+    if is_batch:
+        return rq.Queue('batch', connection=redis_connection())
+    elif request_high_priority:
+        return rq.Queue('high', connection=redis_connection())
+    else:
+        return rq.Queue('low', connection=redis_connection())
+
+
+def enqueue_tests(client_type: str, client_data: Dict, test_data: List[Dict], request_high_priority: bool = False) -> None:
+    """
+    Enqueue test run jobs with keyword arguments specified in test_data.
 
     Prints the queue information to stdout (see _print_queue_info).
     """
-    kw["enqueue_time"] = time.time()
-    queue = _get_queue(user_type=user_type, batch_id=batch_id, **kw)
-    _check_args(run_test, kwargs=kw)
-    _check_test_script_files_exist(**kw)
-    test_files_dir = test_script_directory(kw["markus_address"], kw["assignment_id"])
-    with open(os.path.join(test_files_dir, SETTINGS_FILENAME)) as f:
-        test_specs = json.load(f)
+    assert test_data, 'test_data cannot be empty'
+    client = CLIENTS[client_type](**client_data)
+    _check_test_script_files_exist(client)
+    timeout = _get_job_timeouts(client)
+    queue = _select_queue(len(test_data) > 1, request_high_priority)
     _print_queue_info(queue)
-    timeout = _get_job_timeout(test_specs, kw["test_categories"])
-    queue.enqueue_call(
-        run_test, kwargs=kw, job_id=_format_job_id(**kw), timeout=timeout
-    )
+    for data in test_data:
+        kwargs = {"client_type": client_type,
+                  "test_data": {**client_data, **data},
+                  "enqueue_time": time.time(),
+                  "test_categories": data["test_categories"]}
+        queue.enqueue_call(run_test, kwargs=kwargs, job_id=client.unique_run_str(), timeout=timeout)
 
 
-def cancel_test(markus_address: str, run_ids: List[int], **_kw: ExtraArgType) -> None:
+def cancel_tests(client_type: str, client_data: Dict, test_data: List[Dict]) -> None:
     """
-    Cancel a test run job with the job_id defined using
-    markus_address and run_id.
+    Cancel a test run job with enqueued with the same
     """
     with rq.Connection(redis_connection()):
-        for run_id in run_ids:
-            job_id = _format_job_id(markus_address, run_id)
+        for data in test_data:
+            client = CLIENTS[client_type](**client_data, **data)
             try:
-                job = rq.job.Job.fetch(job_id)
+                job = rq.job.Job.fetch(client.unique_run_str())
             except NoSuchJobError:
-                return
+                continue
             if job.is_queued():
-                files_path = job.kwargs["files_path"]
-                if files_path:
-                    shutil.rmtree(files_path, onerror=ignore_missing_dir_error)
                 job.cancel()
 
 
@@ -221,9 +218,9 @@ def parse_arg_file(arg_file: str) -> Dict[str, ExtraArgType]:
 
 
 COMMANDS = {
-    "run": enqueue_test,
+    "run": enqueue_tests,
     "specs": update_test_specs,
-    "cancel": cancel_test,
+    "cancel": cancel_tests,
     "schema": get_schema,
 }
 

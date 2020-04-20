@@ -109,7 +109,8 @@ workers:
         reaper: # the username of a user used to clean up test processes. This value can be null (see details below)
     queues: # a list of queue names that these users will monitor and select test jobs from. 
             # The order of this list indicates which queues have priority when selecting tests to run
-            # default is ['student', 'single', 'batch'] (see the "queues:" setting option below) 
+            # This list may only contain the strings 'high', 'low', and 'batch'.
+            # default is ['high', 'low', 'batch']
 
 redis:
   url: # url for the redis database. default is: redis://127.0.0.1:6379/0
@@ -129,11 +130,6 @@ resources:
   postgresql:
     port: # port the postgres server is running on
     host: # host the postgres server is running on
-
-queues:
-  - name: # the name of a queue used to enqueue test jobs (see details below)
-    schema: # a json schema used to validate the json representation of the arguments passed to the test_enqueuer script
-            # by MarkUs (see details below)
 ```
 
 ### Environment variables
@@ -199,30 +195,16 @@ to test.
 When a test run is sent to the autotester from MarkUs, the test is not run immediately. Instead it is put in a queue and
 run only when a worker user becomes available. You can choose to just have a single queue or multiple. 
 
-If using multiple queues, you can set a priority order for each worker user (see the `workers:` setting). The workers
-will prioritize running tests from queues that appear earlier in the priority order. 
+If using multiple queues, you can set a priority order for each worker user (see the `workers:` setting). The default is
+to select jobs in the 'high' queue first, then the jobs in the 'low' queue, and finally jobs in the 'batch' queue.
+
+Note that not all workers need to be monitoring all queues. However, you should have at least one worker monitoring every
+queue or else some jobs may never be run!
 
 When MarkUs sends the test to the autotester, in order to decide which queue to put the test in, we inspect the json 
-string passed as an argument to the `markus_autotester` command (using either the `-j` or `-f` flags). This inspection 
-involves validating that json string against a [json schema validation](https://json-schema.org/) for each queue. If the
-json string passes the validation for a certain queue, the test is added to that queue. 
-
-For example, the default queue settings in the configuration are:
-
-```yaml
-queues:
-  - name: batch
-    schema: {'type': 'object', 'properties': {'batch_id': {'type': 'number'}}}
-  - name: single
-    schema: {'type': 'object', 'properties': {'batch_id': {'type': 'null'}, 'user_type': {'const': 'Admin'}}}
-  - name: student
-    schema: {'type': 'object', 'properties': {'batch_id': {'type': 'null'}, 'user_type': {'const': 'Student'}}}
-```
-
-Under this default setup:
- - a test with a non-null `batch_id` will be put in the `batch` queue.
- - a test with a null `batch_id` and where `user_type == 'Admin'` will be put in the `single` queue
- - a test with a null `batch_id` and where `user_type == 'Student'` will be put in the `student` queue
+string passed as an argument to the `markus_autotester` command (using either the `-j` or `-f` flags). If there is more
+than one test to enqueue, all jobs will be put in the 'batch' queue; if there is a single test and the `request_high_priority`
+keyword argument is `True`, the job will be put in the 'high' queue; otherwise, the job will be put in the 'low' queue.
 
 ## MarkUs configuration options
 

@@ -7,8 +7,8 @@ workers:
       - name: !ENV ${USER}
         reaper: null
     queues:
-      - student
-      - single
+      - high
+      - low
       - batch
 
 redis:
@@ -29,11 +29,3 @@ resources:
   postgresql:
     port: 5432
     host: localhost
-
-queues:
-  - name: batch
-    schema: {'type': 'object', 'properties': {'batch_id': {'type': 'number'}}}
-  - name: single
-    schema: {'type': 'object', 'properties': {'batch_id': {'type': 'null'}, 'user_type': {'const': 'Admin'}}}
-  - name: student
-    schema: {'type': 'object', 'properties': {'batch_id': {'type': 'null'}, 'user_type': {'const': 'Student'}}}
