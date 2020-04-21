@@ -21,7 +21,7 @@ from autotester.server.utils.redis_management import (
 from autotester.config import config
 from autotester.server.utils import form_management
 from autotester.server.server import run_test, update_test_specs
-from autotester.server.client_customizations import CLIENTS, ClientType
+from autotester.server.client_customizations import get_client, ClientType
 
 SETTINGS_FILENAME = config["_workspace_contents", "_settings_file"]
 
@@ -87,8 +87,9 @@ def enqueue_tests(client_type: str, client_data: Dict, test_data: List[Dict], re
 
     Prints the queue information to stdout (see _print_queue_info).
     """
-    assert test_data, 'test_data cannot be empty'
-    client = CLIENTS[client_type](**client_data)
+    if not test_data:
+        raise TestParameterError('test_data cannot be empty')
+    client = get_client(client_type, client_data)
     _check_test_script_files_exist(client)
     timeout = _get_job_timeouts(client)
     queue = _select_queue(len(test_data) > 1, request_high_priority)
@@ -107,7 +108,7 @@ def cancel_tests(client_type: str, client_data: Dict, test_data: List[Dict]) -> 
     """
     with rq.Connection(redis_connection()):
         for data in test_data:
-            client = CLIENTS[client_type](**client_data, **data)
+            client = get_client(client_type, {**client_data, **data})
             try:
                 job = rq.job.Job.fetch(client.unique_run_str())
             except NoSuchJobError:

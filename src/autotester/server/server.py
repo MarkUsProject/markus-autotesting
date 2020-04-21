@@ -44,7 +44,7 @@ from autotester.server.utils.redis_management import (
 from autotester.server.utils.form_management import validate_against_schema
 from autotester.resources.ports import get_available_port
 from autotester.resources.postgresql import setup_database
-from autotester.server.client_customizations import CLIENTS, ClientType
+from autotester.server.client_customizations import get_client, ClientType
 
 DEFAULT_ENV_DIR = config["_workspace_contents", "_default_venv_name"]
 TEST_RESULT_DIR = os.path.join(
@@ -394,7 +394,7 @@ def run_test(client_type: str, test_data: Dict, enqueue_time: int, test_categori
     error = None
     hooks_error = None
     time_to_service = int(round(time.time() - enqueue_time, 3) * 1000)
-    client = CLIENTS[client_type](**test_data)
+    client = get_client(client_type, test_data)
 
     try:
         job = rq.get_current_job()
@@ -514,7 +514,7 @@ def update_test_specs(client_type: str, client_data: Dict) -> None:
     process of being copied to a working directory).
     """
     # TODO: catch and log errors
-    client = CLIENTS[client_type](**client_data)
+    client = get_client(client_type, client_data)
     test_script_dir_name = "test_scripts_{}".format(int(time.time()))
     unique_script_str = client.unique_script_str()
     new_dir = os.path.join(TEST_SCRIPT_DIR, clean_dir_name(unique_script_str), test_script_dir_name)
