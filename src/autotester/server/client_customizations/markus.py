@@ -20,15 +20,18 @@ class MarkUs(Client):
         self._api = markusapi.Markus(self.api_key, self.url)
 
     def write_test_files(self, destination: str) -> None:
+        """ Get test files from the client and write them to <destination> """
         zip_content = self._api.get_test_files(self.assignment_id)
         if zip_content is None:
             raise TestScriptFilesError('No test files found')
         extract_zip_stream(zip_content, destination, ignore_root_dir=True)
 
     def get_test_specs(self) -> Dict:
+        """ Get and Return test specs from the client """
         return self._api.get_test_specs(self.assignment_id)
 
     def write_student_files(self, destination: str) -> None:
+        """ Get student files from the client and write them to <destination> """
         collected = self.user_type == "Admin"
         zip_content = self._api.get_files_from_repo(self.assignment_id, self.group_id, collected=collected)
         if zip_content is None:
@@ -36,14 +39,17 @@ class MarkUs(Client):
         extract_zip_stream(zip_content, destination, ignore_root_dir=True)
 
     def send_test_results(self, results_data: Dict) -> None:
+        """ Send test results to the client """
         self._api.upload_test_group_results(
             self.assignment_id, self.group_id, self.run_id, json.dumps(results_data)
         )
 
     def unique_script_str(self) -> str:
+        """ Return a unique string to represent the test scripts used to run tests """
         return "_".join([self.client_type, self.url, str(self.assignment_id)])
 
     def unique_run_str(self) -> str:
+        """ Return a unique string to represent an individual run of tests """
         return "_".join([self.unique_script_str(), str(self.run_id)])
 
     def upload_feedback_to_repo(self, feedback_file: str) -> None:

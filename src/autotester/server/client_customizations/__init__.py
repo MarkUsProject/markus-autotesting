@@ -6,4 +6,5 @@ _CLIENTS = {'markus': markus.MarkUs}
 
 
 def get_client(client_type: str, init_kwargs: Dict) -> ClientType:
+    """ Return a client of <client_type> initialized with <init_kwargs> """
     return _CLIENTS[client_type](init_kwargs)
