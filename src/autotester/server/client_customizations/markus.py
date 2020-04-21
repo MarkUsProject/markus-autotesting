@@ -8,7 +8,7 @@ from autotester.exceptions import TestScriptFilesError
 
 
 class MarkUs(Client):
-    client_type = 'markus'
+    client_type = "markus"
 
     def __init__(self, **kwargs):
         self.url = kwargs.get("url")
@@ -23,7 +23,7 @@ class MarkUs(Client):
         """ Get test files from the client and write them to <destination> """
         zip_content = self._api.get_test_files(self.assignment_id)
         if zip_content is None:
-            raise TestScriptFilesError('No test files found')
+            raise TestScriptFilesError("No test files found")
         extract_zip_stream(zip_content, destination, ignore_root_dir=True)
 
     def get_test_specs(self) -> Dict:
@@ -35,14 +35,12 @@ class MarkUs(Client):
         collected = self.user_type == "Admin"
         zip_content = self._api.get_files_from_repo(self.assignment_id, self.group_id, collected=collected)
         if zip_content is None:
-            raise TestScriptFilesError('No test files found')
+            raise TestScriptFilesError("No test files found")
         extract_zip_stream(zip_content, destination, ignore_root_dir=True)
 
     def send_test_results(self, results_data: Dict) -> None:
         """ Send test results to the client """
-        self._api.upload_test_group_results(
-            self.assignment_id, self.group_id, self.run_id, json.dumps(results_data)
-        )
+        self._api.upload_test_group_results(self.assignment_id, self.group_id, self.run_id, json.dumps(results_data))
 
     def unique_script_str(self) -> str:
         """ Return a unique string to represent the test scripts used to run tests """

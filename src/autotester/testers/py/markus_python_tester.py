@@ -30,23 +30,14 @@ class MarkusTextTestResults(unittest.TextTestResult):
         Record that a test passed.
         """
         self.results.append(
-            {
-                "status": "success",
-                "name": test.id(),
-                "errors": "",
-                "description": test._testMethodDoc,
-            }
+            {"status": "success", "name": test.id(), "errors": "", "description": test._testMethodDoc}
         )
         self.successes.append(test)
 
     def addFailure(
         self,
         test: unittest.TestCase,
-        err: Tuple[
-            Optional[Type[BaseException]],
-            Optional[BaseException],
-            Optional[TracebackType],
-        ],
+        err: Tuple[Optional[Type[BaseException]], Optional[BaseException], Optional[TracebackType]],
     ) -> None:
         """
         Record that a test failed.
@@ -64,23 +55,14 @@ class MarkusTextTestResults(unittest.TextTestResult):
     def addError(
         self,
         test: unittest.TestCase,
-        err: Tuple[
-            Optional[Type[BaseException]],
-            Optional[BaseException],
-            Optional[TracebackType],
-        ],
+        err: Tuple[Optional[Type[BaseException]], Optional[BaseException], Optional[TracebackType]],
     ) -> None:
         """
         Record that a test failed with an error.
         """
         super().addError(test, err)
         self.results.append(
-            {
-                "status": "error",
-                "name": test.id(),
-                "errors": self.errors[-1][-1],
-                "description": test._testMethodDoc,
-            }
+            {"status": "error", "name": test.id(), "errors": self.errors[-1][-1], "description": test._testMethodDoc}
         )
 
 
@@ -141,11 +123,7 @@ class MarkusPytestPlugin:
 
 class MarkusPythonTest(MarkusTest):
     def __init__(
-        self,
-        tester: "MarkusPythonTester",
-        test_file: str,
-        result: Dict,
-        feedback_open: Optional[IO] = None,
+        self, tester: "MarkusPythonTester", test_file: str, result: Dict, feedback_open: Optional[IO] = None,
     ):
         """
         Initialize a Python test created by tester.
@@ -182,9 +160,7 @@ class MarkusPythonTest(MarkusTest):
 
 class MarkusPythonTester(MarkusTester):
     def __init__(
-        self,
-        specs: MarkusTestSpecs,
-        test_class: Type[MarkusPythonTest] = MarkusPythonTest,
+        self, specs: MarkusTestSpecs, test_class: Type[MarkusPythonTest] = MarkusPythonTest,
     ):
         """
         Initialize a python tester using the specifications in specs.

@@ -44,9 +44,7 @@ def _check_test_script_files_exist(client: ClientType) -> None:
     Raise a TestScriptFilesError if the tests script files for this test cannot be found.
     """
     if test_script_directory(client.unique_script_str()) is None:
-        raise TestScriptFilesError(
-            "cannot find test script files: please upload some before running tests"
-        )
+        raise TestScriptFilesError("cannot find test script files: please upload some before running tests")
 
 
 def _get_job_timeouts(client: ClientType, multiplier: float = 1.5) -> int:
@@ -74,31 +72,35 @@ def _select_queue(is_batch: bool, request_high_priority: bool) -> rq.Queue:
     Otherwise return the high queue if request_high_priority is True and return the low queue otherwise.
     """
     if is_batch:
-        return rq.Queue('batch', connection=redis_connection())
+        return rq.Queue("batch", connection=redis_connection())
     elif request_high_priority:
-        return rq.Queue('high', connection=redis_connection())
+        return rq.Queue("high", connection=redis_connection())
     else:
-        return rq.Queue('low', connection=redis_connection())
+        return rq.Queue("low", connection=redis_connection())
 
 
-def enqueue_tests(client_type: str, client_data: Dict, test_data: List[Dict], request_high_priority: bool = False) -> None:
+def enqueue_tests(
+    client_type: str, client_data: Dict, test_data: List[Dict], request_high_priority: bool = False
+) -> None:
     """
     Enqueue test run jobs with keyword arguments specified in test_data.
 
     Prints the queue information to stdout (see _print_queue_info).
     """
     if not test_data:
-        raise TestParameterError('test_data cannot be empty')
+        raise TestParameterError("test_data cannot be empty")
     client = get_client(client_type, client_data)
     _check_test_script_files_exist(client)
     timeout = _get_job_timeouts(client)
     queue = _select_queue(len(test_data) > 1, request_high_priority)
     _print_queue_info(queue)
     for data in test_data:
-        kwargs = {"client_type": client_type,
-                  "test_data": {**client_data, **data},
-                  "enqueue_time": time.time(),
-                  "test_categories": data["test_categories"]}
+        kwargs = {
+            "client_type": client_type,
+            "test_data": {**client_data, **data},
+            "enqueue_time": time.time(),
+            "test_categories": data["test_categories"],
+        }
         queue.enqueue_call(run_test, kwargs=kwargs, job_id=client.unique_run_str(), timeout=timeout)
 
 

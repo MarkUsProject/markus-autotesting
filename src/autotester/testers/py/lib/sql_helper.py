@@ -142,9 +142,7 @@ def execute_psql_file(
             "PGDATABASE": database or os.environ.get("PGDATABASE"),
         }
         env = {**os.environ, **db_vars}
-    return subprocess.run(
-        ["psql", "-f", filename] + list(args), env=env, capture_output=True
-    )
+    return subprocess.run(["psql", "-f", filename] + list(args), env=env, capture_output=True)
 
 
 class PSQLTest:
@@ -233,11 +231,7 @@ class PSQLTest:
 
     @classmethod
     def copy_schema(
-        cls,
-        to_schema: str,
-        tables: Optional[List[str]] = None,
-        from_schema: str = "public",
-        overwrite: bool = True,
+        cls, to_schema: str, tables: Optional[List[str]] = None, from_schema: str = "public", overwrite: bool = True,
     ) -> None:
         """
         Copies tables from <from_schema> to <to_schema>. <from_schema> is
@@ -256,16 +250,12 @@ class PSQLTest:
             curr.execute("CREATE SCHEMA IF NOT EXISTS %s;", [AsIs(to_schema)])
             for table in tables:
                 if overwrite:
-                    curr.execute(
-                        "DROP TABLE IF EXISTS %s.%s;", [AsIs(to_schema), AsIs(table)]
-                    )
+                    curr.execute("DROP TABLE IF EXISTS %s.%s;", [AsIs(to_schema), AsIs(table)])
                 strs = {**strings, "table": AsIs(table)}
                 curr.execute(cls.SCHEMA_COPY_STR, strs)
 
     @classmethod
-    def execute_files(
-        cls, files: List[str], *args, cursor: Optional[CursorType] = None, **kwargs
-    ) -> None:
+    def execute_files(cls, files: List[str], *args, cursor: Optional[CursorType] = None, **kwargs) -> None:
         """
         Execute each file in <files> by passing the content of each to
         cursor.execute.

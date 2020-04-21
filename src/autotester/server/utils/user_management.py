@@ -26,9 +26,7 @@ def tester_user() -> Tuple[str, str]:
     if user_name is None:
         raise TesterUserError("No worker users available to run this job")
 
-    user_workspace = os.path.join(
-        config["workspace"], config["_workspace_contents", "_workers"], user_name
-    )
+    user_workspace = os.path.join(config["workspace"], config["_workspace_contents", "_workers"], user_name)
     if not os.path.isdir(user_workspace):
         raise TesterUserError(f"No workspace directory for user: {user_name}")
 

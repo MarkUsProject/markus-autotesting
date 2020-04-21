@@ -135,9 +135,7 @@ class TestGetSchema:
             out, _err = capfd.readouterr()
             schema = json.loads(out)
             root_dir = os.path.dirname(os.path.abspath(cli.__file__))
-            with open(
-                os.path.join(root_dir, "lib", "tester_schema_skeleton.json")
-            ) as f:
+            with open(os.path.join(root_dir, "lib", "tester_schema_skeleton.json")) as f:
                 skeleton = json.load(f)
             assert schema == skeleton
 

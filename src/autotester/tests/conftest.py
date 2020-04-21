@@ -10,8 +10,7 @@ def redis():
     fake_redis = FakeStrictRedis()
     with patch("autotester.cli.redis_connection", return_value=fake_redis):
         with patch(
-            "autotester.server.utils.redis_management.redis_connection",
-            return_value=fake_redis,
+            "autotester.server.utils.redis_management.redis_connection", return_value=fake_redis,
         ):
             yield fake_redis
 
@@ -40,18 +39,20 @@ def mock_enqueue_call():
 @pytest.fixture(autouse=True)
 def mock_client():
     mock_instance = Mock()
-    with patch('autotester.cli.get_client', return_value=mock_instance):
-        mock_instance.unique_run_str.return_value = 'a'
-        mock_instance.unique_script_str.return_value = 'a'
+    with patch("autotester.cli.get_client", return_value=mock_instance):
+        mock_instance.unique_run_str.return_value = "a"
+        mock_instance.unique_script_str.return_value = "a"
         yield mock_instance
 
 
 @pytest.fixture
 def enqueue_kwargs():
-    yield {"client_type": "test",
-           "client_data": {},
-           "test_data": [{"test_categories": "admin"}],
-           "request_high_priority": False}
+    yield {
+        "client_type": "test",
+        "client_data": {},
+        "test_data": [{"test_categories": "admin"}],
+        "request_high_priority": False,
+    }
 
 
 @pytest.fixture

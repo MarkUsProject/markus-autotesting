@@ -47,9 +47,7 @@ class TestExecutable(unittest.TestCase):
         Use make if cls.make is True, and gcc otherwise.
         """
         if not cls.make and not cls.source_files:
-            raise ValueError(
-                "ERROR: TestExecutable subclasses must specify source_files or set make=True."
-            )
+            raise ValueError("ERROR: TestExecutable subclasses must specify source_files or set make=True.")
 
         cls.compile_out = ""
         cls.compile_err = ""
@@ -65,13 +63,9 @@ class TestExecutable(unittest.TestCase):
         try:
             if cls.make:
                 # Tuple (stdoutdata, stderrdata) is returned
-                cls.compile_out, cls.compile_err, _ = _make(
-                    cls.make_targets, cls.make_args
-                )
+                cls.compile_out, cls.compile_err, _ = _make(cls.make_targets, cls.make_args)
             else:
-                cls.compile_out, cls.compile_err, _ = _compile(
-                    cls.source_files, cls.executable_name
-                )
+                cls.compile_out, cls.compile_err, _ = _compile(cls.source_files, cls.executable_name)
         except subprocess.CalledProcessError:
             cls.compiled = False
         else:
@@ -135,9 +129,7 @@ def simple_test(
     """
 
     def _t(self: "TestExecutable") -> None:
-        stdout, stderr, returncode = self._run_exec(
-            args=args, input_=input_, timeout=timeout, check=check
-        )
+        stdout, stderr, returncode = self._run_exec(args=args, input_=input_, timeout=timeout, check=check)
 
         nonlocal expected_stderr
         nonlocal expected_stdout
@@ -192,9 +184,7 @@ def substr_test(
     """
 
     def _t(self: "TestExecutable") -> None:
-        stdout, stderr, returncode = self._run_exec(
-            args=args, input_=input_, timeout=timeout, check=check
-        )
+        stdout, stderr, returncode = self._run_exec(args=args, input_=input_, timeout=timeout, check=check)
 
         nonlocal expected_stderr
         nonlocal expected_stdout
@@ -227,9 +217,7 @@ class TestTrace(TestExecutable):
     call_types = []  # The only call types to watch out for (see ltrace man page)
 
     @classmethod
-    def _check_trace(
-        cls, args: Optional[List[str]] = None, ltrace_flags=None, **kwargs
-    ):
+    def _check_trace(cls, args: Optional[List[str]] = None, ltrace_flags=None, **kwargs):
         if ltrace_flags is None:
             ltrace_flags = DEFAULT_LTRACE_FLAGS
         else:
@@ -240,11 +228,7 @@ class TestTrace(TestExecutable):
                 "+".join(["__libc_start_main"] + cls.call_types),
             ]
 
-        return Trace(
-            [os.path.join(".", cls.executable_name)] + (args or []),
-            ltrace_flags,
-            **kwargs
-        )
+        return Trace([os.path.join(".", cls.executable_name)] + (args or []), ltrace_flags, **kwargs)
 
 
 class Trace:
@@ -275,9 +259,7 @@ class Trace:
     this can be confirmed examining the regex
     """
 
-    def __init__(
-        self, command: List[str], ltrace_flags: Optional[List[str]] = None, **kwargs
-    ):
+    def __init__(self, command: List[str], ltrace_flags: Optional[List[str]] = None, **kwargs):
         ltrace_flags = ltrace_flags or []
         try:
             _exec(["ltrace"] + ltrace_flags + command, **kwargs)
@@ -426,16 +408,12 @@ class TestGenerator:
         `arg`s is optionally a string containing the command-line arguments given to the executable.
         """
         print(os.path.join(self.input_dir, "*." + self.input_extension))
-        for file in glob.glob(
-            os.path.join(self.input_dir, "*." + self.input_extension)
-        ):
+        for file in glob.glob(os.path.join(self.input_dir, "*." + self.input_extension)):
             print(file)
             name = os.path.splitext(os.path.basename(file))[0]
             stdout_file = os.path.join(self.out_dir, name + "." + self.output_extension)
             stderr_file = os.path.join(self.out_dir, name + "." + self.error_extension)
-            cmd = "{} {} < {} > {} 2> {}".format(
-                self.executable_path, args, file, stdout_file, stderr_file
-            )
+            cmd = "{} {} < {} > {} 2> {}".format(self.executable_path, args, file, stdout_file, stderr_file)
             print("Running:", cmd)
             try:
                 _exec_shell([cmd])
@@ -444,9 +422,7 @@ class TestGenerator:
 
     def clean(self):
         """Remove generated test files."""
-        for file in glob.glob(
-            os.path.join(self.input_dir, "*." + self.input_extension)
-        ):
+        for file in glob.glob(os.path.join(self.input_dir, "*." + self.input_extension)):
             name = os.path.splitext(os.path.basename(file))[0]
             stdout_file = os.path.join(self.out_dir, name + "." + self.output_extension)
             stderr_file = os.path.join(self.out_dir, name + "." + self.error_extension)
@@ -459,9 +435,7 @@ class TestGenerator:
         This must be called *after* build_outputs has been called.
         """
         args = args or []
-        for file in glob.glob(
-            os.path.join(self.input_dir, "*." + self.input_extension)
-        ):
+        for file in glob.glob(os.path.join(self.input_dir, "*." + self.input_extension)):
             name = os.path.splitext(os.path.basename(file))[0]
             stdout_file = os.path.join(self.out_dir, name + "." + self.output_extension)
             stderr_file = os.path.join(self.out_dir, name + "." + self.error_extension)
@@ -473,12 +447,7 @@ class TestGenerator:
             setattr(
                 test_klass,
                 "test_" + name,
-                simple_test(
-                    args,
-                    expected_stdout=test_out,
-                    expected_stderr=test_err,
-                    input_=test_in,
-                ),
+                simple_test(args, expected_stdout=test_out, expected_stderr=test_err, input_=test_in,),
             )
 
 

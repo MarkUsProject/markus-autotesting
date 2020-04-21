@@ -10,9 +10,7 @@ def decode_if_bytes(b: Union[str, bytes], format_: str = "utf-8") -> str:
     return b.decode(format_) if isinstance(b, bytes) else b
 
 
-def loads_partial_json(
-    json_string: str, expected_type: Optional[Type] = None
-) -> Tuple[List, bool]:
+def loads_partial_json(json_string: str, expected_type: Optional[Type] = None) -> Tuple[List, bool]:
     """
     Return a list of objects loaded from a json string and a boolean
     indicating whether the json_string was malformed.  This will try

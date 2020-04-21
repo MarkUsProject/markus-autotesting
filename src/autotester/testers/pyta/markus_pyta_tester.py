@@ -1,7 +1,7 @@
 import os
 import sys
 import json
-from typing import Any, Optional, IO, Type, Dict
+from typing import Optional, IO, Type, Dict
 
 import python_ta
 from pylint.config import VALIDATORS
@@ -34,11 +34,7 @@ class MarkusPyTATest(MarkusTest):
     ERROR_MSGS = {"reported": "{} error(s)"}
 
     def __init__(
-        self,
-        tester: "MarkusPyTATester",
-        student_file_path: str,
-        max_points: int,
-        feedback_open: Optional[IO] = None,
+        self, tester: "MarkusPyTATester", student_file_path: str, max_points: int, feedback_open: Optional[IO] = None,
     ) -> None:
         """
         Initialize a Python TA test that checks the student_file_path file,
@@ -62,9 +58,7 @@ class MarkusPyTATest(MarkusTest):
         for result in reporter._output["results"]:
             if "filename" not in result:
                 continue
-            for msg_group in result.get("msg_errors", []) + result.get(
-                "msg_styles", []
-            ):
+            for msg_group in result.get("msg_errors", []) + result.get("msg_styles", []):
                 for msg in msg_group["occurrences"]:
                     self.annotations.append(
                         {
@@ -89,15 +83,9 @@ class MarkusPyTATest(MarkusTest):
         """
         try:
             # run PyTA and collect annotations
-            sys.stdout = (
-                self.feedback_open
-                if self.feedback_open is not None
-                else self.tester.devnull
-            )
+            sys.stdout = self.feedback_open if self.feedback_open is not None else self.tester.devnull
             sys.stderr = self.tester.devnull
-            reporter = python_ta.check_all(
-                self.student_file, config=self.tester.pyta_config
-            )
+            reporter = python_ta.check_all(self.student_file, config=self.tester.pyta_config)
             if reporter.current_file_linted is None:
                 # No files were checked. The mark is set to 0.
                 num_messages = 0
@@ -107,11 +95,7 @@ class MarkusPyTATest(MarkusTest):
                 # deduct 1 point per message occurrence (not type)
                 num_messages = len(self.annotations)
                 points_earned = max(0, self.points_total - num_messages)
-            message = (
-                self.ERROR_MSGS["reported"].format(num_messages)
-                if num_messages > 0
-                else ""
-            )
+            message = self.ERROR_MSGS["reported"].format(num_messages) if num_messages > 0 else ""
             return self.done(points_earned, message)
         except Exception as e:
             self.annotations = []
@@ -122,9 +106,7 @@ class MarkusPyTATest(MarkusTest):
 
 
 class MarkusPyTATester(MarkusTester):
-    def __init__(
-        self, specs: MarkusTestSpecs, test_class: Type[MarkusPyTATest] = MarkusPyTATest
-    ):
+    def __init__(self, specs: MarkusTestSpecs, test_class: Type[MarkusPyTATest] = MarkusPyTATest):
         """
         Initialize a Python TA tester using the specifications in specs.
 
@@ -180,7 +162,5 @@ class MarkusPyTATester(MarkusTester):
             for test_data in self.specs.get("test_data", "student_files", default=[]):
                 student_file_path = test_data["file_path"]
                 max_points = test_data.get("max_points", 10)
-                test = self.test_class(
-                    self, student_file_path, max_points, feedback_open
-                )
+                test = self.test_class(self, student_file_path, max_points, feedback_open)
                 print(test.run())

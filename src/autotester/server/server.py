@@ -14,10 +14,7 @@ from functools import wraps
 
 from autotester.exceptions import TesterCreationError
 from autotester.config import config
-from autotester.server.utils.string_management import (
-    loads_partial_json,
-    decode_if_bytes
-)
+from autotester.server.utils.string_management import loads_partial_json, decode_if_bytes
 from autotester.server.utils.user_management import (
     get_reaper_username,
     current_user,
@@ -30,7 +27,7 @@ from autotester.server.utils.file_management import (
     fd_open,
     fd_lock,
     recursive_iglob,
-    clean_dir_name
+    clean_dir_name,
 )
 from autotester.server.utils.resource_management import (
     set_rlimits_before_cleanup,
@@ -47,17 +44,11 @@ from autotester.resources.postgresql import setup_database
 from autotester.server.client_customizations import get_client, ClientType
 
 DEFAULT_ENV_DIR = config["_workspace_contents", "_default_venv_name"]
-TEST_RESULT_DIR = os.path.join(
-    config["workspace"], config["_workspace_contents", "_results"]
-)
+TEST_RESULT_DIR = os.path.join(config["workspace"], config["_workspace_contents", "_results"])
 SETTINGS_FILENAME = config["_workspace_contents", "_settings_file"]
 FILES_DIRNAME = config["_workspace_contents", "_files_dir"]
-TEST_SPECS_DIR = os.path.join(
-    config["workspace"], config["_workspace_contents", "_specs"]
-)
-TEST_SCRIPT_DIR = os.path.join(
-    config["workspace"], config["_workspace_contents", "_scripts"]
-)
+TEST_SPECS_DIR = os.path.join(config["workspace"], config["_workspace_contents", "_specs"])
+TEST_SCRIPT_DIR = os.path.join(config["workspace"], config["_workspace_contents", "_scripts"])
 
 TESTER_IMPORT_LINE = {
     "custom": "from testers.custom.markus_custom_tester import MarkusCustomTester as Tester",
@@ -86,19 +77,13 @@ def _run_test_command(test_username: Optional[str] = None) -> str:
     """
     cmd = "{}"
     if test_username is not None:
-        cmd = " ".join(
-            ("sudo", "-Eu", test_username, "--", "bash", "-c", "'{}'".format(cmd))
-        )
+        cmd = " ".join(("sudo", "-Eu", test_username, "--", "bash", "-c", "'{}'".format(cmd)))
 
     return cmd
 
 
 def _create_test_group_result(
-    stdout: str,
-    stderr: str,
-    run_time: int,
-    extra_info: Dict,
-    timeout: Optional[int] = None,
+    stdout: str, stderr: str, run_time: int, extra_info: Dict, timeout: Optional[int] = None,
 ) -> ResultData:
     """
     Return the arguments passed to this function in a dictionary. If stderr is
@@ -138,16 +123,12 @@ def _kill_with_reaper(test_username: str) -> bool:
         copy_cmd = "sudo -u {0} -- bash -c 'cp kill_worker_procs {1} && chmod 4550 {1}'".format(
             test_username, kill_file_dst
         )
-        copy_proc = subprocess.Popen(
-            copy_cmd, shell=True, preexec_fn=set_rlimits_before_cleanup, cwd=cwd
-        )
+        copy_proc = subprocess.Popen(copy_cmd, shell=True, preexec_fn=set_rlimits_before_cleanup, cwd=cwd)
         if copy_proc.wait() < 0:  # wait returns the return code of the proc
             return False
 
         kill_cmd = "sudo -u {} -- bash -c {}".format(reaper_username, kill_file_dst)
-        kill_proc = subprocess.Popen(
-            kill_cmd, shell=True, preexec_fn=set_rlimits_before_cleanup
-        )
+        kill_proc = subprocess.Popen(kill_cmd, shell=True, preexec_fn=set_rlimits_before_cleanup)
         return kill_proc.wait() == 0
     return False
 
@@ -172,9 +153,7 @@ def _create_test_script_command(env_dir: str, tester_type: str) -> str:
         "from testers.markus_test_specs import MarkusTestSpecs",
         f"Tester(specs=MarkusTestSpecs.from_json(sys.stdin.read())).run()",
     ]
-    python_ex = os.path.join(
-        os.path.join(TEST_SPECS_DIR, env_dir), "venv", "bin", "python"
-    )
+    python_ex = os.path.join(os.path.join(TEST_SPECS_DIR, env_dir), "venv", "bin", "python")
     python_str = "; ".join(python_lines)
     return f'{python_ex} -c "{python_str}"'
 
@@ -194,6 +173,7 @@ def _return_error_str(f: Callable):
         except Exception as e:
             return str(e)
         return ""
+
     return return_error_str
 
 
@@ -215,11 +195,7 @@ def _run_feedback_hooks(client: ClientType, test_data: Dict, cwd: str) -> str:
 
 
 def _run_test_specs(
-    cmd: str,
-    client: ClientType,
-    test_categories: List[str],
-    tests_path: str,
-    test_username: str,
+    cmd: str, client: ClientType, test_categories: List[str], tests_path: str, test_username: str,
 ) -> Tuple[List[ResultData], str]:
     """
     Run each test script in test_scripts in the tests_path directory using the
@@ -259,9 +235,7 @@ def _run_test_specs(
                     )
                     try:
                         settings_json = json.dumps({**settings, "test_data": test_data}).encode("utf-8")
-                        out, err = proc.communicate(
-                            input=settings_json, timeout=timeout
-                        )
+                        out, err = proc.communicate(input=settings_json, timeout=timeout)
                     except subprocess.TimeoutExpired:
                         if test_username == current_user():
                             pgrp = os.getpgid(proc.pid)
@@ -287,7 +261,7 @@ def _store_results(client: ClientType, results_data: Dict[str, Union[List[Result
     """
     Write the results of multiple test script runs to an output file as a json string.
     """
-    destination = os.path.join(TEST_RESULT_DIR, clean_dir_name(client.unique_run_str())) + '.json'
+    destination = os.path.join(TEST_RESULT_DIR, clean_dir_name(client.unique_run_str())) + ".json"
     with open(destination, "w") as f:
         json.dump(results_data, f, indent=4)
 
@@ -403,9 +377,7 @@ def run_test(client_type: str, test_data: Dict, enqueue_time: int, test_categori
         try:
             _setup_files(client, tests_path, test_username)
             cmd = _run_test_command(test_username=test_username)
-            results, hooks_error = _run_test_specs(
-                cmd, client, test_categories, tests_path, test_username
-            )
+            results, hooks_error = _run_test_specs(cmd, client, test_categories, tests_path, test_username)
         finally:
             _stop_tester_processes(test_username)
             _clear_working_directory(tests_path, test_username)
@@ -468,9 +440,7 @@ def _create_tester_environments(files_path: str, test_specs: Dict) -> Dict:
                 cmd = [f"{create_file}", json.dumps(settings), files_path]
                 proc = subprocess.run(cmd, stderr=subprocess.PIPE)
                 if proc.returncode != 0:
-                    raise TesterCreationError(
-                        f"create tester environment failed with:\n{proc.stderr}"
-                    )
+                    raise TesterCreationError(f"create tester environment failed with:\n{proc.stderr}")
         else:
             settings["env_loc"] = DEFAULT_ENV_DIR
         test_specs["testers"][i] = settings
@@ -499,9 +469,7 @@ def _destroy_tester_environments(old_test_script_dir: str) -> None:
                 cmd = [f"{destroy_file}", json.dumps(settings)]
                 proc = subprocess.run(cmd, stderr=subprocess.PIPE)
                 if proc.returncode != 0:
-                    raise TesterCreationError(
-                        f"destroy tester environment failed with:\n{proc.stderr}"
-                    )
+                    raise TesterCreationError(f"destroy tester environment failed with:\n{proc.stderr}")
             shutil.rmtree(env_loc, onerror=ignore_missing_dir_error)
 
 
@@ -522,7 +490,7 @@ def update_test_specs(client_type: str, client_data: Dict) -> None:
 
     new_files_dir = os.path.join(new_dir, FILES_DIRNAME)
     client.write_test_files(new_files_dir)
-    filenames = [os.path.relpath(path, new_files_dir) for fd, path in recursive_iglob(new_files_dir) if fd == 'f']
+    filenames = [os.path.relpath(path, new_files_dir) for fd, path in recursive_iglob(new_files_dir) if fd == "f"]
     try:
         validate_against_schema(test_specs, filenames)
     except Exception as e:

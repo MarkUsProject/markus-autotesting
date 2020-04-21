@@ -10,9 +10,7 @@ from typing import Type, Generator, Dict, Union, List
 ValidatorType = type(Draft7Validator)
 
 
-def _extend_with_default(
-    validator_class: Type[ValidatorType] = Draft7Validator,
-) -> ValidatorType:
+def _extend_with_default(validator_class: Type[ValidatorType] = Draft7Validator,) -> ValidatorType:
     """
     Extends a validator class to add defaults before validation.
     From: https://github.com/Julian/jsonschema/blob/master/docs/faq.rst
@@ -21,10 +19,7 @@ def _extend_with_default(
     validate_array = validator_class.VALIDATORS["items"]
 
     def _set_defaults(
-        validator: ValidatorType,
-        properties: Dict,
-        instance: Union[Dict, List],
-        schema: Dict,
+        validator: ValidatorType, properties: Dict, instance: Union[Dict, List], schema: Dict,
     ) -> Generator[BaseException, None, None]:
         """ Set defaults within a "properties" context """
         if not validator.is_type(instance, "object"):
@@ -67,12 +62,12 @@ def _extend_with_default(
     def _set_oneof_defaults(
         validator: ValidatorType, properties: Dict, instance: Dict, schema: Dict
     ) -> Generator[ValidationError, None, None]:
-        """ 
+        """
         Set defaults within a "oneOf" context. This ensures that only
         defaults from the matching subschema are set on the instance.
 
         TODO: If we ever use other optional subschema contexts (ex: allOf, anyOf)
-              then we should implement custom validator functions for those as 
+              then we should implement custom validator functions for those as
               well.
         """
 
@@ -112,13 +107,10 @@ def _extend_with_default(
 
 
 def _validate_with_defaults(
-    schema: Dict,
-    obj: Union[Dict, List],
-    validator_class: ValidatorType = Draft7Validator,
-    best_only: bool = True,
+    schema: Dict, obj: Union[Dict, List], validator_class: ValidatorType = Draft7Validator, best_only: bool = True,
 ) -> Union[ValidationError, List[ValidationError]]:
     """
-    Return an iterator that yields errors from validating obj on schema 
+    Return an iterator that yields errors from validating obj on schema
     after first filling in defaults on obj.
     """
     validator = _extend_with_default(validator_class)(schema)

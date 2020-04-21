@@ -65,9 +65,7 @@ class _Config:
         self._yaml_loader = yaml.SafeLoader
 
         self._yaml_loader.add_implicit_resolver("!ENV", self._replacement_pattern, None)
-        env_constructor = self._constructor_factory(
-            lambda g: os.environ.get(g, self._not_found_key)
-        )
+        env_constructor = self._constructor_factory(lambda g: os.environ.get(g, self._not_found_key))
         self._yaml_loader.add_constructor("!ENV", env_constructor)
 
         self._settings = self._load_from_yaml()
@@ -98,9 +96,7 @@ class _Config:
         return json.dumps(self._settings)
 
     @classmethod
-    def _merge_dicts(
-        cls, dicts: List[Dict[str, ConfigValues]]
-    ) -> Dict[str, ConfigValues]:
+    def _merge_dicts(cls, dicts: List[Dict[str, ConfigValues]]) -> Dict[str, ConfigValues]:
         """
         Returns a merged dictionary created from merging all dictionaries in dicts
         in order.

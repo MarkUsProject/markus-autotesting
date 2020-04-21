@@ -10,11 +10,7 @@ from testers.markus_tester import MarkusTester, MarkusTest, MarkusTestError
 
 class MarkusHaskellTest(MarkusTest):
     def __init__(
-        self,
-        tester: "MarkusHaskellTester",
-        test_file: str,
-        result: Dict,
-        feedback_open: Optional[IO] = None,
+        self, tester: "MarkusHaskellTester", test_file: str, result: Dict, feedback_open: Optional[IO] = None,
     ) -> None:
         """
         Initialize a Haskell test created by tester.
@@ -51,11 +47,7 @@ class MarkusHaskellTest(MarkusTest):
 class MarkusHaskellTester(MarkusTester):
     TASTYSTATS = {"name": 1, "time": 2, "result": 3, "description": -1}
 
-    def __init__(
-        self,
-        specs: MarkusTestSpecs,
-        test_class: Type[MarkusHaskellTest] = MarkusHaskellTest,
-    ) -> None:
+    def __init__(self, specs: MarkusTestSpecs, test_class: Type[MarkusHaskellTest] = MarkusHaskellTest,) -> None:
         """
         Initialize a Haskell tester using the specifications in specs.
 
@@ -106,20 +98,12 @@ class MarkusHaskellTester(MarkusTester):
         haskell_lib = os.path.join(os.path.dirname(os.path.realpath(__file__)), "lib")
         for test_file in self.specs["test_data", "script_files"]:
             with tempfile.NamedTemporaryFile(dir=this_dir) as f:
-                cmd = ["tasty-discover", ".", "_", f.name] + self._test_run_flags(
-                    test_file
-                )
-                subprocess.run(
-                    cmd, stdout=subprocess.DEVNULL, universal_newlines=True, check=True
-                )
+                cmd = ["tasty-discover", ".", "_", f.name] + self._test_run_flags(test_file)
+                subprocess.run(cmd, stdout=subprocess.DEVNULL, universal_newlines=True, check=True)
                 with tempfile.NamedTemporaryFile(mode="w+", dir=this_dir) as sf:
                     cmd = ["runghc", "--", f"-i={haskell_lib}", f.name, f"--stats={sf.name}"]
                     subprocess.run(
-                        cmd,
-                        stdout=subprocess.DEVNULL,
-                        stderr=subprocess.PIPE,
-                        universal_newlines=True,
-                        check=True,
+                        cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, universal_newlines=True, check=True,
                     )
                     results[test_file] = self._parse_test_results(csv.reader(sf))
         return results

@@ -20,9 +20,7 @@ class MarkusTest(ABC):
         ERROR_ALL: str = "error_all"
 
     @abstractmethod
-    def __init__(
-        self, tester: "MarkusTester", feedback_open: Optional[IO] = None
-    ) -> None:
+    def __init__(self, tester: "MarkusTester", feedback_open: Optional[IO] = None) -> None:
         """ Initialize a MarkusTest """
         self.tester = tester
         self.points_total = self.get_total_points()
@@ -44,12 +42,7 @@ class MarkusTest(ABC):
 
     @staticmethod
     def format_result(
-        test_name: str,
-        status: str,
-        output: str,
-        points_earned: int,
-        points_total: int,
-        time: Optional[int] = None,
+        test_name: str, status: str, output: str, points_earned: int, points_total: int, time: Optional[int] = None,
     ) -> str:
         """
         Formats a test result as expected by Markus.
@@ -91,9 +84,7 @@ class MarkusTest(ABC):
                               points when assigning bonus points).
         :return The formatted test result.
         """
-        return MarkusTest.format_result(
-            self.test_name, status, output, points_earned, self.points_total
-        )
+        return MarkusTest.format_result(self.test_name, status, output, points_earned, self.points_total)
 
     def add_feedback(
         self,
@@ -112,9 +103,7 @@ class MarkusTest(ABC):
         # TODO Reconcile with format: return both, or print both
         if self.feedback_open is None:
             raise ValueError("No feedback file enabled")
-        self.feedback_open.write(
-            "========== {}: {} ==========\n\n".format(self.test_name, status.upper())
-        )
+        self.feedback_open.write("========== {}: {} ==========\n\n".format(self.test_name, status.upper()))
         if feedback:
             self.feedback_open.write("## Feedback: {}\n\n".format(feedback))
         if status != self.Status.PASS:
@@ -136,11 +125,7 @@ class MarkusTest(ABC):
         """
         if points_bonus < 0:
             raise ValueError("The test bonus points must be >= 0")
-        result = self.format(
-            status=self.Status.PASS,
-            output=message,
-            points_earned=self.points_total + points_bonus,
-        )
+        result = self.format(status=self.Status.PASS, output=message, points_earned=self.points_total + points_bonus,)
         if self.feedback_open:
             self.add_feedback(status=self.Status.PASS)
         return result
@@ -151,9 +136,7 @@ class MarkusTest(ABC):
         :param message: An optional message, will be shown as test output.
         :return The formatted passed test.
         """
-        result = self.format(
-            status=self.Status.PASS, output=message, points_earned=self.points_total
-        )
+        result = self.format(status=self.Status.PASS, output=message, points_earned=self.points_total)
         if self.feedback_open:
             self.add_feedback(status=self.Status.PASS)
         return result
@@ -177,9 +160,7 @@ class MarkusTest(ABC):
             raise ValueError("The test points earned must be > 0")
         if points_earned >= self.points_total:
             raise ValueError("The test points earned must be < the test total points")
-        result = self.format(
-            status=self.Status.PARTIAL, output=message, points_earned=points_earned
-        )
+        result = self.format(status=self.Status.PARTIAL, output=message, points_earned=points_earned)
         if self.feedback_open:
             self.add_feedback(
                 status=self.Status.PARTIAL,
@@ -189,12 +170,7 @@ class MarkusTest(ABC):
             )
         return result
 
-    def failed(
-        self,
-        message: str,
-        oracle_solution: Optional[str] = None,
-        test_solution: Optional[str] = None,
-    ) -> str:
+    def failed(self, message: str, oracle_solution: Optional[str] = None, test_solution: Optional[str] = None,) -> str:
         """
         Fails this test with 0 points earned. If a feedback file is enabled, adds feedback to it.
         :param message: The failure message, will be shown as test output.
@@ -205,10 +181,7 @@ class MarkusTest(ABC):
         result = self.format(status=self.Status.FAIL, output=message, points_earned=0)
         if self.feedback_open:
             self.add_feedback(
-                status=self.Status.FAIL,
-                feedback=message,
-                oracle_solution=oracle_solution,
-                test_solution=test_solution,
+                status=self.Status.FAIL, feedback=message, oracle_solution=oracle_solution, test_solution=test_solution,
             )
         return result
 
@@ -238,9 +211,7 @@ class MarkusTest(ABC):
             points_bonus = points_earned - self.points_total
             return self.passed_with_bonus(points_bonus, message)
         else:
-            return self.partially_passed(
-                points_earned, message, oracle_solution, test_solution
-            )
+            return self.partially_passed(points_earned, message, oracle_solution, test_solution)
 
     def error(self, message: str) -> str:
         """
@@ -300,11 +271,7 @@ class MarkusTest(ABC):
 
 class MarkusTester(ABC):
     @abstractmethod
-    def __init__(
-        self,
-        specs: MarkusTestSpecs,
-        test_class: Optional[Type[MarkusTest]] = MarkusTest,
-    ) -> None:
+    def __init__(self, specs: MarkusTestSpecs, test_class: Optional[Type[MarkusTest]] = MarkusTest,) -> None:
         self.specs = specs
         self.test_class = test_class
 
@@ -319,11 +286,7 @@ class MarkusTester(ABC):
         """
         status = MarkusTest.Status.ERROR if expected else MarkusTest.Status.ERROR_ALL
         return MarkusTest.format_result(
-            test_name="All tests",
-            status=status,
-            output=message,
-            points_earned=0,
-            points_total=points_total,
+            test_name="All tests", status=status, output=message, points_earned=0, points_total=points_total,
         )
 
     def before_tester_run(self) -> None:
@@ -356,8 +319,7 @@ class MarkusTester(ABC):
                 print(MarkusTester.error_all(message=str(e), expected=True), flush=True)
             except Exception as e:
                 print(
-                    MarkusTester.error_all(message=f"{traceback.format_exc()}\n{e}"),
-                    flush=True,
+                    MarkusTester.error_all(message=f"{traceback.format_exc()}\n{e}"), flush=True,
                 )
             finally:
                 self.after_tester_run()
@@ -365,9 +327,7 @@ class MarkusTester(ABC):
         return run_func_wrapper
 
     @contextmanager
-    def open_feedback(
-        self, filename: Optional[str] = None, mode: str = "w"
-    ) -> Generator[Optional[IO], None, None]:
+    def open_feedback(self, filename: Optional[str] = None, mode: str = "w") -> Generator[Optional[IO], None, None]:
         """
         Yields an open file object, opened in <mode> mode if it exists,
         otherwise it yields None.

@@ -18,12 +18,7 @@ class MarkusJavaTest(MarkusTest):
         "bad_java": 'Java runtime error: "{}"',
     }
 
-    def __init__(
-        self,
-        tester: "MarkusJavaTester",
-        result: Dict,
-        feedback_open: Optional[IO] = None,
-    ) -> None:
+    def __init__(self, tester: "MarkusJavaTester", result: Dict, feedback_open: Optional[IO] = None,) -> None:
         """
         Initialize a Java test created by tester.
 
@@ -61,9 +56,7 @@ class MarkusJavaTester(MarkusTester):
 
     JAVA_TESTER_CLASS = "edu.toronto.cs.teach.MarkusJavaTester"
 
-    def __init__(
-        self, specs: MarkusTestSpecs, test_class: Type[MarkusJavaTest] = MarkusJavaTest
-    ) -> None:
+    def __init__(self, specs: MarkusTestSpecs, test_class: Type[MarkusJavaTest] = MarkusJavaTest) -> None:
         """
         Initialize a Java tester using the specifications in specs.
 
@@ -80,11 +73,7 @@ class MarkusJavaTester(MarkusTester):
         javac_command.extend(self.specs["test_data", "script_files"])
         # student files imported by tests will be compiled on cascade
         subprocess.run(
-            javac_command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            universal_newlines=True,
-            check=True,
+            javac_command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True, check=True,
         )
 
     def run_junit(self) -> subprocess.CompletedProcess:
@@ -99,11 +88,7 @@ class MarkusJavaTester(MarkusTester):
         ]
         java_command.extend(self.specs["test_data", "script_files"])
         java = subprocess.run(
-            java_command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            universal_newlines=True,
-            check=True,
+            java_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, check=True,
         )
         return java
 

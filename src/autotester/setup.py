@@ -2,9 +2,7 @@ from setuptools import setup, find_packages
 
 test_exclusions = ["*.tests", "*.tests.*", "tests.*", "tests"]
 
-packages = ["testers"] + [
-    f"testers.{pkg}" for pkg in find_packages(where="testers", exclude=test_exclusions)
-]
+packages = ["testers"] + [f"testers.{pkg}" for pkg in find_packages(where="testers", exclude=test_exclusions)]
 
 setup(
     name="markus-autotester-testers",

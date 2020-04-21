@@ -59,9 +59,7 @@ def copy_tree(src: str, dst: str, exclude: Tuple = tuple()) -> List[Tuple[str, s
 
 
 def ignore_missing_dir_error(
-    _func: Callable,
-    _path: str,
-    excinfo: Tuple[Type[BaseException], BaseException, Optional[TracebackType]],
+    _func: Callable, _path: str, excinfo: Tuple[Type[BaseException], BaseException, Optional[TracebackType]],
 ) -> None:
     """ Used by shutil.rmtree to ignore a FileNotFoundError """
     err_type, err_inst, traceback = excinfo
@@ -71,9 +69,7 @@ def ignore_missing_dir_error(
 
 
 @contextmanager
-def fd_open(
-    path: str, flags: int = os.O_RDONLY, *args: Any, **kwargs: Any
-) -> Generator[int, None, None]:
+def fd_open(path: str, flags: int = os.O_RDONLY, *args: Any, **kwargs: Any) -> Generator[int, None, None]:
     """
     Open the file or directory at path, yield its
     file descriptor, and close it when finished.
@@ -87,9 +83,7 @@ def fd_open(
 
 
 @contextmanager
-def fd_lock(
-    file_descriptor: int, exclusive: bool = True
-) -> Generator[None, None, None]:
+def fd_lock(file_descriptor: int, exclusive: bool = True) -> Generator[None, None, None]:
     """
     Lock the object with the given file descriptor and unlock it
     when finished.  A lock can either be exclusive or shared by
@@ -114,5 +108,5 @@ def extract_zip_stream(zip_byte_stream: bytes, destination: str, ignore_root_dir
             *dpaths, bname = os.path.split(fname)
             dest = os.path.join(destination, *dpaths[ignore_root_dir:])
             os.makedirs(dest, exist_ok=True)
-            with open(os.path.join(dest, bname), 'wb') as f:
+            with open(os.path.join(dest, bname), "wb") as f:
                 f.write(zf.read(fname))

@@ -7,12 +7,7 @@ from testers.markus_tester import MarkusTester, MarkusTest, MarkusTestError
 
 
 class MarkusRacketTest(MarkusTest):
-    def __init__(
-        self,
-        tester: "MarkusRacketTester",
-        result: Dict,
-        feedback_open: Optional[IO] = None,
-    ) -> None:
+    def __init__(self, tester: "MarkusRacketTester", result: Dict, feedback_open: Optional[IO] = None,) -> None:
         """
         Initialize a racket test created by tester.
 
@@ -46,9 +41,7 @@ class MarkusRacketTester(MarkusTester):
 
     ERROR_MSGS = {"bad_json": "Unable to parse test results: {}"}
 
-    def __init__(
-        self, specs, test_class: Type[MarkusRacketTest] = MarkusRacketTest
-    ) -> None:
+    def __init__(self, specs, test_class: Type[MarkusRacketTest] = MarkusRacketTest) -> None:
         """
         Initialize a racket tester using the specifications in specs.
 
@@ -61,20 +54,14 @@ class MarkusRacketTester(MarkusTester):
         Return the stdout captured from running each test script file with markus.rkt tester.
         """
         results = {}
-        markus_rkt = os.path.join(
-            os.path.dirname(os.path.realpath(__file__)), "lib", "markus.rkt"
-        )
+        markus_rkt = os.path.join(os.path.dirname(os.path.realpath(__file__)), "lib", "markus.rkt")
         for group in self.specs["test_data", "script_files"]:
             test_file = group.get("script_file")
             if test_file:
                 suite_name = group.get("test_suite_name", "all-tests")
                 cmd = [markus_rkt, "--test-suite", suite_name, test_file]
                 rkt = subprocess.run(
-                    cmd,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    universal_newlines=True,
-                    check=True,
+                    cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, check=True,
                 )
                 results[test_file] = rkt.stdout
         return results
