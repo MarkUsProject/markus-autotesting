@@ -5,6 +5,7 @@ import tempfile
 import pytest
 from fakeredis import FakeStrictRedis
 from unittest.mock import patch
+from autotester.config import config
 from autotester.server.utils.file_management import setup_files
 
 from pathlib import Path
