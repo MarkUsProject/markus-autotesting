@@ -4,7 +4,7 @@ from autotester.config import config
 RLIMIT_ADJUSTMENTS = {"nproc": 10}
 
 
-def rlimit_str2int(rlimit_string):
+def _rlimit_str2int(rlimit_string):
     return getattr(resource, f"RLIMIT_{rlimit_string.upper()}")
 
 
@@ -17,7 +17,7 @@ def set_rlimits_before_test() -> None:
     processes will always be able to run.
     """
     for limit_str in config["rlimit_settings"].keys() | RLIMIT_ADJUSTMENTS.keys():
-        limit = rlimit_str2int(limit_str)
+        limit = _rlimit_str2int(limit_str)
         config_soft, config_hard = config["rlimit_settings"].get(
             limit_str, (resource.RLIM_INFINITY, resource.RLIM_INFINITY)
         )
@@ -44,7 +44,7 @@ def set_rlimits_before_cleanup() -> None:
     that cleanup processes will have as many resources as possible to run.
     """
     for limit_str in config["rlimit_settings"].keys() | RLIMIT_ADJUSTMENTS.keys():
-        limit = rlimit_str2int(limit_str)
+        limit = _rlimit_str2int(limit_str)
         soft, hard = resource.getrlimit(limit)
         soft = max(soft, hard)
         resource.setrlimit(limit, (soft, hard))

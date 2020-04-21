@@ -9,11 +9,10 @@ import subprocess
 import signal
 import rq
 import tempfile
-from markusapi import Markus
 from typing import Optional, Dict, Union, List, Tuple, Callable
 from functools import wraps
 
-from autotester.exceptions import TesterCreationError, TestScriptFilesError
+from autotester.exceptions import TesterCreationError
 from autotester.config import config
 from autotester.server.utils.string_management import (
     loads_partial_json,
@@ -30,7 +29,6 @@ from autotester.server.utils.file_management import (
     ignore_missing_dir_error,
     fd_open,
     fd_lock,
-    extract_zip_stream,
     recursive_iglob,
     clean_dir_name
 )
@@ -73,17 +71,17 @@ TESTER_IMPORT_LINE = {
 ResultData = Dict[str, Union[str, int, type(None), Dict]]
 
 
-def run_test_command(test_username: Optional[str] = None) -> str:
+def _run_test_command(test_username: Optional[str] = None) -> str:
     """
     Return a command used to run test scripts as a the test_username
     user, with the correct arguments. Set test_username to None to
     run as the current user.
 
     >>> test_script = 'mysscript.py'
-    >>> run_test_command('f').format(test_script)
+    >>> _run_test_command('f').format(test_script)
     'sudo -u f -- bash -c "./myscript.py"'
 
-    >>> run_test_command().format(test_script)
+    >>> _run_test_command().format(test_script)
     './myscript.py'
     """
     cmd = "{}"
@@ -95,7 +93,7 @@ def run_test_command(test_username: Optional[str] = None) -> str:
     return cmd
 
 
-def create_test_group_result(
+def _create_test_group_result(
     stdout: str,
     stderr: str,
     run_time: int,
@@ -117,7 +115,7 @@ def create_test_group_result(
     }
 
 
-def kill_with_reaper(test_username: str) -> bool:
+def _kill_with_reaper(test_username: str) -> bool:
     """
     Try to kill all processes currently being run by test_username using the method
     described in this article: https://lwn.net/Articles/754980/. Return True if this
@@ -154,7 +152,7 @@ def kill_with_reaper(test_username: str) -> bool:
     return False
 
 
-def kill_without_reaper(test_username: str) -> None:
+def _kill_without_reaper(test_username: str) -> None:
     """
     Kill all processes that test_username is able to kill
     """
@@ -162,7 +160,7 @@ def kill_without_reaper(test_username: str) -> None:
     subprocess.run(kill_cmd, shell=True)
 
 
-def create_test_script_command(env_dir: str, tester_type: str) -> str:
+def _create_test_script_command(env_dir: str, tester_type: str) -> str:
     """
     Return string representing a command line command to
     run tests.
@@ -181,7 +179,7 @@ def create_test_script_command(env_dir: str, tester_type: str) -> str:
     return f'{python_ex} -c "{python_str}"'
 
 
-def get_env_vars(test_username: str) -> Dict[str, str]:
+def _get_env_vars(test_username: str) -> Dict[str, str]:
     """ Return a dictionary containing all environment variables to pass to the next test """
     db_env_vars = setup_database(test_username)
     port_number = get_available_port()
@@ -216,7 +214,7 @@ def _run_feedback_hooks(client: ClientType, test_data: Dict, cwd: str) -> str:
     return hooks_error
 
 
-def run_test_specs(
+def _run_test_specs(
     cmd: str,
     client: ClientType,
     test_categories: List[str],
@@ -236,7 +234,7 @@ def run_test_specs(
         tester_type = settings["tester_type"]
         env_dir = settings.get("env_loc", DEFAULT_ENV_DIR)
 
-        cmd_str = create_test_script_command(env_dir, tester_type)
+        cmd_str = _create_test_script_command(env_dir, tester_type)
         args = cmd.format(cmd_str)
 
         for test_data in settings["test_data"]:
@@ -247,7 +245,7 @@ def run_test_specs(
                 timeout_expired = None
                 timeout = test_data.get("timeout")
                 try:
-                    env_vars = get_env_vars(test_username)
+                    env_vars = _get_env_vars(test_username)
                     proc = subprocess.Popen(
                         args,
                         start_new_session=True,
@@ -269,8 +267,8 @@ def run_test_specs(
                             pgrp = os.getpgid(proc.pid)
                             os.killpg(pgrp, signal.SIGKILL)
                         else:
-                            if not kill_with_reaper(test_username):
-                                kill_without_reaper(test_username)
+                            if not _kill_with_reaper(test_username):
+                                _kill_without_reaper(test_username)
                         out, err = proc.communicate()
                         timeout_expired = timeout
                     hook_errors += _run_feedback_hooks(client, test_data, tests_path)
@@ -281,11 +279,11 @@ def run_test_specs(
                     err = decode_if_bytes(err)
                     duration = int(round(time.time() - start, 3) * 1000)
                     extra_info = test_data.get("extra_info", {})
-                    results.append(create_test_group_result(out, err, duration, extra_info, timeout_expired))
+                    results.append(_create_test_group_result(out, err, duration, extra_info, timeout_expired))
     return results, hook_errors
 
 
-def store_results(client: ClientType, results_data: Dict[str, Union[List[ResultData], str, int]]) -> None:
+def _store_results(client: ClientType, results_data: Dict[str, Union[List[ResultData], str, int]]) -> None:
     """
     Write the results of multiple test script runs to an output file as a json string.
     """
@@ -294,7 +292,7 @@ def store_results(client: ClientType, results_data: Dict[str, Union[List[ResultD
         json.dump(results_data, f, indent=4)
 
 
-def clear_working_directory(tests_path: str, test_username: str) -> None:
+def _clear_working_directory(tests_path: str, test_username: str) -> None:
     """
     Run commands that clear the tests_path working directory
     """
@@ -311,18 +309,18 @@ def clear_working_directory(tests_path: str, test_username: str) -> None:
     subprocess.run(clean_cmd, shell=True)
 
 
-def stop_tester_processes(test_username: str) -> None:
+def _stop_tester_processes(test_username: str) -> None:
     """
     Run a command that kills all tester processes either by killing all
     user processes or killing with a reaper user (see https://lwn.net/Articles/754980/
     for reference).
     """
     if test_username != current_user():
-        if not kill_with_reaper(test_username):
-            kill_without_reaper(test_username)
+        if not _kill_with_reaper(test_username):
+            _kill_without_reaper(test_username)
 
 
-def finalize_results_data(
+def _finalize_results_data(
     results: List[ResultData], error: str, all_hooks_error: str, time_to_service: int
 ) -> Dict[str, Union[List[ResultData], str, int]]:
     """ Return a dictionary of test script results combined with test run info """
@@ -332,31 +330,6 @@ def finalize_results_data(
         "hooks_error": all_hooks_error,
         "time_to_service": time_to_service,
     }
-
-
-def report(
-    results_data: Dict[str, Union[List[ResultData], str, int]],
-    api: Markus,
-    assignment_id: int,
-    group_id: int,
-    run_id: int,
-) -> None:
-    """ Post the results of running test scripts to the markus api """
-    api.upload_test_group_results(
-        assignment_id, group_id, run_id, json.dumps(results_data)
-    )
-
-
-def download_test_files(assignment_id: int, api: Markus, destination: str) -> None:
-    """
-    Download the assignment test files for the assignment with id <assignment_id> for
-    the MarkUs instance with url <markus_address>.
-    Download the files to <destination> which is a path to a (possibly non-existant) directory.
-    """
-    zip_content = api.get_test_files(assignment_id)
-    if zip_content is None:
-        raise TestScriptFilesError('No test files found')
-    extract_zip_stream(zip_content, destination, ignore_root_dir=True)
 
 
 def _get_test_specs(client: ClientType) -> Dict:
@@ -429,22 +402,22 @@ def run_test(client_type: str, test_data: Dict, enqueue_time: int, test_categori
         test_username, tests_path = tester_user()
         try:
             _setup_files(client, tests_path, test_username)
-            cmd = run_test_command(test_username=test_username)
-            results, hooks_error = run_test_specs(
+            cmd = _run_test_command(test_username=test_username)
+            results, hooks_error = _run_test_specs(
                 cmd, client, test_categories, tests_path, test_username
             )
         finally:
-            stop_tester_processes(test_username)
-            clear_working_directory(tests_path, test_username)
+            _stop_tester_processes(test_username)
+            _clear_working_directory(tests_path, test_username)
     except Exception as e:
         error = str(e)
     finally:
-        results_data = finalize_results_data(results, error, hooks_error, time_to_service)
-        store_results(client, results_data)
+        results_data = _finalize_results_data(results, error, hooks_error, time_to_service)
+        _store_results(client, results_data)
         client.send_test_results(results_data)
 
 
-def get_tester_root_dir(tester_type: str) -> str:
+def _get_tester_root_dir(tester_type: str) -> str:
     """
     Return the root directory of the tester named tester_type
     """
@@ -456,7 +429,7 @@ def get_tester_root_dir(tester_type: str) -> str:
     return tester_dir
 
 
-def update_settings(settings: Dict, specs_dir: str) -> Dict:
+def _update_settings(settings: Dict, specs_dir: str) -> Dict:
     """
     Return a dictionary containing all the default settings and the installation settings
     contained in the tester's specs directory as well as the settings. The settings
@@ -472,7 +445,7 @@ def update_settings(settings: Dict, specs_dir: str) -> Dict:
     return full_settings
 
 
-def create_tester_environments(files_path: str, test_specs: Dict) -> Dict:
+def _create_tester_environments(files_path: str, test_specs: Dict) -> Dict:
     """
     Return the test_specs dictionary updated with any additional data generated
     from creating a new tester environment.
@@ -481,10 +454,10 @@ def create_tester_environments(files_path: str, test_specs: Dict) -> Dict:
     values in test specs. Otherwise, the default environment is used.
     """
     for i, settings in enumerate(test_specs["testers"]):
-        tester_dir = get_tester_root_dir(settings["tester_type"])
+        tester_dir = _get_tester_root_dir(settings["tester_type"])
         specs_dir = os.path.join(tester_dir, "specs")
         bin_dir = os.path.join(tester_dir, "bin")
-        settings = update_settings(settings, specs_dir)
+        settings = _update_settings(settings, specs_dir)
         if settings.get("env_data"):
             new_env_dir = tempfile.mkdtemp(prefix="env", dir=TEST_SPECS_DIR)
             os.chmod(new_env_dir, 0o775)
@@ -505,7 +478,7 @@ def create_tester_environments(files_path: str, test_specs: Dict) -> Dict:
     return test_specs
 
 
-def destroy_tester_environments(old_test_script_dir: str) -> None:
+def _destroy_tester_environments(old_test_script_dir: str) -> None:
     """
     Remove the tester environment specified in the settings file located
     in the the old_test_script_dir directory.
@@ -519,7 +492,7 @@ def destroy_tester_environments(old_test_script_dir: str) -> None:
     for settings in test_specs["testers"]:
         env_loc = settings.get("env_loc", DEFAULT_ENV_DIR)
         if env_loc != DEFAULT_ENV_DIR:
-            tester_dir = get_tester_root_dir(settings["tester_type"])
+            tester_dir = _get_tester_root_dir(settings["tester_type"])
             bin_dir = os.path.join(tester_dir, "bin")
             destroy_file = os.path.join(bin_dir, "destroy_environment.sh")
             if os.path.isfile(destroy_file):
@@ -556,7 +529,7 @@ def update_test_specs(client_type: str, client_data: Dict) -> None:
         sys.stderr.write(f"Form Validation Error: {str(e)}")
         sys.exit(1)
 
-    test_specs = create_tester_environments(new_files_dir, test_specs)
+    test_specs = _create_tester_environments(new_files_dir, test_specs)
     settings_filename = os.path.join(new_dir, SETTINGS_FILENAME)
     with open(settings_filename, "w") as f:
         json.dump(test_specs, f)
@@ -566,5 +539,5 @@ def update_test_specs(client_type: str, client_data: Dict) -> None:
     if old_test_script_dir is not None and os.path.isdir(old_test_script_dir):
         with fd_open(old_test_script_dir) as fd:
             with fd_lock(fd, exclusive=True):
-                destroy_tester_environments(old_test_script_dir)
+                _destroy_tester_environments(old_test_script_dir)
                 shutil.rmtree(old_test_script_dir, onerror=ignore_missing_dir_error)

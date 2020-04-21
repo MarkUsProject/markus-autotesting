@@ -1,11 +1,5 @@
 import json
-from typing import Any, Generator, Union, Type, Optional, Tuple, List
-
-
-def stringify(*args: Any) -> Generator[str, None, None]:
-    """ Yields the string representation of args """
-    for a in args:
-        yield str(a)
+from typing import Union, Type, Optional, Tuple, List
 
 
 def decode_if_bytes(b: Union[str, bytes], format_: str = "utf-8") -> str:

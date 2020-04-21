@@ -10,7 +10,7 @@ from typing import Type, Generator, Dict, Union, List
 ValidatorType = type(Draft7Validator)
 
 
-def extend_with_default(
+def _extend_with_default(
     validator_class: Type[ValidatorType] = Draft7Validator,
 ) -> ValidatorType:
     """
@@ -20,7 +20,7 @@ def extend_with_default(
     validate_props = validator_class.VALIDATORS["properties"]
     validate_array = validator_class.VALIDATORS["items"]
 
-    def set_defaults(
+    def _set_defaults(
         validator: ValidatorType,
         properties: Dict,
         instance: Union[Dict, List],
@@ -44,7 +44,7 @@ def extend_with_default(
         for error in validate_props(validator, properties, instance, schema):
             yield error
 
-    def set_array_defaults(
+    def _set_array_defaults(
         validator: ValidatorType, properties: Dict, instance: List, schema: Dict
     ) -> Generator[ValidationError, None, None]:
         """ Set defaults within an "array" context """
@@ -64,7 +64,7 @@ def extend_with_default(
         for error in validate_array(validator, properties, instance, schema):
             yield error
 
-    def set_oneof_defaults(
+    def _set_oneof_defaults(
         validator: ValidatorType, properties: Dict, instance: Dict, schema: Dict
     ) -> Generator[ValidationError, None, None]:
         """ 
@@ -103,15 +103,15 @@ def extend_with_default(
             instance.update(good_instance)
 
     custom_validators = {
-        "properties": set_defaults,
-        "items": set_array_defaults,
-        "oneOf": set_oneof_defaults,
+        "properties": _set_defaults,
+        "items": _set_array_defaults,
+        "oneOf": _set_oneof_defaults,
     }
 
     return validators.extend(validator_class, custom_validators)
 
 
-def validate_with_defaults(
+def _validate_with_defaults(
     schema: Dict,
     obj: Union[Dict, List],
     validator_class: ValidatorType = Draft7Validator,
@@ -121,7 +121,7 @@ def validate_with_defaults(
     Return an iterator that yields errors from validating obj on schema 
     after first filling in defaults on obj.
     """
-    validator = extend_with_default(validator_class)(schema)
+    validator = _extend_with_default(validator_class)(schema)
     # first time to fill in defaults since validating 'required', 'minProperties',
     # etc. can't be done until the instance has been properly filled with defaults.
     list(validator.iter_errors(obj))
@@ -129,18 +129,6 @@ def validate_with_defaults(
     if best_only:
         return best_match(errors)
     return errors
-
-
-def is_valid(
-    obj: Union[Dict, List],
-    schema: Dict,
-    validator_class: ValidatorType = Draft7Validator,
-) -> bool:
-    """
-    Return True if <obj> is valid for schema <schema> using the
-    validator <validator_class>.
-    """
-    return validator_class(schema).is_valid(obj)
 
 
 def get_schema() -> Dict:
@@ -173,6 +161,6 @@ def validate_against_schema(test_specs: Dict, filenames: List[str]) -> None:
         # don't validate based on categories
         schema["definitions"]["test_data_categories"].pop("enum")
         schema["definitions"]["test_data_categories"].pop("enumNames")
-        error = validate_with_defaults(schema, test_specs, best_only=True)
+        error = _validate_with_defaults(schema, test_specs, best_only=True)
         if error:
             raise error

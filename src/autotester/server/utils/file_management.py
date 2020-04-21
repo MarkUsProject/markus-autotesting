@@ -70,18 +70,6 @@ def ignore_missing_dir_error(
     raise err_inst
 
 
-def move_tree(src: str, dst: str) -> List[Tuple[str, str]]:
-    """
-    Recursively move all files and subdirectories in the path
-    indicated by src to the path indicated by dst. If directories
-    don't exist, they are created.
-    """
-    os.makedirs(dst, exist_ok=True)
-    moved = copy_tree(src, dst)
-    shutil.rmtree(src, onerror=ignore_missing_dir_error)
-    return moved
-
-
 @contextmanager
 def fd_open(
     path: str, flags: int = os.O_RDONLY, *args: Any, **kwargs: Any

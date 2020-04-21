@@ -15,14 +15,6 @@ class TesterUserError(MarkUsError):
     """ Error raised when a tester user is not available """
 
 
-class JobArgumentError(MarkUsError):
-    """ Error raised when a test job is enqueued with the wrong arguments """
-
-
-class InvalidQueueError(MarkUsError):
-    """ Error raised when a queue cannot be found to enqueue a test job """
-
-
 class TestScriptFilesError(MarkUsError):
     """ Error raised when test script files cannot be found for a given test job """
 
