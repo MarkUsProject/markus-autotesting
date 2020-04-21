@@ -91,14 +91,10 @@ class TestSetupFiles:
         student_files, script_files = setup_files(
             files_path, tests_path, test_username, markus_address, assignment_id
         )
-        group_stfile = []
-        group_scfile = []
         for _fd, file_or_dir in student_files:
-            group_stfile.append(Path(file_or_dir).group())
+            assert test_username == Path(file_or_dir).group()
         for _fd, file_or_dir in script_files:
-            group_scfile.append(Path(file_or_dir).group())
-        assert all(test_username == i for i in group_scfile)
-        assert all(test_username == i for i in group_stfile)
+            assert test_username == Path(file_or_dir).group()
 
     def test_student_files(self, t_path, f_path, args):
         """
@@ -112,21 +108,11 @@ class TestSetupFiles:
         student_files, script_files = setup_files(
             files_path, tests_path, test_username, markus_address, assignment_id
         )
-        stdir_pmsn = []
-        stfile_pmsn = []
         for fd, file_or_dir in student_files:
             if fd == "d":
-                permission = fd_permission(file_or_dir)
-                stdir_pmsn.append(
-                    True
-                ) if permission == "-rwxrwx---" else stdir_pmsn.append(False)
+                assert fd_permission(file_or_dir) == "-rwxrwx---"
             else:
-                permission = fd_permission(file_or_dir)
-                stfile_pmsn.append(
-                    True
-                ) if permission == "-rw-rw----" else stfile_pmsn.append(False)
-        assert all(i for i in stdir_pmsn)
-        assert all(i for i in stfile_pmsn)
+                assert fd_permission(file_or_dir) == "-rw-rw----"
 
     def test_script_files(self, t_path, f_path, args):
         """
@@ -140,26 +126,22 @@ class TestSetupFiles:
         student_files, script_files = setup_files(
             files_path, tests_path, test_username, markus_address, assignment_id
         )
-        scdir_pmsn = []
-        scfile_pmsn = []
         for fd, file_or_dir in script_files:
             if fd == "d":
-                permission = fd_permission(file_or_dir)
-                scdir_pmsn.append(
-                    True
-                ) if permission == "drwxrwx--T" else scdir_pmsn.append(False)
+                assert fd_permission(file_or_dir) == "drwxrwx--T"
             else:
-                mode = os.stat(file_or_dir).st_mode
-                permission = stat.filemode(mode)
-                scfile_pmsn.append(
-                    True
-                ) if permission == "-rw-r-----" else scfile_pmsn.append(False)
-        assert all(i for i in scdir_pmsn)
-        assert all(i for i in scfile_pmsn)
+                assert fd_permission(file_or_dir) == "-rw-r-----"
 
     def test_copied_file(self, t_path, f_path, args):
         """
-        Checks whether all the copied files are exists
+        Checks whether all the copied files are exists.
+        student_files:
+        All the contents from files_path are moved into tests_path
+        and the moved contents are returned here as student_files.
+        script_files:
+        All the contents from the test_script_directory of
+        corresponding markus_address and assignment_id are copied
+        into tests_path and the copied contents are returned here as script_files.
         """
         markus_address, assignment_id = args
         tests_path = t_path
@@ -168,9 +150,7 @@ class TestSetupFiles:
         student_files, script_files = setup_files(
             files_path, tests_path, test_username, markus_address, assignment_id
         )
-        st_files = []
-        scr_files = []
-        [st_files.append(i[1]) for i in student_files]
-        [scr_files.append(j[1]) for j in script_files]
-        assert all(os.path.exists(f) for f in st_files)
-        assert all(os.path.exists(f) for f in scr_files)
+        for fd, file_or_dir in student_files:
+            assert os.path.exists(file_or_dir)
+        for fd, file_or_dir in script_files:
+            assert os.path.exists(file_or_dir)
