@@ -9,6 +9,8 @@ from autotester.server.utils.file_management import setup_files
 
 from pathlib import Path
 
+FILES_DIRNAME = config["_workspace_contents", "_files_dir"]
+
 
 @pytest.fixture(autouse=True)
 def redis():
@@ -29,7 +31,7 @@ def tmp_script_dir():
     Mock the test_script_directory method and yield a temporary directory
     """
     with tempfile.TemporaryDirectory() as tmp_dir:
-        files_dir = os.path.join(tmp_dir, "files")
+        files_dir = os.path.join(tmp_dir, FILES_DIRNAME)
         os.mkdir(files_dir)
         with tempfile.NamedTemporaryFile(dir=files_dir):
             with patch(
@@ -150,7 +152,7 @@ class TestSetupFiles:
         student_files, script_files = setup_files(
             files_path, tests_path, test_username, markus_address, assignment_id
         )
-        for fd, file_or_dir in student_files:
+        for _fd, file_or_dir in student_files:
             assert os.path.exists(file_or_dir)
-        for fd, file_or_dir in script_files:
+        for _fd, file_or_dir in script_files:
             assert os.path.exists(file_or_dir)
