@@ -38,6 +38,7 @@ def mock_enqueue_call():
 
 @pytest.fixture(autouse=True)
 def mock_client():
+    """ Patches the call to get_client """
     mock_instance = Mock()
     with patch("autotester.cli.get_client", return_value=mock_instance):
         mock_instance.unique_run_str.return_value = "a"
@@ -47,6 +48,7 @@ def mock_client():
 
 @pytest.fixture
 def enqueue_kwargs():
+    """ Keword arguments that can be passed to enqueue tests """
     yield {
         "client_type": "test",
         "client_data": {},
@@ -57,19 +59,22 @@ def enqueue_kwargs():
 
 @pytest.fixture
 def cancel_kwargs():
+    """ Keword arguments that can be passed to cancel tests """
     yield {"client_type": "test", "client_data": {}, "test_data": [{}]}
 
 
 @pytest.fixture(autouse=True)
-def accept_generic_markus_error():
+def accept_generic_autotest_error():
+    """ Fail silently for non-specific autotest errors """
     try:
         yield
-    except cli.MarkUsError:
+    except cli.AutotestError:
         pass
 
 
 @pytest.fixture
 def mock_rq_job():
+    """ Patch rq's Job class """
     with patch("rq.job.Job") as job:
         enqueued_job = Mock()
         job.fetch.return_value = enqueued_job

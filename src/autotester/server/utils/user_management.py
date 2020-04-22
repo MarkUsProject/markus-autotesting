@@ -16,13 +16,13 @@ def current_user() -> str:
 
 def tester_user() -> Tuple[str, str]:
     """
-    Get the workspace for the tester user specified by the MARKUSWORKERUSER
+    Get the workspace for the tester user specified by the WORKERUSER
     environment variable, return the user_name and path to that user's workspace.
 
     Raises an AutotestError if a tester user is not specified or if a workspace
     has not been setup for that user.
     """
-    user_name = os.environ.get("MARKUSWORKERUSER")
+    user_name = os.environ.get("WORKERUSER")
     if user_name is None:
         raise TesterUserError("No worker users available to run this job")
 

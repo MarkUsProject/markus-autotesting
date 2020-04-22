@@ -1,14 +1,14 @@
 import subprocess
-from testers.markus_tester import MarkusTester
-from testers.markus_test_specs import MarkusTestSpecs
+from testers.tester import Tester
+from testers.test_specs import TestSpecs
 
 
-class MarkusCustomTester(MarkusTester):
-    def __init__(self, specs: MarkusTestSpecs) -> None:
-        """ Initialize a MarkusCustomTester """
+class CustomTester(Tester):
+    def __init__(self, specs: TestSpecs) -> None:
+        """ Initialize a CustomTester """
         super().__init__(specs, test_class=None)
 
-    @MarkusTester.run_decorator
+    @Tester.run_decorator
     def run(self) -> None:
         """
         Run a test and print the results to stdout

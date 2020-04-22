@@ -1,4 +1,4 @@
-include testers/racket/lib/markus.rkt
 include testers/haskell/lib/Stats.hs
+include testers/racket/lib/autotester.rkt
 graft testers/java/lib
 include testers/*/specs/install_settings.json

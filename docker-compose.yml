@@ -8,14 +8,14 @@ services:
       args:
         UBUNTU_VERSION: '18.04'
         LOGIN_USER: 'docker'
-    image: markus-autotest-dev:1.0.0
+    image: autotest-dev:1.0.0
     stdin_open: true
     tty: true
     user: docker
     volumes:
       - .:/app:cached
       - ssh_pub_key:/ssh_pub_key:ro
-      - workspace:/home/docker/.markus-autotesting:rw
+      - workspace:/home/docker/.autotesting:rw
     environment:
       - USER=docker
       - REDIS_URL=redis://redis_autotest:6379/
@@ -39,9 +39,7 @@ services:
   postgres_autotest:
     image: postgres:10
     volumes:
-    - .psqlrc:/root/.psqlrc:ro
     - postgres_autotest:/var/lib/postgresql/data
-    - ./log:/root/log:cached
     environment:
     - PSQL_HISTFILE=/root/log/.psql_history
     - POSTGRES_HOST_AUTH_METHOD=trust

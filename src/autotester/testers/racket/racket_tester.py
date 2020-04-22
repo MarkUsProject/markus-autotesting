@@ -3,11 +3,11 @@ import subprocess
 import os
 from typing import Dict, Optional, IO, Type
 
-from testers.markus_tester import MarkusTester, MarkusTest, MarkusTestError
+from testers.tester import Tester, Test, TestError
 
 
-class MarkusRacketTest(MarkusTest):
-    def __init__(self, tester: "MarkusRacketTester", result: Dict, feedback_open: Optional[IO] = None,) -> None:
+class RacketTest(Test):
+    def __init__(self, tester: "RacketTester", result: Dict, feedback_open: Optional[IO] = None,) -> None:
         """
         Initialize a racket test created by tester.
 
@@ -24,7 +24,7 @@ class MarkusRacketTest(MarkusTest):
         """ The name of this test """
         return self._test_name
 
-    @MarkusTest.run_decorator
+    @Test.run_decorator
     def run(self) -> str:
         """
         Return a json string containing all test result information.
@@ -37,11 +37,11 @@ class MarkusRacketTest(MarkusTest):
             return self.error(message=self.message)
 
 
-class MarkusRacketTester(MarkusTester):
+class RacketTester(Tester):
 
     ERROR_MSGS = {"bad_json": "Unable to parse test results: {}"}
 
-    def __init__(self, specs, test_class: Type[MarkusRacketTest] = MarkusRacketTest) -> None:
+    def __init__(self, specs, test_class: Type[RacketTest] = RacketTest) -> None:
         """
         Initialize a racket tester using the specifications in specs.
 
@@ -51,22 +51,22 @@ class MarkusRacketTester(MarkusTester):
 
     def run_racket_test(self) -> Dict[str, str]:
         """
-        Return the stdout captured from running each test script file with markus.rkt tester.
+        Return the stdout captured from running each test script file with autotester.rkt tester.
         """
         results = {}
-        markus_rkt = os.path.join(os.path.dirname(os.path.realpath(__file__)), "lib", "markus.rkt")
+        autotester_rkt = os.path.join(os.path.dirname(os.path.realpath(__file__)), "lib", "autotester.rkt")
         for group in self.specs["test_data", "script_files"]:
             test_file = group.get("script_file")
             if test_file:
                 suite_name = group.get("test_suite_name", "all-tests")
-                cmd = [markus_rkt, "--test-suite", suite_name, test_file]
+                cmd = [autotester_rkt, "--test-suite", suite_name, test_file]
                 rkt = subprocess.run(
                     cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, check=True,
                 )
                 results[test_file] = rkt.stdout
         return results
 
-    @MarkusTester.run_decorator
+    @Tester.run_decorator
     def run(self) -> None:
         """
         Runs all tests in this tester.
@@ -74,15 +74,15 @@ class MarkusRacketTester(MarkusTester):
         try:
             results = self.run_racket_test()
         except subprocess.CalledProcessError as e:
-            raise MarkusTestError(e.stderr) from e
+            raise TestError(e.stderr) from e
         with self.open_feedback() as feedback_open:
             for test_file, result in results.items():
                 if result.strip():
                     try:
                         test_results = json.loads(result)
                     except json.JSONDecodeError as e:
-                        msg = MarkusRacketTester.ERROR_MSGS["bad_json"].format(result)
-                        raise MarkusTestError(msg) from e
+                        msg = RacketTester.ERROR_MSGS["bad_json"].format(result)
+                        raise TestError(msg) from e
                     for t_result in test_results:
                         test = self.test_class(self, t_result, feedback_open)
                         print(test.run(), flush=True)

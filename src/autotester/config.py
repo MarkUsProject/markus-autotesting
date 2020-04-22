@@ -19,7 +19,7 @@ from collections.abc import Mapping
 import yaml
 
 DEFAULT_ROOT = os.path.join(os.path.dirname(__file__), "config_defaults")
-CONFIG_FILENAME = "markus_autotester_config"
+CONFIG_FILENAME = "autotester_config"
 CONFIG_ENV_VAR = "AUTOTESTER_CONFIG"
 
 
@@ -31,8 +31,8 @@ def _find_local_config() -> Optional[str]:
     Return the file name of the local configuration file if it exists.
 
     Returns the file specified by the AUTOTESTER_CONFIG environment variable,
-    otherwise returns the file at $HOME/.markus_autotester_config,
-    otherwise returns the file at /etc/markus_autotester_config
+    otherwise returns the file at $HOME/.autotester_config,
+    otherwise returns the file at /etc/autotester_config
     """
     system_config = os.path.join(os.path.sep, "etc", CONFIG_FILENAME)
     user_config = os.path.join(os.environ.get("HOME"), f".{CONFIG_FILENAME}")

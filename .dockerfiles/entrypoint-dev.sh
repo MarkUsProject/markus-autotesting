@@ -15,4 +15,4 @@ fi
 
 sudo "$(command -v sshd)"
 
-exec "$@"
+sudo -Eu "$(whoami)" -- "$@" # run command in new shell so that additional groups are loaded

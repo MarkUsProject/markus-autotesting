@@ -15,7 +15,7 @@ ConnectionType = Type[_psycopg2_connection]
 
 def _in_autotest_env() -> bool:
     """
-    Return true iff this script is being run by the MarkUs autotester.
+    Return true iff this script is being run by the autotester.
 
     This function can be used to check whether the AUTOTESTENV environment
     variable has been set to 'true'.
@@ -27,7 +27,7 @@ def connection(*args, **kwargs):
     """
     Return a psycopg2 connection object
 
-    If this function is called while being run by the MarkUs autotester,
+    If this function is called while being run by the autotester,
     any arguments passed to this function will be ignored and a connection will
     be made to the correct database in the autotester's run environment.
 
@@ -106,7 +106,7 @@ def execute_psql_file(
 
         $ psql -f <filename> [<args>]
 
-    If this function is called while being run by the MarkUs autotester,
+    If this function is called while being run by the autotester,
     the <database>, <password> and <user> arguments function will be ignored
     and a connection will be made to the correct database in the autotester's
     run environment instead.
@@ -167,7 +167,7 @@ class PSQLTest:
         """
         Set an open connection to a database as a class attribute.
 
-        If this function is called while being run by the MarkUs autotester,
+        If this function is called while being run by the autotester,
         any arguments passed to this function will be ignored and a connection
         will be made to the correct database in the autotester's run
         environment.

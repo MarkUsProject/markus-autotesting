@@ -1,4 +1,4 @@
-workspace: !ENV ${HOME}/.markus-autotesting/workspace
+workspace: !ENV ${HOME}/.autotesting/workspace
 
 server_user: !ENV ${USER}
 

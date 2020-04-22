@@ -244,7 +244,7 @@ create_default_tester_venv() {
   pip="${default_tester_venv}/bin/pip"
   ${pip} install --upgrade pip
   ${pip} install wheel # must be installed before requirements
-  ${pip} install "${TESTERSROOT}"
+  ${pip} install -e "${TESTERSROOT}"
 }
 
 compile_reaper_script() {
@@ -264,7 +264,7 @@ create_enqueuer_wrapper() {
 
   echo "#!/usr/bin/env bash
         source \${HOME}/.bash_profile
-        ${SERVER_VENV}/bin/markus_autotester \"\$@\"" | sudo tee ${enqueuer} > /dev/null
+        ${SERVER_VENV}/bin/autotester \"\$@\"" | sudo tee ${enqueuer} > /dev/null
   sudo chown "${SERVER_USER}:${SERVER_USER}" "${enqueuer}"
   sudo chmod u=rwx,go=r ${enqueuer}
 }
@@ -309,7 +309,7 @@ install_testers() {
 }
 
 suggest_next_steps() {
-  echo "[AUTOTEST-INSTALL] You must add MarkUs web server's public key to ${SERVER_USER}'s '~/.ssh/authorized_keys'"
+  echo "[AUTOTEST-INSTALL] You must add the client's public key to ${SERVER_USER}'s '~/.ssh/authorized_keys'"
   echo "[AUTOTEST-INSTALL] You may want to add '${BINDIR}/start-stop.sh start' to ${SERVER_USER}'s crontab with a @reboot time"
 }
 

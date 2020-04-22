@@ -17,43 +17,43 @@
     ...))
   
 ; struct containing the required values from running a single test
-(struct markus-result (name status message))
+(struct autotester-result (name status message))
 
-; convert a markus-result struct to hash
-(define (markus-result->hash r) 
-  (hasheq 'name (markus-result-name r)
-          'status (markus-result-status r)
-          'message (markus-result-message r)))
+; convert a autotester-result struct to hash
+(define (autotester-result->hash r)
+  (hasheq 'name (autotester-result-name r)
+          'status (autotester-result-status r)
+          'message (autotester-result-message r)))
 
 ; convert test result info to hash
 (define (check-infos->hash stack)
   (make-immutable-hash
    (map (lambda (ci) (cons (check-info-name ci) (check-info-value ci))) stack)))
 
-; create result hash from a successful markus test
+; create result hash from a successful test
 (define (make-success test-case-name result)
-  (markus-result->hash 
-    (markus-result test-case-name "pass" "")))
+  (autotester-result->hash
+    (autotester-result test-case-name "pass" "")))
 
-; create result hash from a failed markus test
+; create result hash from a failed autotester test
 (define (make-failure test-case-name result)
   (let* ( [failure-data
             (if (exn:test:check? result)
               (check-infos->hash (exn:test:check-stack result))
               (hash))]
           [message (hash-ref failure-data 'message "")])
-        (markus-result->hash
-          (markus-result 
+        (autotester-result->hash
+          (autotester-result
             test-case-name 
             "fail" 
             (format "~s" message)))))
 
-; create result hash from a markus test that caused an error
+; create result hash from a test that caused an error
 (define (make-error test-case-name result)
-  (markus-result->hash 
-    (markus-result test-case-name "error" (format "~s" (exn-message result)))))
+  (autotester-result->hash
+    (autotester-result test-case-name "error" (format "~s" (exn-message result)))))
 
-; create result hash depending for a markus test depending on whether it was a
+; create result hash depending for a test depending on whether it was a
 ; success, failure, or caused an error (see above)
 (define (show-test-result result)
   (match result
@@ -62,7 +62,7 @@
     [(test-error test-case-name result) (make-error test-case-name result)]))
 
 ; define a custom error type (currently not used)
-(define (raise-markus-error message [error-type 'markus-error])
+(define (raise-autotester-error message [error-type 'autotester-error])
   (raise (error error-type message)))
 
 ; main module: parses command line arguments, runs tests specified by these arguments

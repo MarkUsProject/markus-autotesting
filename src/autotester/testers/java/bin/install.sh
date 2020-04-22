@@ -24,7 +24,7 @@ compile_tester() {
 
 update_specs() {
     echo "[JAVA-INSTALL] Updating specs"
-    echo '{}' | jq ".path_to_tester_jars = \"${JAVADIR}/build/install/MarkusJavaTester/lib\"" > "${SPECSDIR}/install_settings.json"
+    echo '{}' | jq ".path_to_tester_jars = \"${JAVADIR}/build/install/JavaTester/lib\"" > "${SPECSDIR}/install_settings.json"
 }
 
 # script starts here

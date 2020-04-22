@@ -6,12 +6,12 @@ from typing import Optional, IO, Type, Dict
 import python_ta
 from pylint.config import VALIDATORS
 from python_ta.reporters import PositionReporter, PlainReporter
-from testers.markus_test_specs import MarkusTestSpecs
+from testers.test_specs import TestSpecs
 
-from testers.markus_tester import MarkusTester, MarkusTest
+from testers.tester import Tester, Test
 
 
-class MarkusPyTAReporter(PositionReporter):
+class PyTAReporter(PositionReporter):
     def print_messages(self, level="all"):
         """
         Print error and warning messages to a feedback file
@@ -29,12 +29,12 @@ class MarkusPyTAReporter(PositionReporter):
         pass
 
 
-class MarkusPyTATest(MarkusTest):
+class PyTATest(Test):
 
     ERROR_MSGS = {"reported": "{} error(s)"}
 
     def __init__(
-        self, tester: "MarkusPyTATester", student_file_path: str, max_points: int, feedback_open: Optional[IO] = None,
+        self, tester: "PyTATester", student_file_path: str, max_points: int, feedback_open: Optional[IO] = None,
     ) -> None:
         """
         Initialize a Python TA test that checks the student_file_path file,
@@ -51,7 +51,7 @@ class MarkusPyTATest(MarkusTest):
         """ The name of this test """
         return f"PyTA {self.student_file}"
 
-    def add_annotations(self, reporter: MarkusPyTAReporter) -> None:
+    def add_annotations(self, reporter: PyTAReporter) -> None:
         """
         Records annotations from the results extracted from reporter.
         """
@@ -76,7 +76,7 @@ class MarkusPyTATest(MarkusTest):
         """ Record all the annotations from this test in the tester object """
         self.tester.annotations.extend(self.annotations)
 
-    @MarkusTest.run_decorator
+    @Test.run_decorator
     def run(self) -> str:
         """
         Return a json string containing all test result information.
@@ -105,8 +105,8 @@ class MarkusPyTATest(MarkusTest):
             sys.stdout = sys.__stdout__
 
 
-class MarkusPyTATester(MarkusTester):
-    def __init__(self, specs: MarkusTestSpecs, test_class: Type[MarkusPyTATest] = MarkusPyTATest):
+class PyTATester(Tester):
+    def __init__(self, specs: TestSpecs, test_class: Type[PyTATest] = PyTATest):
         """
         Initialize a Python TA tester using the specifications in specs.
 
@@ -118,7 +118,7 @@ class MarkusPyTATester(MarkusTester):
         self.pyta_config = self.update_pyta_config()
         self.annotations = []
         self.devnull = open(os.devnull, "w")
-        VALIDATORS[MarkusPyTAReporter.__name__] = MarkusPyTAReporter
+        VALIDATORS[PyTAReporter.__name__] = PyTAReporter
 
     def update_pyta_config(self) -> Dict:
         """
@@ -126,7 +126,7 @@ class MarkusPyTATester(MarkusTester):
         this tester.
 
         This dictionary is updated to set the pyta-reporter option to
-        MarkusPyTAReporter and the pyta-output-file to this tester's
+        PyTAReporter and the pyta-output-file to this tester's
         feedback file.
         """
         config_file = self.specs.get("test_data", "config_file_name")
@@ -136,7 +136,7 @@ class MarkusPyTATester(MarkusTester):
         else:
             config_dict = {}
 
-        config_dict["pyta-reporter"] = "MarkusPyTAReporter"
+        config_dict["pyta-reporter"] = "PyTAReporter"
         if self.feedback_file:
             config_dict["pyta-output-file"] = self.feedback_file
 
@@ -153,7 +153,7 @@ class MarkusPyTATester(MarkusTester):
         if self.devnull:
             self.devnull.close()
 
-    @MarkusTester.run_decorator
+    @Tester.run_decorator
     def run(self) -> None:
         """
         Runs all tests in this tester.

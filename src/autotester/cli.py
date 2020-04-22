@@ -11,7 +11,7 @@ from rq.exceptions import NoSuchJobError
 from autotester.exceptions import (
     TestScriptFilesError,
     TestParameterError,
-    MarkUsError,
+    AutotestError,
 )
 from autotester.server.utils.redis_management import (
     redis_connection,
@@ -142,7 +142,7 @@ def cli() -> None:
     """
     Entrypoint for the command line interface for the autotester package.
 
-    This function is invoked when the markus_autotester command is called
+    This function is invoked when the autotester command is called
     from the command line.
     """
     parser = argparse.ArgumentParser()
@@ -154,7 +154,7 @@ def cli() -> None:
 
     try:
         COMMANDS[args.command](**args.arg_json)
-    except MarkUsError as e:
+    except AutotestError as e:
         print(str(e))
         sys.exit(1)
 

@@ -51,12 +51,12 @@ TEST_SPECS_DIR = os.path.join(config["workspace"], config["_workspace_contents",
 TEST_SCRIPT_DIR = os.path.join(config["workspace"], config["_workspace_contents", "_scripts"])
 
 TESTER_IMPORT_LINE = {
-    "custom": "from testers.custom.markus_custom_tester import MarkusCustomTester as Tester",
-    "haskell": "from testers.haskell.markus_haskell_tester import MarkusHaskellTester as Tester",
-    "java": "from testers.java.markus_java_tester import MarkusJavaTester as Tester",
-    "py": "from testers.py.markus_python_tester import MarkusPythonTester as Tester",
-    "pyta": "from testers.pyta.markus_pyta_tester import MarkusPyTATester as Tester",
-    "racket": "from testers.racket.markus_racket_tester import MarkusRacketTester as Tester",
+    "custom": "from testers.custom.custom_tester import CustomTester as Tester",
+    "haskell": "from testers.haskell.haskell_tester import HaskellTester as Tester",
+    "java": "from testers.java.java_tester import JavaTester as Tester",
+    "py": "from testers.py.python_tester import PythonTester as Tester",
+    "pyta": "from testers.pyta.pyta_tester import PyTATester as Tester",
+    "racket": "from testers.racket.racket_tester import RacketTester as Tester",
 }
 
 ResultData = Dict[str, Union[str, int, type(None), Dict]]
@@ -150,8 +150,8 @@ def _create_test_script_command(env_dir: str, tester_type: str) -> str:
     python_lines = [
         "import sys, json",
         import_line,
-        "from testers.markus_test_specs import MarkusTestSpecs",
-        f"Tester(specs=MarkusTestSpecs.from_json(sys.stdin.read())).run()",
+        "from testers.test_specs import TestSpecs",
+        f"Tester(specs=TestSpecs.from_json(sys.stdin.read())).run()",
     ]
     python_ex = os.path.join(os.path.join(TEST_SPECS_DIR, env_dir), "venv", "bin", "python")
     python_str = "; ".join(python_lines)
@@ -476,8 +476,8 @@ def _destroy_tester_environments(old_test_script_dir: str) -> None:
 @clean_after
 def update_test_specs(client_type: str, client_data: Dict) -> None:
     """
-    Download test script files and test specs for the given assignment at the given
-    MarkUs instance. Indicate that these new test scripts should be used instead of
+    Download test script files and test specs for the given client.
+    Indicate that these new test scripts should be used instead of
     the old ones. Remove the old ones when it is safe to do so (they are not in the
     process of being copied to a working directory).
     """
@@ -489,6 +489,7 @@ def update_test_specs(client_type: str, client_data: Dict) -> None:
     test_specs = client.get_test_specs()
 
     new_files_dir = os.path.join(new_dir, FILES_DIRNAME)
+    os.makedirs(new_files_dir, exist_ok=True)
     client.write_test_files(new_files_dir)
     filenames = [os.path.relpath(path, new_files_dir) for fd, path in recursive_iglob(new_files_dir) if fd == "f"]
     try:

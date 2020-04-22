@@ -3,14 +3,14 @@ from collections.abc import Mapping
 from typing import Any, Union, Tuple, Iterable, Optional
 
 
-class MarkusTestSpecs(Mapping):
+class TestSpecs(Mapping):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        """ Initialize a MarkUsTestSpecs instance """
+        """ Initialize a TestSpecs instance """
         self._specs = dict(*args, **kwargs)
 
     @classmethod
-    def from_json(cls, json_str: str) -> "MarkusTestSpecs":
-        """ Return a MarkUsTestSpecs instance created from a json string """
+    def from_json(cls, json_str: str) -> "TestSpecs":
+        """ Return a TestSpecs instance created from a json string """
         return cls(json.loads(json_str))
 
     def __getitem__(self, key: Union[str, Tuple]) -> Any:
@@ -21,7 +21,7 @@ class MarkusTestSpecs(Mapping):
         using each element in the tuple as a key in the next
         nested dictionary
 
-        >>> my_dict = MarkusTestSpecs({'a':{'b':{'c': 123}}})
+        >>> my_dict = TestSpecs({'a':{'b':{'c': 123}}})
         >>> my_dict['a','b','c']
         123
         >>> my_dict['a','b']

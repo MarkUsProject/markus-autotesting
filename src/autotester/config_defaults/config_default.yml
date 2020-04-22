@@ -4,7 +4,7 @@
 
 server_user: !ENV ${USER}
 
-workspace: !ENV ${HOME}/.markus-autotesting/
+workspace: !ENV ${HOME}/.autotesting/
 
 workers:
   - users:

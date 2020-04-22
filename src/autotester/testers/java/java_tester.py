@@ -3,11 +3,11 @@ import json
 import subprocess
 from typing import Dict, Optional, IO, Type
 
-from testers.markus_test_specs import MarkusTestSpecs
-from testers.markus_tester import MarkusTester, MarkusTest, MarkusTestError
+from testers.test_specs import TestSpecs
+from testers.tester import Tester, Test, TestError
 
 
-class MarkusJavaTest(MarkusTest):
+class JavaTest(Test):
     class JUnitStatus(enum.Enum):
         SUCCESSFUL = 1
         ABORTED = 2
@@ -18,7 +18,7 @@ class MarkusJavaTest(MarkusTest):
         "bad_java": 'Java runtime error: "{}"',
     }
 
-    def __init__(self, tester: "MarkusJavaTester", result: Dict, feedback_open: Optional[IO] = None,) -> None:
+    def __init__(self, tester: "JavaTester", result: Dict, feedback_open: Optional[IO] = None,) -> None:
         """
         Initialize a Java test created by tester.
 
@@ -27,7 +27,7 @@ class MarkusJavaTest(MarkusTest):
         """
         self.class_name, _sep, self.method_name = result["name"].partition(".")
         self.description = result.get("description")
-        self.status = MarkusJavaTest.JUnitStatus[result["status"]]
+        self.status = JavaTest.JUnitStatus[result["status"]]
         self.message = result.get("message")
         super().__init__(tester, feedback_open)
 
@@ -39,24 +39,24 @@ class MarkusJavaTest(MarkusTest):
             name += f" ({self.description})"
         return name
 
-    @MarkusTest.run_decorator
+    @Test.run_decorator
     def run(self) -> str:
         """
         Return a json string containing all test result information.
         """
-        if self.status == MarkusJavaTest.JUnitStatus.SUCCESSFUL:
+        if self.status == JavaTest.JUnitStatus.SUCCESSFUL:
             return self.passed()
-        elif self.status == MarkusJavaTest.JUnitStatus.FAILED:
+        elif self.status == JavaTest.JUnitStatus.FAILED:
             return self.failed(message=self.message)
         else:
             return self.error(message=self.message)
 
 
-class MarkusJavaTester(MarkusTester):
+class JavaTester(Tester):
 
-    JAVA_TESTER_CLASS = "edu.toronto.cs.teach.MarkusJavaTester"
+    JAVA_TESTER_CLASS = "edu.toronto.cs.teach.JavaTester"
 
-    def __init__(self, specs: MarkusTestSpecs, test_class: Type[MarkusJavaTest] = MarkusJavaTest) -> None:
+    def __init__(self, specs: TestSpecs, test_class: Type[JavaTest] = JavaTest) -> None:
         """
         Initialize a Java tester using the specifications in specs.
 
@@ -84,7 +84,7 @@ class MarkusJavaTester(MarkusTester):
             "java",
             "-cp",
             self.java_classpath,
-            MarkusJavaTester.JAVA_TESTER_CLASS,
+            JavaTester.JAVA_TESTER_CLASS,
         ]
         java_command.extend(self.specs["test_data", "script_files"])
         java = subprocess.run(
@@ -92,7 +92,7 @@ class MarkusJavaTester(MarkusTester):
         )
         return java
 
-    @MarkusTester.run_decorator
+    @Tester.run_decorator
     def run(self) -> None:
         """
         Runs all tests in this tester.
@@ -101,16 +101,16 @@ class MarkusJavaTester(MarkusTester):
         try:
             self.compile()
         except subprocess.CalledProcessError as e:
-            msg = MarkusJavaTest.ERRORS["bad_javac"].format(e.stdout)
-            raise MarkusTestError(msg) from e
+            msg = JavaTest.ERRORS["bad_javac"].format(e.stdout)
+            raise TestError(msg) from e
         # run the tests with junit
         try:
             results = self.run_junit()
             if results.stderr:
-                raise MarkusTestError(results.stderr)
+                raise TestError(results.stderr)
         except subprocess.CalledProcessError as e:
-            msg = MarkusJavaTest.ERRORS["bad_java"].format(e.stdout + e.stderr)
-            raise MarkusTestError(msg) from e
+            msg = JavaTest.ERRORS["bad_java"].format(e.stdout + e.stderr)
+            raise TestError(msg) from e
         with self.open_feedback() as feedback_open:
             for result in json.loads(results.stdout):
                 test = self.test_class(self, result, feedback_open)

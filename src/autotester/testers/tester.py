@@ -3,15 +3,15 @@ import json
 from abc import ABC, abstractmethod
 from functools import wraps
 from typing import Optional, IO, Callable, Any, Type, Generator
-from testers.markus_test_specs import MarkusTestSpecs
+from testers.test_specs import TestSpecs
 import traceback
 
 
-class MarkusTestError(Exception):
+class TestError(Exception):
     """ Error raised when a test error occurs """
 
 
-class MarkusTest(ABC):
+class Test(ABC):
     class Status:
         PASS: str = "pass"
         PARTIAL: str = "partial"
@@ -20,8 +20,8 @@ class MarkusTest(ABC):
         ERROR_ALL: str = "error_all"
 
     @abstractmethod
-    def __init__(self, tester: "MarkusTester", feedback_open: Optional[IO] = None) -> None:
-        """ Initialize a MarkusTest """
+    def __init__(self, tester: "Tester", feedback_open: Optional[IO] = None) -> None:
+        """ Initialize a Test """
         self.tester = tester
         self.points_total = self.get_total_points()
         if self.points_total <= 0:
@@ -45,9 +45,9 @@ class MarkusTest(ABC):
         test_name: str, status: str, output: str, points_earned: int, points_total: int, time: Optional[int] = None,
     ) -> str:
         """
-        Formats a test result as expected by Markus.
+        Formats a test result.
         :param test_name: The test name
-        :param status: A member of MarkusTest.Status.
+        :param status: A member of Test.Status.
         :param output: The test output.
         :param points_earned: The points earned by the test, must be a float >= 0 (can be greater than the test total
                               points when assigning bonus points).
@@ -77,14 +77,14 @@ class MarkusTest(ABC):
 
     def format(self, status: str, output: str, points_earned: int) -> str:
         """
-        Formats the result of this test as expected by Markus.
-        :param status: A member of MarkusTest.Status.
+        Formats the result of this test.
+        :param status: A member of Test.Status.
         :param output: The test output.
         :param points_earned: The points earned by the test, must be a float >= 0 (can be greater than the test total
                               points when assigning bonus points).
         :return The formatted test result.
         """
-        return MarkusTest.format_result(self.test_name, status, output, points_earned, self.points_total)
+        return Test.format_result(self.test_name, status, output, points_earned, self.points_total)
 
     def add_feedback(
         self,
@@ -95,7 +95,7 @@ class MarkusTest(ABC):
     ) -> None:
         """
         Adds the feedback of this test to the feedback file.
-        :param status: A member of MarkusTest.Status.
+        :param status: A member of Test.Status.
         :param feedback: The feedback, can be None.
         :param oracle_solution: The expected solution, can be None.
         :param test_solution: The test solution, can be None.
@@ -240,7 +240,7 @@ class MarkusTest(ABC):
     def run_decorator(run_func: Callable) -> Callable:
         """
         Wrapper around a test.run method. Used to print error messages
-        in the correct json format. If it catches a MarkusTestError then
+        in the correct json format. If it catches a TestError then
         only the error message is sent in the description, otherwise the
         whole traceback is sent.
         """
@@ -253,7 +253,7 @@ class MarkusTest(ABC):
                 self.before_test_run()
                 result_json = run_func(self, *args, **kwargs)
                 self.after_successful_test_run()
-            except MarkusTestError as e:
+            except TestError as e:
                 result_json = self.error(message=str(e))
             except Exception as e:
                 result_json = self.error(message=f"{traceback.format_exc()}\n{e}")
@@ -269,9 +269,9 @@ class MarkusTest(ABC):
         """
 
 
-class MarkusTester(ABC):
+class Tester(ABC):
     @abstractmethod
-    def __init__(self, specs: MarkusTestSpecs, test_class: Optional[Type[MarkusTest]] = MarkusTest,) -> None:
+    def __init__(self, specs: TestSpecs, test_class: Optional[Type[Test]] = Test,) -> None:
         self.specs = specs
         self.test_class = test_class
 
@@ -284,8 +284,8 @@ class MarkusTester(ABC):
         :param expected: Indicates whether this reports an expected or an unexpected tester error.
         :return The formatted erred tests.
         """
-        status = MarkusTest.Status.ERROR if expected else MarkusTest.Status.ERROR_ALL
-        return MarkusTest.format_result(
+        status = Test.Status.ERROR if expected else Test.Status.ERROR_ALL
+        return Test.format_result(
             test_name="All tests", status=status, output=message, points_earned=0, points_total=points_total,
         )
 
@@ -305,7 +305,7 @@ class MarkusTester(ABC):
     def run_decorator(run_func: Callable) -> Callable:
         """
         Wrapper around a tester.run method. Used to print error messages
-        in the correct json format. If it catches a MarkusTestError then
+        in the correct json format. If it catches a TestError then
         only the error message is sent in the description, otherwise the
         whole traceback is sent.
         """
@@ -315,11 +315,11 @@ class MarkusTester(ABC):
             try:
                 self.before_tester_run()
                 return run_func(self, *args, **kwargs)
-            except MarkusTestError as e:
-                print(MarkusTester.error_all(message=str(e), expected=True), flush=True)
+            except TestError as e:
+                print(Tester.error_all(message=str(e), expected=True), flush=True)
             except Exception as e:
                 print(
-                    MarkusTester.error_all(message=f"{traceback.format_exc()}\n{e}"), flush=True,
+                    Tester.error_all(message=f"{traceback.format_exc()}\n{e}"), flush=True,
                 )
             finally:
                 self.after_tester_run()

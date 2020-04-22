@@ -4,13 +4,13 @@ import tempfile
 import csv
 from typing import Dict, Optional, IO, Type, List, Iterator, Union
 
-from testers.markus_test_specs import MarkusTestSpecs
-from testers.markus_tester import MarkusTester, MarkusTest, MarkusTestError
+from testers.test_specs import TestSpecs
+from testers.tester import Tester, Test, TestError
 
 
-class MarkusHaskellTest(MarkusTest):
+class HaskellTest(Test):
     def __init__(
-        self, tester: "MarkusHaskellTester", test_file: str, result: Dict, feedback_open: Optional[IO] = None,
+        self, tester: "HaskellTester", test_file: str, result: Dict, feedback_open: Optional[IO] = None,
     ) -> None:
         """
         Initialize a Haskell test created by tester.
@@ -31,7 +31,7 @@ class MarkusHaskellTest(MarkusTest):
             return ".".join([self._file_name, self._test_name])
         return self._file_name
 
-    @MarkusTest.run_decorator
+    @Test.run_decorator
     def run(self) -> str:
         """
         Return a json string containing all test result information.
@@ -44,10 +44,10 @@ class MarkusHaskellTest(MarkusTest):
             return self.error(message=self.message)
 
 
-class MarkusHaskellTester(MarkusTester):
+class HaskellTester(Tester):
     TASTYSTATS = {"name": 1, "time": 2, "result": 3, "description": -1}
 
-    def __init__(self, specs: MarkusTestSpecs, test_class: Type[MarkusHaskellTest] = MarkusHaskellTest,) -> None:
+    def __init__(self, specs: TestSpecs, test_class: Type[HaskellTest] = HaskellTest,) -> None:
         """
         Initialize a Haskell tester using the specifications in specs.
 
@@ -108,7 +108,7 @@ class MarkusHaskellTester(MarkusTester):
                     results[test_file] = self._parse_test_results(csv.reader(sf))
         return results
 
-    @MarkusTester.run_decorator
+    @Tester.run_decorator
     def run(self) -> None:
         """
         Runs all tests in this tester.
@@ -116,7 +116,7 @@ class MarkusHaskellTester(MarkusTester):
         try:
             results = self.run_haskell_tests()
         except subprocess.CalledProcessError as e:
-            raise MarkusTestError(e.stderr) from e
+            raise TestError(e.stderr) from e
         with self.open_feedback() as feedback_open:
             for test_file, result in results.items():
                 for res in result:
