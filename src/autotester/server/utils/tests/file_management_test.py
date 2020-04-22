@@ -51,6 +51,21 @@ def dir_has_one_dir():
 
 
 @pytest.fixture
+def dir_has_multiple_fd():
+    """
+    Yields a directory which has multiple files and directories
+    """
+    with tempfile.TemporaryDirectory() as root_dir:
+        tempfile.TemporaryDirectory(dir=root_dir)
+        tempfile.NamedTemporaryFile(dir=root_dir)
+        with tempfile.TemporaryDirectory(dir=root_dir) as dir1:
+            pass
+        with tempfile.NamedTemporaryFile(dir=root_dir) as file1:
+            pass
+        yield root_dir, dir1, file1.name
+
+
+@pytest.fixture
 def nested_fd():
     """
     Yields a nested file structure
@@ -91,53 +106,90 @@ def empty_tmp_script_dir():
 
 
 @pytest.fixture
+def tmp_script_outer_dir():
+    """
+    Mock the test_script_directory method and yield a temporary directory
+    which has no subdirectory from FILES_DIRNAME but has other file or directory
+    """
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tempfile.NamedTemporaryFile(dir=tmp_dir)
+        tempfile.TemporaryDirectory(dir=tmp_dir)
+        with patch(
+            "autotester.server.utils.redis_management.test_script_directory",
+            return_value=tmp_dir,
+        ):
+            yield tmp_dir
+
+
+@pytest.fixture
 def tmp_script_dir_with_one_file():
     """
-    Mock the test_script_directory method and yield a temporary directory and a file
+    Mock the test_script_directory method and yield a temporary directory which has only one file
     """
     with tempfile.TemporaryDirectory() as tmp_dir:
         files_dir = os.path.join(tmp_dir, FILES_DIRNAME)
         os.mkdir(files_dir)
-        with tempfile.NamedTemporaryFile(dir=files_dir) as file:
-            with patch(
-                "autotester.server.utils.redis_management.test_script_directory",
-                return_value=tmp_dir,
-            ):
-                yield tmp_dir, file.name
+        tempfile.NamedTemporaryFile(dir=files_dir)
+        with patch(
+            "autotester.server.utils.redis_management.test_script_directory",
+            return_value=tmp_dir,
+        ):
+            yield tmp_dir
 
 
 @pytest.fixture
 def tmp_script_dir_with_one_dir():
     """
-    Mock the test_script_directory method and yield a temporary directory and a subdirectory
+    Mock the test_script_directory method and yield a temporary directory which has only one subdirectory
     """
     with tempfile.TemporaryDirectory() as tmp_dir:
         files_dir = os.path.join(tmp_dir, FILES_DIRNAME)
         os.mkdir(files_dir)
-        with tempfile.TemporaryDirectory(dir=files_dir) as sub_dir:
-            with patch(
-                "autotester.server.utils.redis_management.test_script_directory",
-                return_value=tmp_dir,
-            ):
-                yield tmp_dir, sub_dir
+        tempfile.TemporaryDirectory(dir=files_dir)
+        with patch(
+            "autotester.server.utils.redis_management.test_script_directory",
+            return_value=tmp_dir,
+        ):
+            yield tmp_dir
 
 
 @pytest.fixture
 def nested_tmp_script_dir():
     """
-    Mock the test_script_directory method and yield a temporary directory and nested file structure
+    Mock the test_script_directory method and yield a temporary directory which has nested file structure
     """
     with tempfile.TemporaryDirectory() as tmp_dir:
         files_dir = os.path.join(tmp_dir, FILES_DIRNAME)
         os.mkdir(files_dir)
         with tempfile.TemporaryDirectory(dir=files_dir) as sub_dir1:
             with tempfile.TemporaryDirectory(dir=sub_dir1) as sub_dir2:
-                with tempfile.NamedTemporaryFile(dir=sub_dir2) as file:
-                    with patch(
-                        "autotester.server.utils.redis_management.test_script_directory",
-                        return_value=tmp_dir,
-                    ):
-                        yield tmp_dir, sub_dir1, sub_dir2, file.name
+                tempfile.NamedTemporaryFile(dir=sub_dir2)
+                with patch(
+                    "autotester.server.utils.redis_management.test_script_directory",
+                    return_value=tmp_dir,
+                ):
+                    yield tmp_dir
+
+
+@pytest.fixture
+def tmp_script_dir_has_multiple_fd():
+    """
+    Mock the test_script_directory method and yield a temporary directory
+    which has more than one file or directory
+    """
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        files_dir = os.path.join(tmp_dir, FILES_DIRNAME)
+        os.mkdir(files_dir)
+        tempfile.TemporaryDirectory(dir=files_dir)
+        tempfile.NamedTemporaryFile(dir=files_dir)
+        with tempfile.TemporaryDirectory(dir=files_dir) as root_dir:
+            with tempfile.TemporaryDirectory(dir=root_dir) as sub_dir:
+                tempfile.NamedTemporaryFile(dir=sub_dir)
+                with patch(
+                    "autotester.server.utils.redis_management.test_script_directory",
+                    return_value=tmp_dir,
+                ):
+                    yield tmp_dir
 
 
 def list_of_fd(file_or_dir):
@@ -225,9 +277,10 @@ class TestCopyTree:
         source_dir = empty_dir
         dest_dir, file = dir_has_one_file
         list_fd_before_copy = os.listdir(dest_dir)
-        copy_tree(source_dir, dest_dir)
+        copied_file_or_dir = copy_tree(source_dir, dest_dir)
         list_fd_after_copy = os.listdir(dest_dir)
         assert len(list_fd_before_copy) == len(list_fd_after_copy)
+        assert not copied_file_or_dir
 
     def test_dir_has_one_file(self, dir_has_one_file, empty_dir):
         """
@@ -235,9 +288,9 @@ class TestCopyTree:
         """
         source_dir, source_file = dir_has_one_file
         dest_dir = empty_dir
-        copy_tree(source_dir, dest_dir)
-        copied_file = os.path.join(dest_dir, os.path.basename(source_file))
-        assert os.path.exists(copied_file)
+        copied_file_or_dir = copy_tree(source_dir, dest_dir)
+        for _fd, file_or_dir in copied_file_or_dir:
+            assert os.path.exists(file_or_dir)
 
     def test_dir_has_one_dir(self, dir_has_one_dir, empty_dir):
         """
@@ -245,9 +298,9 @@ class TestCopyTree:
         """
         source_dir, sub_dir = dir_has_one_dir
         dest_dir = empty_dir
-        copy_tree(source_dir, dest_dir)
-        copied_dir = os.path.join(dest_dir, os.path.basename(sub_dir))
-        assert os.path.exists(copied_dir)
+        copied_file_or_dir = copy_tree(source_dir, dest_dir)
+        for _fd, file_or_dir in copied_file_or_dir:
+            assert os.path.exists(file_or_dir)
 
     def test_dir_has_nested_fd(self, empty_dir, nested_fd):
         """
@@ -255,13 +308,33 @@ class TestCopyTree:
         """
         dest_dir = empty_dir
         source_dir, sub_dir1, sub_dir2, source_file = nested_fd
-        copy_tree(source_dir, dest_dir)
-        copied_dir1 = os.path.join(dest_dir, os.path.basename(sub_dir1))
-        copied_dir2 = os.path.join(copied_dir1, os.path.basename(sub_dir2))
-        copied_file = os.path.join(copied_dir2, os.path.basename(source_file))
-        assert os.path.exists(copied_dir1)
-        assert os.path.exists(copied_dir2)
-        assert os.path.exists(copied_file)
+        copied_file_or_dir = copy_tree(source_dir, dest_dir)
+        for _fd, file_or_dir in copied_file_or_dir:
+            assert os.path.exists(file_or_dir)
+
+    def test_dir_has_multiple_fd(self, empty_dir, dir_has_multiple_fd):
+        """
+        When the source directory has more than one file or directory
+        """
+        dest_dir = empty_dir
+        source_dir, *_ = dir_has_multiple_fd
+        copied_file_or_dir = copy_tree(source_dir, dest_dir)
+        for _fd, file_or_dir in copied_file_or_dir:
+            assert os.path.exists(file_or_dir)
+
+    def test_exclude(self, empty_dir, dir_has_multiple_fd):
+        """
+        Checks whether the files or directories in the exclude list are not copied
+        """
+        dest_dir = empty_dir
+        source_dir, sub_dir, file = dir_has_multiple_fd
+        copied_file_or_dir = copy_tree(source_dir, dest_dir, exclude=(sub_dir, file))
+        for _fd, file_or_dir in copied_file_or_dir:
+            assert os.path.exists(file_or_dir)
+        excluded_dir = os.path.join(dest_dir, sub_dir)
+        excluded_file = os.path.join(dest_dir, file)
+        assert not os.path.exists(excluded_dir)
+        assert not os.path.exists(excluded_file)
 
 
 def test_ignore_missing_dir_error():
@@ -286,9 +359,10 @@ class TestMoveTree:
         source_dir = tempfile.mkdtemp()
         dest_dir, sub_dir = dir_has_one_dir
         list_fd_before_move = os.listdir(dest_dir)
-        move_tree(source_dir, dest_dir)
+        moved_file_or_dir = move_tree(source_dir, dest_dir)
         list_fd_after_move = os.listdir(dest_dir)
         assert len(list_fd_before_move) == len(list_fd_after_move)
+        assert not moved_file_or_dir
 
     def test_dir_has_one_file(self, empty_dir):
         """
@@ -297,24 +371,24 @@ class TestMoveTree:
         source_dir = tempfile.mkdtemp()
         fd, source_file = tempfile.mkstemp(dir=source_dir)
         dest_dir = empty_dir
-        move_tree(source_dir, dest_dir)
-        moved_file = os.path.join(dest_dir, os.path.basename(source_file))
-        assert os.path.exists(moved_file)
+        moved_file_or_dir = move_tree(source_dir, dest_dir)
+        for _fd, file_or_dir in moved_file_or_dir:
+            assert os.path.exists(file_or_dir)
         assert not os.path.exists(source_file)
 
-    def test_dir_has_one_dir(self, empty_dir, dir_has_one_dir):
+    def test_dir_has_one_dir(self, empty_dir):
         """
         When the directory has only one subdirectory
         """
         source_dir = tempfile.mkdtemp()
         sub_dir = tempfile.mkdtemp(dir=source_dir)
         dest_dir = empty_dir
-        move_tree(source_dir, dest_dir)
-        moved_dir = os.path.join(dest_dir, os.path.basename(sub_dir))
-        assert os.path.exists(moved_dir)
+        moved_file_or_dir = move_tree(source_dir, dest_dir)
+        for _fd, file_or_dir in moved_file_or_dir:
+            assert os.path.exists(file_or_dir)
         assert not os.path.exists(sub_dir)
 
-    def test_dir_has_nested_fd(self, empty_dir, nested_fd):
+    def test_dir_has_nested_fd(self, empty_dir):
         """
         When the files are nested in subdirectories more than 2 directories deep
         """
@@ -323,14 +397,12 @@ class TestMoveTree:
         sub_dir1 = tempfile.mkdtemp(dir=source_dir)
         sub_dir2 = tempfile.mkdtemp(dir=sub_dir1)
         fd, source_file = tempfile.mkstemp(dir=sub_dir2)
-        move_tree(source_dir, dest_dir)
-        moved_dir1 = os.path.join(dest_dir, os.path.basename(sub_dir1))
-        moved_dir2 = os.path.join(moved_dir1, os.path.basename(sub_dir2))
-        moved_file = os.path.join(moved_dir2, os.path.basename(source_file))
-        assert os.path.exists(moved_dir1)
+        moved_file_or_dir = move_tree(source_dir, dest_dir)
+        for _fd, file_or_dir in moved_file_or_dir:
+            assert os.path.exists(file_or_dir)
         assert not os.path.exists(sub_dir1)
-        assert os.path.exists(moved_dir2)
-        assert os.path.exists(moved_file)
+        assert not os.path.exists(sub_dir2)
+        assert not os.path.exists(source_file)
 
 
 class TestFdOpen:
@@ -376,9 +448,12 @@ class TestCopyTestScriptFiles:
         assignment_id = 1
         tests_path, test_file = dir_has_one_file
         list_fd_before_copy = os.listdir(tests_path)
-        copy_test_script_files(markus_address, assignment_id, tests_path)
+        copied_test_script_files = copy_test_script_files(
+            markus_address, assignment_id, tests_path
+        )
         list_fd_after_copy = os.listdir(tests_path)
         assert len(list_fd_before_copy) == len(list_fd_after_copy)
+        assert not copied_test_script_files
 
     def test_dir_has_one_file(self, dir_has_one_file, tmp_script_dir_with_one_file):
         """
@@ -387,10 +462,11 @@ class TestCopyTestScriptFiles:
         markus_address = "http://localhost:3000/csc108/en/main"
         assignment_id = 1
         tests_path, test_file = dir_has_one_file
-        tmp_script_dir, file = tmp_script_dir_with_one_file
-        copy_test_script_files(markus_address, assignment_id, tests_path)
-        copied_file = os.path.join(tests_path, file)
-        assert os.path.exists(copied_file)
+        copied_test_script_files = copy_test_script_files(
+            markus_address, assignment_id, tests_path
+        )
+        for _fd, file_or_dir in copied_test_script_files:
+            assert os.path.exists(file_or_dir)
 
     def test_dir_has_one_dir(self, dir_has_one_file, tmp_script_dir_with_one_dir):
         """
@@ -399,10 +475,11 @@ class TestCopyTestScriptFiles:
         markus_address = "http://localhost:3000/csc108/en/main"
         assignment_id = 1
         tests_path, test_file = dir_has_one_file
-        tmp_script_dir, sub_dir = tmp_script_dir_with_one_dir
-        copy_test_script_files(markus_address, assignment_id, tests_path)
-        copied_dir = os.path.join(tests_path, sub_dir)
-        assert os.path.exists(copied_dir)
+        copied_test_script_files = copy_test_script_files(
+            markus_address, assignment_id, tests_path
+        )
+        for _fd, file_or_dir in copied_test_script_files:
+            assert os.path.exists(file_or_dir)
 
     def test_dir_has_nested_fd(self, dir_has_one_file, nested_tmp_script_dir):
         """
@@ -411,11 +488,35 @@ class TestCopyTestScriptFiles:
         markus_address = "http://localhost:3000/csc108/en/main"
         assignment_id = 1
         tests_path, test_file = dir_has_one_file
-        tmp_script_dir, sub_dir1, sub_dir2, file = nested_tmp_script_dir
-        copy_test_script_files(markus_address, assignment_id, tests_path)
-        copied_dir1 = os.path.join(tests_path, os.path.basename(sub_dir1))
-        copied_dir2 = os.path.join(copied_dir1, os.path.basename(sub_dir2))
-        copied_file = os.path.join(copied_dir2, os.path.basename(file))
-        assert os.path.exists(copied_dir1)
-        assert os.path.exists(copied_dir2)
-        assert os.path.exists(copied_file)
+        copied_test_script_files = copy_test_script_files(
+            markus_address, assignment_id, tests_path
+        )
+        for _fd, file_or_dir in copied_test_script_files:
+            assert os.path.exists(file_or_dir)
+
+    def test_dir_has_multiple_fd(
+        self, dir_has_one_file, tmp_script_dir_has_multiple_fd
+    ):
+        """
+        When the files are nested in subdirectories more than 2 directories deep
+        """
+        markus_address = "http://localhost:3000/csc108/en/main"
+        assignment_id = 1
+        tests_path, test_file = dir_has_one_file
+        copied_test_script_files = copy_test_script_files(
+            markus_address, assignment_id, tests_path
+        )
+        for _fd, file_or_dir in copied_test_script_files:
+            assert os.path.exists(file_or_dir)
+
+    def test_dir_has_no_files_dir(self, dir_has_one_file, tmp_script_outer_dir):
+        """
+        When tmp_script_dir has no subdirectory from FILES_DIRNAME but has other file or directory
+        """
+        markus_address = "http://localhost:3000/csc108/en/main"
+        assignment_id = 1
+        tests_path, test_file = dir_has_one_file
+        copied_test_script_files = copy_test_script_files(
+            markus_address, assignment_id, tests_path
+        )
+        assert not copied_test_script_files
