@@ -97,5 +97,5 @@ class MarkusRacketTester(MarkusTester):
                         msg = MarkusRacketTester.ERROR_MSGS["bad_json"].format(result)
                         raise MarkusTestError(msg) from e
                     for t_result in test_results:
-                        test = self.test_class(self, feedback_open, t_result)
+                        test = self.test_class(self, t_result, feedback_open)
                         print(test.run(), flush=True)
