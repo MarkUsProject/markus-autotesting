@@ -163,7 +163,7 @@ def f_path_has_one_dir():
     Returns a temporary directory which has only one subdirectory
     """
     files_path = tempfile.mkdtemp()
-    sub_dir = tempfile.mkdtemp(dir=files_path)
+    tempfile.mkdtemp(dir=files_path)
     return files_path
 
 
@@ -173,8 +173,8 @@ def f_path_has_multiple_fd():
     Returns a temporary directory which has more than one file and directory
     """
     files_path = tempfile.mkdtemp()
-    sub_dir1 = tempfile.mkdtemp(dir=files_path)
-    sub_dir2 = tempfile.mkdtemp(dir=files_path)
+    tempfile.mkdtemp(dir=files_path)
+    tempfile.mkdtemp(dir=files_path)
     fd, file1 = tempfile.mkstemp(dir=files_path)
     f_d, file2 = tempfile.mkstemp(dir=files_path)
     return files_path
