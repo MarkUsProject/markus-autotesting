@@ -26,7 +26,7 @@ def redis():
         yield fake_redis
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def empty_tmp_script_dir():
     """
     Mock the test_script_directory method and yield an empty temporary directory
@@ -225,7 +225,9 @@ class TestSetupFiles:
     Checks the permission of files and directories in student_files and script_files
     """
 
-    def test_group_owner(self, t_path, f_path_has_one_file, args):
+    def test_group_owner(
+        self, t_path, f_path_has_one_file, args, tmp_script_dir_with_one_file
+    ):
         """
         Checks whether the group owner of both
         student files and script files changed into test_username
@@ -242,7 +244,9 @@ class TestSetupFiles:
         for _fd, file_or_dir in script_files:
             assert test_username == Path(file_or_dir).group()
 
-    def test_student_files(self, t_path, f_path_has_one_file, args):
+    def test_student_files(
+        self, t_path, f_path_has_one_file, args, tmp_script_dir_with_one_file
+    ):
         """
         Checks whether the permission of files and directories
         in student files changed into '0o770' and '0o660'
@@ -260,7 +264,9 @@ class TestSetupFiles:
             else:
                 assert fd_permission(file_or_dir) == "-rw-rw----"
 
-    def test_script_files(self, t_path, f_path_has_one_file, args):
+    def test_script_files(
+        self, t_path, f_path_has_one_file, args, tmp_script_dir_with_one_file
+    ):
         """
         Checks whether the permission of files and directories
         in script files changed into '0o1770' and '0o640'
