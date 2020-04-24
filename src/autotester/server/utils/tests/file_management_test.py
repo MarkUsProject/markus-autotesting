@@ -90,7 +90,7 @@ def redis():
         yield fake_redis
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def empty_tmp_script_dir():
     """
     Mock the test_script_directory method and yield an empty temporary directory
@@ -440,9 +440,9 @@ class TestCopyTestScriptFiles:
     Checks whether all the test script directory contents are copied into tests_path
     """
 
-    def test_empty_dir(self, dir_has_one_file):
+    def test_empty_dir(self, dir_has_one_file, empty_tmp_script_dir):
         """
-        When the test script directory is empty has only one file
+        When the test script directory is empty
         """
         markus_address = "http://localhost:3000/csc108/en/main"
         assignment_id = 1
