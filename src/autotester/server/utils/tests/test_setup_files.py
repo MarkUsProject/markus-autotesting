@@ -129,9 +129,9 @@ def tmp_script_dir_has_multiple_fd():
 
 
 @pytest.fixture
-def t_path():
+def tests_path():
     """
-    Returns a temporary directory with one sub directory
+    Returns a temporary directory which has only one file
     """
     with tempfile.TemporaryDirectory() as tests_path:
         with tempfile.NamedTemporaryFile(dir=tests_path):
@@ -143,8 +143,8 @@ def f_path_empty():
     """
     Returns an empty temporary directory
     """
-    files_path = tempfile.mkdtemp()
-    return files_path
+    with tempfile.TemporaryDirectory() as files_path:
+        yield files_path
 
 
 @pytest.fixture
@@ -152,9 +152,9 @@ def f_path_has_one_file():
     """
     Returns a temporary directory which has only one file
     """
-    files_path = tempfile.mkdtemp()
-    f_d, files = tempfile.mkstemp(dir=files_path)
-    return files_path
+    with tempfile.TemporaryDirectory() as files_path:
+        tempfile.NamedTemporaryFile(dir=files_path)
+        yield files_path
 
 
 @pytest.fixture
@@ -162,9 +162,9 @@ def f_path_has_one_dir():
     """
     Returns a temporary directory which has only one subdirectory
     """
-    files_path = tempfile.mkdtemp()
-    tempfile.mkdtemp(dir=files_path)
-    return files_path
+    with tempfile.TemporaryDirectory() as files_path:
+        tempfile.TemporaryDirectory(dir=files_path)
+        yield files_path
 
 
 @pytest.fixture
@@ -172,12 +172,12 @@ def f_path_has_multiple_fd():
     """
     Returns a temporary directory which has more than one file and directory
     """
-    files_path = tempfile.mkdtemp()
-    tempfile.mkdtemp(dir=files_path)
-    tempfile.mkdtemp(dir=files_path)
-    fd, file1 = tempfile.mkstemp(dir=files_path)
-    f_d, file2 = tempfile.mkstemp(dir=files_path)
-    return files_path
+    with tempfile.TemporaryDirectory() as files_path:
+        tempfile.TemporaryDirectory(dir=files_path)
+        tempfile.TemporaryDirectory(dir=files_path)
+        tempfile.NamedTemporaryFile(dir=files_path)
+        tempfile.NamedTemporaryFile(dir=files_path)
+        yield files_path
 
 
 @pytest.fixture
@@ -185,12 +185,12 @@ def f_path_has_nested_fd():
     """
     Returns a temporary directory which has nested file structure
     """
-    files_path = tempfile.mkdtemp()
-    sub_dir1 = tempfile.mkdtemp(dir=files_path)
-    sub_dir2 = tempfile.mkdtemp(dir=sub_dir1)
-    fd, file1 = tempfile.mkstemp(dir=sub_dir2)
-    f_d, file2 = tempfile.mkstemp(dir=sub_dir2)
-    return files_path
+    with tempfile.TemporaryDirectory() as files_path:
+        with tempfile.TemporaryDirectory(dir=files_path) as sub_dir1:
+            with tempfile.TemporaryDirectory(dir=sub_dir1) as sub_dir2:
+                tempfile.NamedTemporaryFile(dir=sub_dir2)
+                tempfile.NamedTemporaryFile(dir=sub_dir2)
+                yield files_path
 
 
 @pytest.fixture
@@ -226,14 +226,13 @@ class TestSetupFiles:
     """
 
     def test_group_owner(
-        self, t_path, f_path_has_one_file, args, tmp_script_dir_with_one_file
+        self, tests_path, f_path_has_one_file, args, tmp_script_dir_with_one_file
     ):
         """
         Checks whether the group owner of both
         student files and script files changed into test_username
         """
         markus_address, assignment_id = args
-        tests_path = t_path
         files_path = f_path_has_one_file
         test_username = Path(tests_path).owner()
         student_files, script_files = setup_files(
@@ -245,14 +244,13 @@ class TestSetupFiles:
             assert test_username == Path(file_or_dir).group()
 
     def test_student_files(
-        self, t_path, f_path_has_one_file, args, tmp_script_dir_with_one_file
+        self, tests_path, f_path_has_one_file, args, tmp_script_dir_with_one_file
     ):
         """
         Checks whether the permission of files and directories
         in student files changed into '0o770' and '0o660'
         """
         markus_address, assignment_id = args
-        tests_path = t_path
         files_path = f_path_has_one_file
         test_username = Path(tests_path).owner()
         student_files, script_files = setup_files(
@@ -265,14 +263,13 @@ class TestSetupFiles:
                 assert fd_permission(file_or_dir) == "-rw-rw----"
 
     def test_script_files(
-        self, t_path, f_path_has_one_file, args, tmp_script_dir_with_one_file
+        self, tests_path, f_path_has_one_file, args, tmp_script_dir_with_one_file
     ):
         """
         Checks whether the permission of files and directories
         in script files changed into '0o1770' and '0o640'
         """
         markus_address, assignment_id = args
-        tests_path = t_path
         files_path = f_path_has_one_file
         test_username = Path(tests_path).owner()
         student_files, script_files = setup_files(
@@ -284,12 +281,11 @@ class TestSetupFiles:
             else:
                 assert fd_permission(file_or_dir) == "-rw-r-----"
 
-    def test_f_path_empty(self, t_path, f_path_empty, args, empty_tmp_script_dir):
+    def test_f_path_empty(self, tests_path, f_path_empty, args, empty_tmp_script_dir):
         """
 
         """
         markus_address, assignment_id = args
-        tests_path = t_path
         files_path = f_path_empty
         test_username = Path(tests_path).owner()
         student_files, script_files = setup_files(
@@ -298,12 +294,11 @@ class TestSetupFiles:
         assert not student_files
         assert not script_files
 
-    def test_f_path_has_one_file(self, t_path, f_path_has_one_file, args):
+    def test_f_path_has_one_file(self, tests_path, f_path_has_one_file, args):
         """
         When the files_path and the test_script_dir has only one file
         """
         markus_address, assignment_id = args
-        tests_path = t_path
         files_path = f_path_has_one_file
         test_username = Path(tests_path).owner()
         student_files, script_files = setup_files(
@@ -315,13 +310,12 @@ class TestSetupFiles:
             assert os.path.exists(file_or_dir)
 
     def test_f_path_has_one_dir(
-        self, t_path, f_path_has_one_dir, args, tmp_script_dir_with_one_dir
+        self, tests_path, f_path_has_one_dir, args, tmp_script_dir_with_one_dir
     ):
         """
         When the files_path and the test_script_dir has only one directory
         """
         markus_address, assignment_id = args
-        tests_path = t_path
         files_path = f_path_has_one_dir
         test_username = Path(tests_path).owner()
         student_files, script_files = setup_files(
@@ -333,13 +327,12 @@ class TestSetupFiles:
             assert os.path.exists(file_or_dir)
 
     def test_f_path_has_multiple_fd(
-        self, t_path, f_path_has_multiple_fd, args, tmp_script_dir_has_multiple_fd
+        self, tests_path, f_path_has_multiple_fd, args, tmp_script_dir_has_multiple_fd
     ):
         """
         When the files_path and the test_script_dir has multiple files and directories
         """
         markus_address, assignment_id = args
-        tests_path = t_path
         files_path = f_path_has_multiple_fd
         test_username = Path(tests_path).owner()
         student_files, script_files = setup_files(
@@ -351,13 +344,12 @@ class TestSetupFiles:
             assert os.path.exists(file_or_dir)
 
     def test_f_path_has_nested_fd(
-        self, t_path, f_path_has_nested_fd, args, nested_tmp_script_dir
+        self, tests_path, f_path_has_nested_fd, args, nested_tmp_script_dir
     ):
         """
         When the files_path and the test_script_dir has only one file
         """
         markus_address, assignment_id = args
-        tests_path = t_path
         files_path = f_path_has_nested_fd
         test_username = Path(tests_path).owner()
         student_files, script_files = setup_files(
@@ -369,13 +361,12 @@ class TestSetupFiles:
             assert os.path.exists(file_or_dir)
 
     def test_dir_has_no_files_dir(
-        self, t_path, f_path_has_one_file, args, tmp_script_outer_dir
+        self, tests_path, f_path_has_one_file, args, tmp_script_outer_dir
     ):
         """
         When test_script_dir has no subdirectory from FILES_DIRNAME but has other file or directory
         """
         markus_address, assignment_id = args
-        tests_path = t_path
         files_path = f_path_has_one_file
         test_username = Path(tests_path).owner()
         student_files, script_files = setup_files(
