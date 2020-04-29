@@ -143,8 +143,10 @@ def f_path_empty():
     """
     Returns an empty temporary directory
     """
-    with tempfile.TemporaryDirectory() as files_path:
-        yield files_path
+    files_path = tempfile.TemporaryDirectory()
+    yield files_path.name
+    if os.path.exists(files_path.name):
+        files_path.cleanup()
 
 
 @pytest.fixture
@@ -152,9 +154,11 @@ def f_path_has_one_file():
     """
     Returns a temporary directory which has only one file
     """
-    with tempfile.TemporaryDirectory() as files_path:
-        tempfile.NamedTemporaryFile(dir=files_path)
-        yield files_path
+    files_path = tempfile.TemporaryDirectory()
+    tempfile.NamedTemporaryFile(dir=files_path.name)
+    yield files_path.name
+    if os.path.exists(files_path.name):
+        files_path.cleanup()
 
 
 @pytest.fixture
@@ -162,9 +166,11 @@ def f_path_has_one_dir():
     """
     Returns a temporary directory which has only one subdirectory
     """
-    with tempfile.TemporaryDirectory() as files_path:
-        tempfile.TemporaryDirectory(dir=files_path)
-        yield files_path
+    files_path = tempfile.TemporaryDirectory()
+    tempfile.TemporaryDirectory(dir=files_path.name)
+    yield files_path.name
+    if os.path.exists(files_path.name):
+        files_path.cleanup()
 
 
 @pytest.fixture
@@ -172,12 +178,14 @@ def f_path_has_multiple_fd():
     """
     Returns a temporary directory which has more than one file and directory
     """
-    with tempfile.TemporaryDirectory() as files_path:
-        tempfile.TemporaryDirectory(dir=files_path)
-        tempfile.TemporaryDirectory(dir=files_path)
-        tempfile.NamedTemporaryFile(dir=files_path)
-        tempfile.NamedTemporaryFile(dir=files_path)
-        yield files_path
+    files_path = tempfile.TemporaryDirectory()
+    tempfile.TemporaryDirectory(dir=files_path.name)
+    tempfile.TemporaryDirectory(dir=files_path.name)
+    tempfile.NamedTemporaryFile(dir=files_path.name)
+    tempfile.NamedTemporaryFile(dir=files_path.name)
+    yield files_path.name
+    if os.path.exists(files_path.name):
+        files_path.cleanup()
 
 
 @pytest.fixture
@@ -185,12 +193,14 @@ def f_path_has_nested_fd():
     """
     Returns a temporary directory which has nested file structure
     """
-    with tempfile.TemporaryDirectory() as files_path:
-        with tempfile.TemporaryDirectory(dir=files_path) as sub_dir1:
-            with tempfile.TemporaryDirectory(dir=sub_dir1) as sub_dir2:
-                tempfile.NamedTemporaryFile(dir=sub_dir2)
-                tempfile.NamedTemporaryFile(dir=sub_dir2)
-                yield files_path
+    files_path = tempfile.TemporaryDirectory()
+    sub_dir1 = tempfile.TemporaryDirectory(dir=files_path.name)
+    sub_dir2 = tempfile.TemporaryDirectory(dir=sub_dir1.name)
+    tempfile.NamedTemporaryFile(dir=sub_dir2.name)
+    tempfile.NamedTemporaryFile(dir=sub_dir2.name)
+    yield files_path.name
+    if os.path.exists(files_path.name):
+        files_path.cleanup()
 
 
 @pytest.fixture
