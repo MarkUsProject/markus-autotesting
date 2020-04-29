@@ -26,8 +26,10 @@ def empty_dir():
     """
     Yields an empty directory
     """
-    with tempfile.TemporaryDirectory() as empty_directory:
-        yield empty_directory
+    empty_dir = tempfile.TemporaryDirectory()
+    yield empty_dir.name
+    if os.path.exists(empty_dir.name):
+        empty_dir.cleanup()
 
 
 @pytest.fixture
@@ -35,9 +37,11 @@ def dir_has_one_file():
     """
     Yields a directory which has only one file
     """
-    with tempfile.TemporaryDirectory() as dir:
-        with tempfile.NamedTemporaryFile(dir=dir) as file:
-            yield dir, file.name
+    tmp_dir = tempfile.TemporaryDirectory()
+    tmp_file = tempfile.NamedTemporaryFile(dir=tmp_dir.name)
+    yield tmp_dir.name, tmp_file.name
+    if os.path.exists(tmp_dir.name):
+        tmp_dir.cleanup()
 
 
 @pytest.fixture
@@ -45,9 +49,11 @@ def dir_has_one_dir():
     """
     Yields a directory with one subdirectory
     """
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        with tempfile.TemporaryDirectory(dir=tmp_dir) as sub_dir:
-            yield tmp_dir, sub_dir
+    tmp_dir = tempfile.TemporaryDirectory()
+    sub_dir = tempfile.TemporaryDirectory(dir=tmp_dir.name)
+    yield tmp_dir.name, sub_dir.name
+    if os.path.exists(tmp_dir.name):
+        tmp_dir.cleanup()
 
 
 @pytest.fixture
@@ -55,14 +61,14 @@ def dir_has_multiple_fd():
     """
     Yields a directory which has multiple files and directories
     """
-    with tempfile.TemporaryDirectory() as root_dir:
-        tempfile.TemporaryDirectory(dir=root_dir)
-        tempfile.NamedTemporaryFile(dir=root_dir)
-        with tempfile.TemporaryDirectory(dir=root_dir) as dir1:
-            pass
-        with tempfile.NamedTemporaryFile(dir=root_dir) as file1:
-            pass
-        yield root_dir, dir1, file1.name
+    root_dir = tempfile.TemporaryDirectory()
+    dir1 = tempfile.TemporaryDirectory(dir=root_dir.name)
+    file1 = tempfile.NamedTemporaryFile(dir=root_dir.name)
+    tempfile.TemporaryDirectory(dir=root_dir.name)
+    tempfile.NamedTemporaryFile(dir=root_dir.name)
+    yield root_dir.name, dir1.name, file1.name
+    if os.path.exists(root_dir.name):
+        root_dir.cleanup()
 
 
 @pytest.fixture
@@ -70,11 +76,13 @@ def nested_fd():
     """
     Yields a nested file structure
     """
-    with tempfile.TemporaryDirectory() as root_dir:
-        with tempfile.TemporaryDirectory(dir=root_dir) as sub_dir1:
-            with tempfile.TemporaryDirectory(dir=sub_dir1) as sub_dir2:
-                with tempfile.NamedTemporaryFile(dir=sub_dir2) as file:
-                    yield root_dir, sub_dir1, sub_dir2, file.name
+    root_dir = tempfile.TemporaryDirectory()
+    sub_dir1 = tempfile.TemporaryDirectory(dir=root_dir.name)
+    sub_dir2 = tempfile.TemporaryDirectory(dir=sub_dir1.name)
+    file = tempfile.NamedTemporaryFile(dir=sub_dir2.name)
+    yield root_dir.name, sub_dir1.name, sub_dir2.name, file.name
+    if os.path.exists(root_dir.name):
+        root_dir.cleanup()
 
 
 @pytest.fixture(autouse=True)
@@ -327,12 +335,16 @@ class TestCopyTree:
         Checks whether the files or directories in the exclude list are not copied
         """
         dest_dir = empty_dir
-        source_dir, sub_dir, file = dir_has_multiple_fd
-        copied_file_or_dir = copy_tree(source_dir, dest_dir, exclude=(sub_dir, file))
+        source_dir, sub_dir, source_file = dir_has_multiple_fd
+        sub_dir_name = os.path.basename(sub_dir)
+        source_file_name = os.path.basename(source_file)
+        copied_file_or_dir = copy_tree(
+            source_dir, dest_dir, exclude=[sub_dir_name, source_file_name]
+        )
         for _fd, file_or_dir in copied_file_or_dir:
             assert os.path.exists(file_or_dir)
-        excluded_dir = os.path.join(dest_dir, sub_dir)
-        excluded_file = os.path.join(dest_dir, file)
+        excluded_dir = os.path.join(dest_dir, sub_dir_name)
+        excluded_file = os.path.join(dest_dir, source_file_name)
         assert not os.path.exists(excluded_dir)
         assert not os.path.exists(excluded_file)
 
@@ -356,7 +368,7 @@ class TestMoveTree:
         """
         When the source directory is empty
         """
-        source_dir = tempfile.mkdtemp()
+        source_dir = empty_dir
         dest_dir, sub_dir = dir_has_one_dir
         list_fd_before_move = os.listdir(dest_dir)
         moved_file_or_dir = move_tree(source_dir, dest_dir)
@@ -364,39 +376,34 @@ class TestMoveTree:
         assert len(list_fd_before_move) == len(list_fd_after_move)
         assert not moved_file_or_dir
 
-    def test_dir_has_one_file(self, empty_dir):
+    def test_dir_has_one_file(self, empty_dir, dir_has_one_file):
         """
         When the source directory has only one file
         """
-        source_dir = tempfile.mkdtemp()
-        fd, source_file = tempfile.mkstemp(dir=source_dir)
+        source_dir, source_file = dir_has_one_file
         dest_dir = empty_dir
         moved_file_or_dir = move_tree(source_dir, dest_dir)
         for _fd, file_or_dir in moved_file_or_dir:
             assert os.path.exists(file_or_dir)
         assert not os.path.exists(source_file)
 
-    def test_dir_has_one_dir(self, empty_dir):
+    def test_dir_has_one_dir(self, empty_dir, dir_has_one_dir):
         """
-        When the directory has only one subdirectory
+        When the source directory has only one subdirectory
         """
-        source_dir = tempfile.mkdtemp()
-        sub_dir = tempfile.mkdtemp(dir=source_dir)
+        source_dir, sub_dir = dir_has_one_dir
         dest_dir = empty_dir
         moved_file_or_dir = move_tree(source_dir, dest_dir)
         for _fd, file_or_dir in moved_file_or_dir:
             assert os.path.exists(file_or_dir)
         assert not os.path.exists(sub_dir)
 
-    def test_dir_has_nested_fd(self, empty_dir):
+    def test_dir_has_nested_fd(self, empty_dir, nested_fd):
         """
         When the files are nested in subdirectories more than 2 directories deep
         """
         dest_dir = empty_dir
-        source_dir = tempfile.mkdtemp()
-        sub_dir1 = tempfile.mkdtemp(dir=source_dir)
-        sub_dir2 = tempfile.mkdtemp(dir=sub_dir1)
-        fd, source_file = tempfile.mkstemp(dir=sub_dir2)
+        source_dir, sub_dir1, sub_dir2, source_file = nested_fd
         moved_file_or_dir = move_tree(source_dir, dest_dir)
         for _fd, file_or_dir in moved_file_or_dir:
             assert os.path.exists(file_or_dir)
