@@ -20,7 +20,6 @@ install_haskell_packages() {
     # The order that these packages are installed matters. Could cause a dependency conflict 
     # Crucially it looks like tasty-stats needs to be installed before tasty-quickcheck 
     # TODO: install these without cabal so they can be properly isolated/uninstalled
-    sudo cabal install tasty-stats --global
     sudo cabal install tasty-discover --global
     sudo cabal install tasty-quickcheck --global
 }

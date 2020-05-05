@@ -49,8 +49,6 @@ class MarkusHaskellTest(MarkusTest):
 
 
 class MarkusHaskellTester(MarkusTester):
-    # column indexes of relevant data from tasty-stats csv
-    # reference: http://hackage.haskell.org/package/tasty-stats
     TASTYSTATS = {"name": 1, "time": 2, "result": 3, "description": -1}
 
     def __init__(
@@ -70,7 +68,7 @@ class MarkusHaskellTester(MarkusTester):
         Return a list of additional arguments to the tasty-discover executable
         """
         module_flag = f"--modules={os.path.basename(test_file)}"
-        stats_flag = "--ingredient=Test.Tasty.Stats.consoleStatsReporter"
+        stats_flag = "--ingredient=Stats.consoleStatsReporter"
         flags = [
             module_flag,
             stats_flag,
@@ -105,6 +103,7 @@ class MarkusHaskellTester(MarkusTester):
         """
         results = {}
         this_dir = os.getcwd()
+        haskell_lib = os.path.join(os.path.dirname(os.path.realpath(__file__)), "lib")
         for test_file in self.specs["test_data", "script_files"]:
             with tempfile.NamedTemporaryFile(dir=this_dir) as f:
                 cmd = ["tasty-discover", ".", "_", f.name] + self._test_run_flags(
@@ -114,7 +113,7 @@ class MarkusHaskellTester(MarkusTester):
                     cmd, stdout=subprocess.DEVNULL, universal_newlines=True, check=True
                 )
                 with tempfile.NamedTemporaryFile(mode="w+", dir=this_dir) as sf:
-                    cmd = ["runghc", f.name, f"--stats={sf.name}"]
+                    cmd = ["runghc", "--", f"-i={haskell_lib}", f.name, f"--stats={sf.name}"]
                     subprocess.run(
                         cmd,
                         stdout=subprocess.DEVNULL,
