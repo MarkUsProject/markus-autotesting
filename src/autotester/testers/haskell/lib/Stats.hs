@@ -37,7 +37,7 @@ statsReporter = TestReporter optDesc runner
   where optDesc = [ Option (Proxy :: Proxy (Maybe StatsFile)) ]
         runner opts tree = do
           StatsFile file <- lookupOption opts
-          pure $ collectStats (getNumThreads $ lookupOption opts) file $ IntMap.fromList $ zip [0..] $ testsNames opts tree
+          pure $ collectStats file $ IntMap.fromList $ zip [0..] $ testsNames opts tree
 
 -- | Console reporter with support to collect statistics in a file.
 consoleStatsReporter :: Ingredient
@@ -51,10 +51,10 @@ waitFinished = readTVar >=> \case
   Done x -> pure x
   _      -> retry
 
-collectStats :: Int -> FilePath -> IntMap TestName -> StatusMap -> IO (Time -> IO Bool)
-collectStats nthreads file names status = do
+collectStats :: FilePath -> IntMap TestName -> StatusMap -> IO (Time -> IO Bool)
+collectStats file names status = do
   results <- atomically (traverse waitFinished status)
-  rows    <- resultRow nthreads $ IntMap.toList $ zipMap names results
+  rows    <- resultRow $ IntMap.toList $ zipMap names results
   exists  <- doesFileExist file
   if exists
     then appendFile file $ formatCSV rows ""
@@ -77,13 +77,12 @@ formatCSV = foldEndo . map ((. ('\n':)) . foldEndo . intersperse (',':) . map fi
         isValid c      = isPrint c && not (isSpace c)
 
 header :: [String]
-header = ["idx", "name", "time", "result", "nthreads", "description"]
+header = ["idx", "name", "time", "result", "description"]
 
-resultRow :: Int -> [(Int, (TestName, Result))] -> IO [[String]]
-resultRow nthreads' results = do
-  let nthreads = show nthreads'
+resultRow :: [(Int, (TestName, Result))] -> IO [[String]]
+resultRow results = do
   pure $ flip map results $
     \(show -> idx, (name, Result { resultDescription=dropWhileEnd isSpace -> description
                                  , resultShortDescription=result
                                  , resultTime=show -> time })) ->
-    [idx, name, time, result, nthreads, description]
+    [idx, name, time, result, description]
