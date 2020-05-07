@@ -3,6 +3,7 @@ All notable changes to this project will be documented here.
 
 ## [unreleased]
 - Updated development docker image to connect to the development MarkUs docker image (#238)
+- Removed Tasty-Stats as a dependency for the haskell tester and added our own ingredient instead to collect stats (#259)
 
 ## [1.9.0]
 - allow tests to write to existing subdirectories but not overwrite existing test script files (#237).
