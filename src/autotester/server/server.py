@@ -165,35 +165,6 @@ def _get_env_vars(test_username: str) -> Dict[str, str]:
     return {"PORT": port_number, **db_env_vars}
 
 
-def _return_error_str(f: Callable):
-    @wraps(f)
-    def return_error_str(*args, **kwargs):
-        try:
-            f(*args, **kwargs)
-        except Exception as e:
-            return str(e)
-        return ""
-
-    return return_error_str
-
-
-def _run_feedback_hooks(client: ClientType, test_data: Dict, cwd: str) -> str:
-    hooks_error = ""
-
-    feedback_file = test_data.get("feedback_file_name")
-    annotation_file = test_data.get("annotation_file")
-    if feedback_file:
-        feedback_file = os.path.join(cwd, feedback_file)
-        if test_data.get("upload_feedback_file"):
-            hooks_error += _return_error_str(client.upload_feedback_file)(feedback_file)
-        if test_data.get("upload_feedback_to_repo"):
-            hooks_error += _return_error_str(client.upload_feedback_to_repo)(feedback_file)
-    if annotation_file and test_data.get("upload_annotations"):
-        annotation_file = os.path.join(cwd, annotation_file)
-        hooks_error += _return_error_str(client.upload_annotations)(annotation_file)
-    return hooks_error
-
-
 def _run_test_specs(
     cmd: str, client: ClientType, test_categories: List[str], tests_path: str, test_username: str,
 ) -> Tuple[List[ResultData], str]:
@@ -245,7 +216,7 @@ def _run_test_specs(
                                 _kill_without_reaper(test_username)
                         out, err = proc.communicate()
                         timeout_expired = timeout
-                    hook_errors += _run_feedback_hooks(client, test_data, tests_path)
+                    hook_errors += client.after_test(test_data, tests_path)
                 except Exception as e:
                     err += "\n\n{}".format(e)
                 finally:

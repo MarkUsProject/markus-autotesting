@@ -239,6 +239,7 @@ create_default_tester_venv() {
   local default_tester_venv
   default_tester_venv="${WORKSPACE_SUBDIRS[SPECS]}/${DEFAULT_VENV_NAME}/venv"
 
+  rm -rf "${default_tester_venv}"
   "python${PYTHON_VERSION}" -m venv "${default_tester_venv}"
   local pip
   pip="${default_tester_venv}/bin/pip"

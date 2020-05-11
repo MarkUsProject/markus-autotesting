@@ -50,6 +50,24 @@ class MarkUs(Client):
         """ Return a unique string to represent an individual run of tests """
         return "_".join([self.unique_script_str(), str(self.run_id)])
 
+    def after_test(self, test_data: Dict, cwd: str) -> str:
+        """
+        Upload feedback files and annotations and return any error messages.
+        """
+        hooks_error = ""
+        feedback_file = test_data.get("feedback_file_name")
+        annotation_file = test_data.get("annotation_file")
+        if feedback_file:
+            feedback_file = os.path.join(cwd, feedback_file)
+            if test_data.get("upload_feedback_file"):
+                hooks_error += self._return_error_str(self.upload_feedback_file)(feedback_file)
+            if test_data.get("upload_feedback_to_repo"):
+                hooks_error += self._return_error_str(self.upload_feedback_to_repo)(feedback_file)
+        if annotation_file and test_data.get("upload_annotations"):
+            annotation_file = os.path.join(cwd, annotation_file)
+            hooks_error += self._return_error_str(self.upload_annotations)(annotation_file)
+        return hooks_error
+
     def upload_feedback_to_repo(self, feedback_file: str) -> None:
         """
         Upload the feedback file to the group's repo.

@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import Dict
+from typing import Dict, Callable
+from functools import wraps
 
 
 class Client(ABC):
@@ -33,20 +34,22 @@ class Client(ABC):
         """ Return a unique string to represent an individual run of tests """
         pass
 
-    @abstractmethod
-    def upload_feedback_to_repo(self, feedback_file: str) -> None:
-        """
-        Upload a feedback file to a client's repository
-        TODO: deprecate and get rid of this option
-        """
-        pass
+    @staticmethod
+    def _return_error_str(f: Callable) -> Callable:
+        @wraps(f)
+        def return_error_str(*args, **kwargs):
+            try:
+                f(*args, **kwargs)
+            except Exception as e:
+                return str(e)
+            return ""
+
+        return return_error_str
 
     @abstractmethod
-    def upload_feedback_file(self, feedback_file: str) -> None:
-        """ Upload a feedback file to the client """
-        pass
-
-    @abstractmethod
-    def upload_annotations(self, annotation_file: str) -> None:
-        """ Upload a feedback file to a client's repository """
+    def after_test(self, test_data: Dict, cwd: str) -> str:
+        """
+        Run after each test where test_data is the data for the test and cwd the directory where the test is run.
+        Return any error messages.
+        """
         pass
