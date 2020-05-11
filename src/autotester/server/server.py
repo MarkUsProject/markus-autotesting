@@ -9,8 +9,7 @@ import subprocess
 import signal
 import rq
 import tempfile
-from typing import Optional, Dict, Union, List, Tuple, Callable
-from functools import wraps
+from typing import Optional, Dict, Union, List, Tuple
 
 from autotester.exceptions import TesterCreationError
 from autotester.config import config
