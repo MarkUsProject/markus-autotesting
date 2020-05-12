@@ -3,7 +3,7 @@ import json
 from abc import ABC, abstractmethod
 from functools import wraps
 from typing import Optional, IO, Callable, Any, Type, Generator
-from testers.test_specs import TestSpecs
+from testers.specs import TestSpecs
 import traceback
 
 

@@ -5,7 +5,7 @@ from types import TracebackType
 import pytest
 import sys
 
-from testers.test_specs import TestSpecs
+from testers.specs import TestSpecs
 from testers.tester import Tester, Test
 
 

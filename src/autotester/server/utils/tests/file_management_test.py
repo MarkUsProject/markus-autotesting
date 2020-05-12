@@ -4,8 +4,6 @@ from autotester.server.utils.file_management import (
     recursive_iglob,
     copy_tree,
     ignore_missing_dir_error,
-    move_tree,
-    copy_test_script_files,
     fd_open,
 )
 import os.path
@@ -339,7 +337,7 @@ class TestCopyTree:
         sub_dir_name = os.path.basename(sub_dir)
         source_file_name = os.path.basename(source_file)
         copied_file_or_dir = copy_tree(
-            source_dir, dest_dir, exclude=[sub_dir_name, source_file_name]
+            source_dir, dest_dir, exclude=(sub_dir_name, source_file_name)
         )
         for _fd, file_or_dir in copied_file_or_dir:
             assert os.path.exists(file_or_dir)
@@ -357,59 +355,6 @@ def test_ignore_missing_dir_error():
     tmp_dir = tempfile.mkdtemp()
     shutil.rmtree(tmp_dir)
     shutil.rmtree(tmp_dir, onerror=ignore_missing_dir_error)
-
-
-class TestMoveTree:
-    """
-    Checks that all the contents are moved from source to destination
-    """
-
-    def test_empty_dir(self, empty_dir, dir_has_one_dir):
-        """
-        When the source directory is empty
-        """
-        source_dir = empty_dir
-        dest_dir, sub_dir = dir_has_one_dir
-        list_fd_before_move = os.listdir(dest_dir)
-        moved_file_or_dir = move_tree(source_dir, dest_dir)
-        list_fd_after_move = os.listdir(dest_dir)
-        assert len(list_fd_before_move) == len(list_fd_after_move)
-        assert not moved_file_or_dir
-
-    def test_dir_has_one_file(self, empty_dir, dir_has_one_file):
-        """
-        When the source directory has only one file
-        """
-        source_dir, source_file = dir_has_one_file
-        dest_dir = empty_dir
-        moved_file_or_dir = move_tree(source_dir, dest_dir)
-        for _fd, file_or_dir in moved_file_or_dir:
-            assert os.path.exists(file_or_dir)
-        assert not os.path.exists(source_file)
-
-    def test_dir_has_one_dir(self, empty_dir, dir_has_one_dir):
-        """
-        When the source directory has only one subdirectory
-        """
-        source_dir, sub_dir = dir_has_one_dir
-        dest_dir = empty_dir
-        moved_file_or_dir = move_tree(source_dir, dest_dir)
-        for _fd, file_or_dir in moved_file_or_dir:
-            assert os.path.exists(file_or_dir)
-        assert not os.path.exists(sub_dir)
-
-    def test_dir_has_nested_fd(self, empty_dir, nested_fd):
-        """
-        When the files are nested in subdirectories more than 2 directories deep
-        """
-        dest_dir = empty_dir
-        source_dir, sub_dir1, sub_dir2, source_file = nested_fd
-        moved_file_or_dir = move_tree(source_dir, dest_dir)
-        for _fd, file_or_dir in moved_file_or_dir:
-            assert os.path.exists(file_or_dir)
-        assert not os.path.exists(sub_dir1)
-        assert not os.path.exists(sub_dir2)
-        assert not os.path.exists(source_file)
 
 
 class TestFdOpen:
@@ -440,90 +385,3 @@ class TestFdOpen:
                 dir_fd = fdd
             with pytest.raises(IOError):
                 os.close(dir_fd)
-
-
-class TestCopyTestScriptFiles:
-    """
-    Checks whether all the test script directory contents are copied into tests_path
-    """
-
-    def test_empty_dir(self, dir_has_one_file, empty_tmp_script_dir):
-        """
-        When the test script directory is empty
-        """
-        markus_address = "http://localhost:3000/csc108/en/main"
-        assignment_id = 1
-        tests_path, test_file = dir_has_one_file
-        list_fd_before_copy = os.listdir(tests_path)
-        copied_test_script_files = copy_test_script_files(
-            markus_address, assignment_id, tests_path
-        )
-        list_fd_after_copy = os.listdir(tests_path)
-        assert len(list_fd_before_copy) == len(list_fd_after_copy)
-        assert not copied_test_script_files
-
-    def test_dir_has_one_file(self, dir_has_one_file, tmp_script_dir_with_one_file):
-        """
-        When the test script directory has only one file
-        """
-        markus_address = "http://localhost:3000/csc108/en/main"
-        assignment_id = 1
-        tests_path, test_file = dir_has_one_file
-        copied_test_script_files = copy_test_script_files(
-            markus_address, assignment_id, tests_path
-        )
-        for _fd, file_or_dir in copied_test_script_files:
-            assert os.path.exists(file_or_dir)
-
-    def test_dir_has_one_dir(self, dir_has_one_file, tmp_script_dir_with_one_dir):
-        """
-        When the test script directory has only one subdirectory
-        """
-        markus_address = "http://localhost:3000/csc108/en/main"
-        assignment_id = 1
-        tests_path, test_file = dir_has_one_file
-        copied_test_script_files = copy_test_script_files(
-            markus_address, assignment_id, tests_path
-        )
-        for _fd, file_or_dir in copied_test_script_files:
-            assert os.path.exists(file_or_dir)
-
-    def test_dir_has_nested_fd(self, dir_has_one_file, nested_tmp_script_dir):
-        """
-        When the files are nested in subdirectories more than 2 directories deep
-        """
-        markus_address = "http://localhost:3000/csc108/en/main"
-        assignment_id = 1
-        tests_path, test_file = dir_has_one_file
-        copied_test_script_files = copy_test_script_files(
-            markus_address, assignment_id, tests_path
-        )
-        for _fd, file_or_dir in copied_test_script_files:
-            assert os.path.exists(file_or_dir)
-
-    def test_dir_has_multiple_fd(
-        self, dir_has_one_file, tmp_script_dir_has_multiple_fd
-    ):
-        """
-        When the files are nested in subdirectories more than 2 directories deep
-        """
-        markus_address = "http://localhost:3000/csc108/en/main"
-        assignment_id = 1
-        tests_path, test_file = dir_has_one_file
-        copied_test_script_files = copy_test_script_files(
-            markus_address, assignment_id, tests_path
-        )
-        for _fd, file_or_dir in copied_test_script_files:
-            assert os.path.exists(file_or_dir)
-
-    def test_dir_has_no_files_dir(self, dir_has_one_file, tmp_script_outer_dir):
-        """
-        When tmp_script_dir has no subdirectory from FILES_DIRNAME but has other file or directory
-        """
-        markus_address = "http://localhost:3000/csc108/en/main"
-        assignment_id = 1
-        tests_path, test_file = dir_has_one_file
-        copied_test_script_files = copy_test_script_files(
-            markus_address, assignment_id, tests_path
-        )
-        assert not copied_test_script_files

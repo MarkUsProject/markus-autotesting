@@ -4,7 +4,7 @@ import tempfile
 import csv
 from typing import Dict, Optional, IO, Type, List, Iterator, Union
 
-from testers.test_specs import TestSpecs
+from testers.specs import TestSpecs
 from testers.tester import Tester, Test, TestError
 
 

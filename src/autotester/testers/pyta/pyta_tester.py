@@ -6,7 +6,7 @@ from typing import Optional, IO, Type, Dict
 import python_ta
 from pylint.config import VALIDATORS
 from python_ta.reporters import PositionReporter, PlainReporter
-from testers.test_specs import TestSpecs
+from testers.specs import TestSpecs
 
 from testers.tester import Tester, Test
 

@@ -1,6 +1,6 @@
 import subprocess
 from testers.tester import Tester
-from testers.test_specs import TestSpecs
+from testers.specs import TestSpecs
 
 
 class CustomTester(Tester):

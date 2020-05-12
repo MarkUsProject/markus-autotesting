@@ -3,7 +3,7 @@ import json
 import subprocess
 from typing import Dict, Optional, IO, Type
 
-from testers.test_specs import TestSpecs
+from testers.specs import TestSpecs
 from testers.tester import Tester, Test, TestError
 
 

@@ -149,7 +149,7 @@ def _create_test_script_command(env_dir: str, tester_type: str) -> str:
     python_lines = [
         "import sys, json",
         import_line,
-        "from testers.test_specs import TestSpecs",
+        "from testers.specs import TestSpecs",
         f"Tester(specs=TestSpecs.from_json(sys.stdin.read())).run()",
     ]
     python_ex = os.path.join(os.path.join(TEST_SPECS_DIR, env_dir), "venv", "bin", "python")
