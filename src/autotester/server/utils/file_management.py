@@ -96,17 +96,21 @@ def fd_lock(file_descriptor: int, exclusive: bool = True) -> Generator[None, Non
         fcntl.flock(file_descriptor, fcntl.LOCK_UN)
 
 
-def extract_zip_stream(zip_byte_stream: bytes, destination: str, ignore_root_dir: bool = True) -> None:
+def extract_zip_stream(zip_byte_stream: bytes, destination: str, ignore_root_dirs: int = 1) -> None:
     """
     Extract files in a zip archive's content <zip_byte_stream> to <destination>, a path to a local directory.
 
-    If ignore_root_dir is True, the files in the zip archive will be extracted and written as if the root directory
-    of the zip archive was not in their path.
+    If ignore_root_dir is a positive integer, the files in the zip archive will be extracted and written as if
+    the top n root directories of the zip archive were not in their path (where n == ignore_root_dirs).
     """
     with zipfile.ZipFile(BytesIO(zip_byte_stream)) as zf:
         for fname in zf.namelist():
-            *dpaths, bname = os.path.split(fname)
-            dest = os.path.join(destination, *dpaths[ignore_root_dir:])
-            os.makedirs(dest, exist_ok=True)
-            with open(os.path.join(dest, bname), "wb") as f:
-                f.write(zf.read(fname))
+            *dpaths, bname = fname.split(os.sep)
+            dest = os.path.join(destination, *dpaths[ignore_root_dirs:])
+            filename = os.path.join(dest, bname)
+            if filename.endswith('/'):
+                os.makedirs(filename, exist_ok=True)
+            else:
+                os.makedirs(dest, exist_ok=True)
+                with open(filename, "wb") as f:
+                    f.write(zf.read(fname))
