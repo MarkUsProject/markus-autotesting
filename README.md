@@ -1,19 +1,33 @@
 [![Acceptance tests](https://layerci.com/badge/github/MarkUsProject/markus-autotesting)](https://layerci.com/jobs/github/MarkUsProject/markus-autotesting)
 
-Autotesting with Markus
-==============================
+Autotesting
+===========
 
 Autotesting allows instructors to run tests on students submissions and automatically create marks for them.
 It also allows students to run a separate set of tests and self-assess their submissions.
 
-Autotesting consists of a client component integrated into MarkUs, and a standalone server component.
 Jobs are enqueued using the gem Resque with a first in first out strategy, and served one at a time or concurrently.
 
 ## Install and run
 
 ### Client
 
-The autotesting client component is already included in a MarkUs installation. See the [Markus Configuration Options](#markus-configuration-options) section for how to configure your MarkUs installation to run tests with markus-autotesting.
+The autotester currently only supports a MarkUs instance as a client. The autotesting client component is already 
+included in a MarkUs installation. See the [Markus Configuration Options](#markus-configuration-options) section for how
+to configure your MarkUs installation to run tests with the autotester.
+
+If you would like to use a different client, please contact the developers of this project to discuss how to get the
+autotester to work with your client.
+
+Client requirements:
+
+- REST Api that allows:
+        - download test script files
+        - download test settings
+        - download student files
+        - upload results
+        - optional: upload feedback files
+        - optional: upload source code annotations
 
 ### Server
 
@@ -48,11 +62,11 @@ Installing the server will also install the following debian packages:
 - postgresql (if not running in a docker environment)
 - iptables (if not running in a docker environment)
 
-This script may also add new users and create new postgres databases. See the [configuration](#markus-autotesting-configuration-options) section for more details.
+This script may also add new users and create new postgres databases. See the [configuration](#autotesting-configuration-options) section for more details.
 
 ### Testers
 
-The markus autotester currently supports testers for the following languages and testing frameworks:
+The autotester currently supports testers for the following languages and testing frameworks:
 
 - `haskell`
     - [QuickCheck](http://hackage.haskell.org/package/QuickCheck)
@@ -88,18 +102,18 @@ Installing each tester will also install the following additional packages:
 - `custom`
     - none
 
-## Markus-autotesting configuration options
+## Autotester configuration options
 
 These settings can be overridden or extended by including a configuration file in one of two locations:
 
-- `${HOME}/.markus_autotester_config` (where `${HOME}` is the home directory of the user running the markus server)
-- `/etc/markus_autotester_config` (for a system wide configuration)
+- `${HOME}/.autotester_config` (where `${HOME}` is the home directory of the user running the supervisor process)
+- `/etc/autotester_config` (for a system wide configuration)
 
 An example configuration file can be found in `doc/config_example.yml`. Please see below for a description of all options and defaults:
 
 ```yaml
-workspace: # an absolute path to a directory containing all files/workspaces required to run the autotester default is
-           # ${HOME}/.markus-autotesting/workspace where ${HOME} is the home directory of the user running the autotester
+workspace: # an absolute path to a directory containing all files/workspaces required to run the autotester. Default is
+           # ${HOME}/.autotesting/workspace where ${HOME} is the home directory of the user running the autotester
 
 server_user: # the username of the user designated to run the autotester itself. Default is the current user
 
@@ -109,7 +123,8 @@ workers:
         reaper: # the username of a user used to clean up test processes. This value can be null (see details below)
     queues: # a list of queue names that these users will monitor and select test jobs from. 
             # The order of this list indicates which queues have priority when selecting tests to run
-            # default is ['student', 'single', 'batch'] (see the "queues:" setting option below) 
+            # This list may only contain the strings 'high', 'low', and 'batch'.
+            # default is ['high', 'low', 'batch']
 
 redis:
   url: # url for the redis database. default is: redis://127.0.0.1:6379/0
@@ -129,14 +144,31 @@ resources:
   postgresql:
     port: # port the postgres server is running on
     host: # host the postgres server is running on
-
-queues:
-  - name: # the name of a queue used to enqueue test jobs (see details below)
-    schema: # a json schema used to validate the json representation of the arguments passed to the test_enqueuer script
-            # by MarkUs (see details below)
 ```
 
-### Markus-autotesting configuration details
+### Environment variables
+
+Certain settings can be specified with environment variables. If these environment variables are set, they will override
+the corresponding setting in the configuration files:
+
+```yaml
+workspace: # AUTOTESTER_WORKSPACE
+
+redis:
+  url: # REDIS_URL
+
+server_user: # AUTOTESTER_SERVER_USER
+
+supervisor:
+  url: # AUTOTESTER_SUPERVISOR_URL
+
+resources:
+  postgresql:
+    port: # PGPORT
+    host: # PGHOST
+```
+
+### autotesting configuration details
 
 #### reaper users
 
@@ -174,33 +206,19 @@ to test.
 
 #### queue names and schemas
 
-When a test run is sent to the autotester from MarkUs, the test is not run immediately. Instead it is put in a queue and
+When a test run is sent to the autotester from a client, the test is not run immediately. Instead it is put in a queue and
 run only when a worker user becomes available. You can choose to just have a single queue or multiple. 
 
-If using multiple queues, you can set a priority order for each worker user (see the `workers:` setting). The workers
-will prioritize running tests from queues that appear earlier in the priority order. 
+If using multiple queues, you can set a priority order for each worker user (see the `workers:` setting). The default is
+to select jobs in the 'high' queue first, then the jobs in the 'low' queue, and finally jobs in the 'batch' queue.
 
-When MarkUs sends the test to the autotester, in order to decide which queue to put the test in, we inspect the json 
-string passed as an argument to the `markus_autotester` command (using either the `-j` or `-f` flags). This inspection 
-involves validating that json string against a [json schema validation](https://json-schema.org/) for each queue. If the
-json string passes the validation for a certain queue, the test is added to that queue. 
+Note that not all workers need to be monitoring all queues. However, you should have at least one worker monitoring every
+queue or else some jobs may never be run!
 
-For example, the default queue settings in the configuration are:
-
-```yaml
-queues:
-  - name: batch
-    schema: {'type': 'object', 'properties': {'batch_id': {'type': 'number'}}}
-  - name: single
-    schema: {'type': 'object', 'properties': {'batch_id': {'type': 'null'}, 'user_type': {'const': 'Admin'}}}
-  - name: student
-    schema: {'type': 'object', 'properties': {'batch_id': {'type': 'null'}, 'user_type': {'const': 'Student'}}}
-```
-
-Under this default setup:
- - a test with a non-null `batch_id` will be put in the `batch` queue.
- - a test with a null `batch_id` and where `user_type == 'Admin'` will be put in the `single` queue
- - a test with a null `batch_id` and where `user_type == 'Student'` will be put in the `student` queue
+When a client sends the test to the autotester, in order to decide which queue to put the test in, we inspect the json 
+string passed as an argument to the `autotester` command (using either the `-j` or `-f` flags). If there is more
+than one test to enqueue, all jobs will be put in the 'batch' queue; if there is a single test and the `request_high_priority`
+keyword argument is `True`, the job will be put in the 'high' queue; otherwise, the job will be put in the 'low' queue.
 
 ## MarkUs configuration options
 
@@ -240,18 +258,18 @@ can be `nil`, forcing `config.x.autotest.server_host` to be `localhost` and loca
 ##### config.x.autotest.server_dir
 The directory on the autotest server where temporary files are copied. 
 
-This should be the same as the `workspace` directory in the markus-autotesting config file.
+This should be the same as the `workspace` directory in the autotesting config file.
 
 (multiple MarkUs instances can use the same directory)
 
 ##### config.x.autotest.server_command
-The command to run on the markus-autotesting server that runs the wrapper script that calls `markus_autotester`.
+The command to run on the autotesting server that runs the wrapper script that calls `autotester`.
 
 In most cases, this should be set to `'autotest_enqueuer'`
 
 ## The Custom Tester
 
-The markus-autotesting server supports running arbitrary scripts as a 'custom' tester. This script will be run using the custom tester and results from this test script will be parsed and reported to MarkUs in the same way as any other tester would. 
+The autotesting server supports running arbitrary scripts as a 'custom' tester. This script will be run using the custom tester and results from this test script will be parsed and reported to MarkUs in the same way as any other tester would. 
 
 Any custom script should report the results individual test cases by writing a json string to stdout in the following format:
 

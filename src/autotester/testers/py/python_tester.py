@@ -1,34 +1,45 @@
 import os
 import unittest
+from typing import TextIO, Tuple, Optional, Type, Dict, IO, List
+from types import TracebackType
 import pytest
 import sys
-from testers.markus_tester import MarkusTester, MarkusTest
+
+from testers.specs import TestSpecs
+from testers.tester import Tester, Test
 
 
-class MarkusTextTestResults(unittest.TextTestResult):
+class TextTestResults(unittest.TextTestResult):
     """
     Custom unittest.TextTestResult that saves results as
     a hash to self.results so they can be more easily
-    parsed by the MarkusPythonTest.run function
+    parsed by the PythonTest.run function
     """
 
-    def __init__(self, stream, descriptions, verbosity):
+    def __init__(self, stream: TextIO, descriptions: bool, verbosity: int) -> None:
+        """
+        Extends TextTestResult.__init__ and adds additional attributes to keep track
+        of successes and additional result information.
+        """
         super().__init__(stream, descriptions, verbosity)
         self.results = []
         self.successes = []
 
-    def addSuccess(self, test):
-        self.results.append(
-            {
-                "status": "success",
-                "name": test.id(),
-                "errors": "",
-                "description": test._testMethodDoc,
-            }
-        )
+    def addSuccess(self, test: unittest.TestCase) -> None:
+        """
+        Record that a test passed.
+        """
+        self.results.append({"status": "success", "name": test.id(), "errors": "", "description": test._testMethodDoc})
         self.successes.append(test)
 
-    def addFailure(self, test, err):
+    def addFailure(
+        self,
+        test: unittest.TestCase,
+        err: Tuple[Optional[Type[BaseException]], Optional[BaseException], Optional[TracebackType]],
+    ) -> None:
+        """
+        Record that a test failed.
+        """
         super().addFailure(test, err)
         self.results.append(
             {
@@ -39,29 +50,44 @@ class MarkusTextTestResults(unittest.TextTestResult):
             }
         )
 
-    def addError(self, test, err):
+    def addError(
+        self,
+        test: unittest.TestCase,
+        err: Tuple[Optional[Type[BaseException]], Optional[BaseException], Optional[TracebackType]],
+    ) -> None:
+        """
+        Record that a test failed with an error.
+        """
         super().addError(test, err)
         self.results.append(
-            {
-                "status": "error",
-                "name": test.id(),
-                "errors": self.errors[-1][-1],
-                "description": test._testMethodDoc,
-            }
+            {"status": "error", "name": test.id(), "errors": self.errors[-1][-1], "description": test._testMethodDoc}
         )
 
 
-class MarkusPytestPlugin:
+class PytestPlugin:
     """
     Pytest plugin to collect and parse test results as well
     as any errors during the test collection process.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
+        """
+        Initialize a pytest plugin for collecting results
+        """
         self.results = {}
 
     @pytest.hookimpl(hookwrapper=True, tryfirst=True)
     def pytest_runtest_makereport(self, item, call):
+        """
+        Implement a pytest hook that is run when reporting the
+        results of a given test item.
+
+        Records the results of each test in the self.results
+        attribute.
+
+        See pytest documentation for a description of the parameter
+        types and the return value.
+        """
         outcome = yield
         rep = outcome.get_result()
         if rep.failed or item.nodeid not in self.results:
@@ -74,6 +100,16 @@ class MarkusPytestPlugin:
         return rep
 
     def pytest_collectreport(self, report):
+        """
+        Implement a pytest hook that is run after the collector has
+        finished collecting all tests.
+
+        Records a test failure in the self.results attribute if the
+        collection step failed.
+
+        See pytest documentation for a description of the parameter
+        types and the return value.
+        """
         if report.failed:
             self.results[report.nodeid] = {
                 "status": "error",
@@ -83,8 +119,16 @@ class MarkusPytestPlugin:
             }
 
 
-class MarkusPythonTest(MarkusTest):
-    def __init__(self, tester, test_file, result, feedback_open=None):
+class PythonTest(Test):
+    def __init__(
+        self, tester: "PythonTester", test_file: str, result: Dict, feedback_open: Optional[IO] = None,
+    ):
+        """
+        Initialize a Python test created by tester.
+
+        The result was created after running some unittest or pytest tests.
+        Test feedback will be written to feedback_open.
+        """
         self._test_name = result["name"]
         self._file_name = test_file
         self.description = result.get("description")
@@ -93,13 +137,17 @@ class MarkusPythonTest(MarkusTest):
         super().__init__(tester, feedback_open)
 
     @property
-    def test_name(self):
+    def test_name(self) -> str:
+        """ The name of this test """
         if self.description:
             return f"{self._test_name} ({self.description})"
         return self._test_name
 
-    @MarkusTest.run_decorator
-    def run(self):
+    @Test.run_decorator
+    def run(self) -> str:
+        """
+        Return a json string containing all test result information.
+        """
         if self.status == "success":
             return self.passed(message=self.message)
         elif self.status == "failure":
@@ -108,12 +156,19 @@ class MarkusPythonTest(MarkusTest):
             return self.error(message=self.message)
 
 
-class MarkusPythonTester(MarkusTester):
-    def __init__(self, specs, test_class=MarkusPythonTest):
+class PythonTester(Tester):
+    def __init__(
+        self, specs: TestSpecs, test_class: Type[PythonTest] = PythonTest,
+    ):
+        """
+        Initialize a python tester using the specifications in specs.
+
+        This tester will create tests of type test_class.
+        """
         super().__init__(specs, test_class)
 
     @staticmethod
-    def _load_unittest_tests(test_file):
+    def _load_unittest_tests(test_file: str) -> unittest.TestSuite:
         """
         Discover unittest tests in test_file and return
         a unittest.TestSuite that contains these tests
@@ -123,7 +178,7 @@ class MarkusPythonTester(MarkusTester):
         discovered_tests = test_loader.discover(test_file_dir, test_file)
         return unittest.TestSuite(discovered_tests)
 
-    def _run_unittest_tests(self, test_file):
+    def _run_unittest_tests(self, test_file: str) -> List[Dict]:
         """
         Run unittest tests in test_file and return the results
         of these tests
@@ -131,14 +186,12 @@ class MarkusPythonTester(MarkusTester):
         test_suite = self._load_unittest_tests(test_file)
         with open(os.devnull, "w") as nullstream:
             test_runner = unittest.TextTestRunner(
-                verbosity=self.specs["test_data", "output_verbosity"],
-                stream=nullstream,
-                resultclass=MarkusTextTestResults,
+                verbosity=self.specs["test_data", "output_verbosity"], stream=nullstream, resultclass=TextTestResults,
             )
             test_result = test_runner.run(test_suite)
         return test_result.results
 
-    def _run_pytest_tests(self, test_file):
+    def _run_pytest_tests(self, test_file: str) -> List[Dict]:
         """
         Run unittest tests in test_file and return the results
         of these tests
@@ -148,14 +201,14 @@ class MarkusPythonTester(MarkusTester):
             try:
                 sys.stdout = null_out
                 verbosity = self.specs["test_data", "output_verbosity"]
-                plugin = MarkusPytestPlugin()
+                plugin = PytestPlugin()
                 pytest.main([test_file, f"--tb={verbosity}"], plugins=[plugin])
                 results.extend(plugin.results.values())
             finally:
                 sys.stdout = sys.__stdout__
         return results
 
-    def run_python_tests(self):
+    def run_python_tests(self) -> Dict[str, List[Dict]]:
         """
         Return a dict mapping each filename to its results
         """
@@ -168,8 +221,11 @@ class MarkusPythonTester(MarkusTester):
             results[test_file] = result
         return results
 
-    @MarkusTester.run_decorator
-    def run(self):
+    @Tester.run_decorator
+    def run(self) -> None:
+        """
+        Runs all tests in this tester.
+        """
         results = self.run_python_tests()
         with self.open_feedback() as feedback_open:
             for test_file, result in results.items():

@@ -56,7 +56,8 @@ install_packages() {
                                                                                     postgresql-client \
                                                                                     libpq-dev \
                                                                                     openssh-server \
-                                                                                    gcc
+                                                                                    gcc \
+                                                                                    rsync
   if [ -z "${DOCKER}" ]; then
     sudo DEBIAN_FRONTEND=${debian_frontend} apt-get ${apt_yes} "${apt_opts[@]}" install iptables postgresql
   fi
@@ -119,6 +120,7 @@ _create_unprivileged_user() {
     echo "[AUTOTEST-INSTALL] worker users are not restricted from accessing redis in a docker installation"
   fi
   echo "${SERVER_USER} ALL=(${username}) NOPASSWD:ALL" | sudo EDITOR="tee -a" visudo
+  sudo usermod -a -G "${username}" "${SERVER_USER}"
 }
 
 _create_worker_and_reaper_users() {
@@ -237,12 +239,13 @@ create_default_tester_venv() {
   local default_tester_venv
   default_tester_venv="${WORKSPACE_SUBDIRS[SPECS]}/${DEFAULT_VENV_NAME}/venv"
 
+  rm -rf "${default_tester_venv}"
   "python${PYTHON_VERSION}" -m venv "${default_tester_venv}"
   local pip
   pip="${default_tester_venv}/bin/pip"
   ${pip} install --upgrade pip
   ${pip} install wheel # must be installed before requirements
-  ${pip} install "${TESTERSROOT}"
+  ${pip} install -e "${TESTERSROOT}"
 }
 
 compile_reaper_script() {
@@ -261,25 +264,31 @@ create_enqueuer_wrapper() {
   echo "[AUTOTEST-INSTALL] Creating enqueuer wrapper at '${enqueuer}'"
 
   echo "#!/usr/bin/env bash
-        ${SERVER_VENV}/bin/markus_autotester \"\$@\"" | sudo tee ${enqueuer} > /dev/null
+        source \${HOME}/.bash_profile
+        ${SERVER_VENV}/bin/autotester \"\$@\"" | sudo tee ${enqueuer} > /dev/null
   sudo chown "${SERVER_USER}:${SERVER_USER}" "${enqueuer}"
   sudo chmod u=rwx,go=r ${enqueuer}
-
 }
 
 start_workers() {
   local supervisorconf
   local generate_script
   local rq
+  local worker_cmd
 
   supervisorconf="${WORKSPACE_SUBDIRS[LOGS]}/supervisord.conf"
   generate_script="${BINDIR}/generate_supervisord_conf.py"
   rq="${SERVER_VENV}/bin/rq"
+  worker_cmd="${PYTHON} ${generate_script} ${rq} ${supervisorconf}"
 
 
   echo "[AUTOTEST-INSTALL] Generating supervisor config at '${supervisorconf}' and starting rq workers"
-  sudo -u "${SERVER_USER}" -- bash -c "${PYTHON} ${generate_script} ${rq} ${supervisorconf} &&
-                                      ${BINDIR}/start-stop.sh start"
+  if [ -z "${DOCKER}" ]; then
+    echo "[AUTOTEST-INSTALL] Starting rq workers"
+    worker_cmd="${worker_cmd} && ${BINDIR}/start-stop.sh start"
+  fi
+
+  sudo -Eu "${SERVER_USER}" -- bash -c "${worker_cmd}"
 }
 
 install_testers() {
@@ -292,12 +301,16 @@ install_testers() {
   fi
   for tester in "${to_install[@]}"; do
     echo "[AUTOTEST-INSTALL] installing tester: ${tester}"
-    "${TESTERSROOT}/testers/${tester}/bin/install.sh"
+    if [ -n "${NON_INTERACTIVE}" ]; then
+      "${TESTERSROOT}/testers/${tester}/bin/install.sh" --non-interactive
+    else
+      "${TESTERSROOT}/testers/${tester}/bin/install.sh"
+    fi
   done
 }
 
 suggest_next_steps() {
-  echo "[AUTOTEST-INSTALL] You must add MarkUs web server's public key to ${SERVER_USER}'s '~/.ssh/authorized_keys'"
+  echo "[AUTOTEST-INSTALL] You must add the client's public key to ${SERVER_USER}'s '~/.ssh/authorized_keys'"
   echo "[AUTOTEST-INSTALL] You may want to add '${BINDIR}/start-stop.sh start' to ${SERVER_USER}'s crontab with a @reboot time"
 }
 

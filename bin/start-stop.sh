@@ -10,15 +10,7 @@ RQ="${PROJECTROOT}/venv/bin/rq"
 SUPERVISORD="${PROJECTROOT}/venv/bin/supervisord"
 
 start_supervisor() {
-	local pid_file
-	pid_file="${LOGS_DIR}/supervisord.pid"
-	if [ -f "${pid_file}" ]; then
-	  local supervisor_pid
-	  supervisor_pid=$(cat "${pid_file}")
-		echo "Supervisor appears to be running already (PID: ${supervisor_pid})" >&2
-		exit 1
-	fi
-	(cd "${LOGS_DIR}" && ${SUPERVISORD} -c supervisord.conf)
+	(cd "${LOGS_DIR}" && ${SUPERVISORD} -c supervisord.conf "$@")
 }
 
 stop_supervisor() {
@@ -56,14 +48,14 @@ fi
 
 case $1 in 
 	start)
-		start_supervisor
+		start_supervisor "${@:2}"
 		;;
 	stop)
 		stop_supervisor
 		;;
 	restart)
 		stop_supervisor
-		start_supervisor
+		start_supervisor "${@:2}"
 		;;
 	stat)
 		"${RQ}" info --url "${REDIS_URL}" "${@:2}"

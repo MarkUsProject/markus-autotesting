@@ -45,10 +45,6 @@
           }
         }
       }
-    },
-    "hooks_file": {
-      "$ref": "#/definitions/files_list",
-      "title": "Custom hooks file"
     }
   }
 }

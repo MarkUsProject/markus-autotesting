@@ -17,7 +17,7 @@ supervisor.rpcinterface_factory = supervisor.rpcinterface:make_main_rpcinterface
 """
 
 CONTENT = """[program:rq_worker_{worker_user}]
-environment=MARKUSWORKERUSER={worker_user}
+environment=WORKERUSER={worker_user}
 command={rq} worker {worker_args} {queues}
 process_name=rq_worker_{worker_user}
 numprocs={numprocs}

@@ -1,12 +1,12 @@
-workspace: !ENV ${HOME}/.markus-autotesting/
+workspace: !ENV ${AUTOTESTER_WORKSPACE}
 
 redis:
   url: !ENV ${REDIS_URL}
 
-server_user: !ENV ${USER}
+server_user: !ENV ${AUTOTESTER_SERVER_USER}
 
 supervisor:
-  url: !ENV ${SUPERVISOR_URL}
+  url: !ENV ${AUTOTESTER_SUPERVISOR_URL}
 
 resources:
   postgresql:
