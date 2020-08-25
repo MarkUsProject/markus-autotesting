@@ -22,7 +22,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
-public class MarkusJavaTester {
+public class JavaTester {
 
     private class TestResult {
         private @NotNull String name;
@@ -34,7 +34,7 @@ public class MarkusJavaTester {
     private @NotNull String[] testClasses;
     private @NotNull List<TestResult> results;
 
-    public MarkusJavaTester(@NotNull String[] testFiles) {
+    public JavaTester(@NotNull String[] testFiles) {
 
         this.testClasses = new String[testFiles.length];
         for (int i = 0; i < testFiles.length; i++) {
@@ -93,7 +93,7 @@ public class MarkusJavaTester {
 
     public static void main(String[] args) {
 
-        MarkusJavaTester tester = new MarkusJavaTester(args);
+        JavaTester tester = new JavaTester(args);
         tester.run();
     }
 

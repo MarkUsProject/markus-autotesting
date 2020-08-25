@@ -2,14 +2,9 @@
 
 set -e
 
-install_packages() {
-    echo "[PYTA-INSTALL] Installing system packages"
-    sudo apt-get install python3
-}
-
 # script starts here
-if [[ $# -ne 0 ]]; then
-    echo "Usage: $0"
+if [[ $# -gt 1 ]]; then
+    echo "Usage: $0 [--non-interactive]"
     exit 1
 fi
 
@@ -19,5 +14,4 @@ THISDIR=$(dirname "${THISSCRIPT}")
 SPECSDIR=$(readlink -f "${THISDIR}/../specs")
 
 # main
-install_packages
 touch "${SPECSDIR}/.installed"

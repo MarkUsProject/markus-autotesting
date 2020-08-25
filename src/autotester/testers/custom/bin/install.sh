@@ -3,8 +3,8 @@
 set -e
 
 # script starts here
-if [[ $# -ne 0 ]]; then
-    echo "Usage: $0"
+if [[ $# -gt 1 ]]; then
+    echo "Usage: $0 [--non-interactive]"
     exit 1
 fi
 

@@ -2,14 +2,15 @@ import redis
 import rq
 import time
 from functools import wraps
-from autotester.server.utils import file_management, string_management
+from typing import Optional, Tuple, Callable
+from autotester.server.utils import string_management
 from autotester.config import config
 
 CURRENT_TEST_SCRIPT_HASH = config["redis", "_current_test_script_hash"]
 POP_INTERVAL_HASH = config["redis", "_pop_interval_hash"]
 
 
-def redis_connection():
+def redis_connection() -> redis.Redis:
     """
     Return the currently open redis connection object. If there is no
     connection currently open, one is created using the url specified in
@@ -22,30 +23,20 @@ def redis_connection():
     return rq.get_current_connection()
 
 
-def get_test_script_key(markus_address, assignment_id):
-    """
-    Return unique key for each assignment used for
-    storing the location of test scripts in Redis
-    """
-    clean_markus_address = file_management.clean_dir_name(markus_address)
-    return f"{clean_markus_address}_{assignment_id}"
-
-
-def test_script_directory(markus_address, assignment_id, set_to=None):
+def test_script_directory(unique_script_str: str, set_to: Optional[str] = None):
     """
     Return the directory containing the test scripts for a specific assignment.
     Optionally updates the location of the test script directory to the value
     of the set_to keyword argument (if it is not None)
     """
-    key = get_test_script_key(markus_address, assignment_id)
     r = redis_connection()
     if set_to is not None:
-        r.hset(CURRENT_TEST_SCRIPT_HASH, key, set_to)
-    out = r.hget(CURRENT_TEST_SCRIPT_HASH, key)
+        r.hset(CURRENT_TEST_SCRIPT_HASH, unique_script_str, set_to)
+    out = r.hget(CURRENT_TEST_SCRIPT_HASH, unique_script_str)
     return string_management.decode_if_bytes(out)
 
 
-def update_pop_interval_stat(queue_name):
+def update_pop_interval_stat(queue_name: str) -> None:
     """
     Update the values contained in the redis hash named REDIS_POP_HASH for
     the queue named queue_name. This should be called whenever a new job
@@ -59,7 +50,7 @@ def update_pop_interval_stat(queue_name):
     r.hincrby(POP_INTERVAL_HASH, "{}_count".format(queue_name), 1)
 
 
-def clear_pop_interval_stat(queue_name):
+def _clear_pop_interval_stat(queue_name: str) -> None:
     """
     Reset the values contained in the redis hash named REDIS_POP_HASH for
     the queue named queue_name. This should be called whenever a queue becomes
@@ -71,7 +62,7 @@ def clear_pop_interval_stat(queue_name):
     r.hset(POP_INTERVAL_HASH, "{}_count".format(queue_name), 0)
 
 
-def get_pop_interval_stat(queue_name):
+def _get_pop_interval_stat(queue_name: str) -> Tuple[int, int, int]:
     """
     Return the following data about the queue named queue_name:
         - the time the first job was popped from the queue during the
@@ -83,19 +74,19 @@ def get_pop_interval_stat(queue_name):
     """
     r = redis_connection()
     start = r.hget(POP_INTERVAL_HASH, "{}_start".format(queue_name))
-    last = r.hget(POP_INTERVAL_HASH, "{}_count".format(queue_name))
+    last = r.hget(POP_INTERVAL_HASH, "{}_last".format(queue_name))
     count = r.hget(POP_INTERVAL_HASH, "{}_count".format(queue_name))
     return start, last, count
 
 
-def get_avg_pop_interval(queue_name):
+def get_avg_pop_interval(queue_name: str) -> Optional[float]:
     """
     Return the average interval between pops off of the end of the
     queue named queue_name during the current burst of jobs.
     Return None if there are no jobs in the queue, indicating that
     there is no current burst.
     """
-    start, last, count = get_pop_interval_stat(queue_name)
+    start, last, count = _get_pop_interval_stat(queue_name)
     try:
         start = float(start)
         last = float(last)
@@ -103,18 +94,18 @@ def get_avg_pop_interval(queue_name):
     except TypeError:
         return None
     count -= 1
-    return (last - start) / count if count else 0
+    return (last - start) / count if count else 0.0
 
 
-def clean_up():
+def _clean_up() -> None:
     """ Reset the pop interval data for each empty queue """
     with rq.Connection(redis_connection()):
         for q in rq.Queue.all():
             if q.is_empty():
-                clear_pop_interval_stat(q.name)
+                _clear_pop_interval_stat(q.name)
 
 
-def clean_after(func):
+def clean_after(func: Callable) -> Callable:
     """
     Call the clean_up function after the
     decorated function func is finished
@@ -125,6 +116,6 @@ def clean_after(func):
         try:
             return func(*args, **kwargs)
         finally:
-            clean_up()
+            _clean_up()
 
     return wrapper

@@ -2,12 +2,22 @@ import subprocess
 import os
 import tempfile
 import csv
+from typing import Dict, Optional, IO, Type, List, Iterator, Union
 
-from testers.markus_tester import MarkusTester, MarkusTest, MarkusTestError
+from testers.specs import TestSpecs
+from testers.tester import Tester, Test, TestError
 
 
-class MarkusHaskellTest(MarkusTest):
-    def __init__(self, tester, test_file, result, feedback_open=None):
+class HaskellTest(Test):
+    def __init__(
+        self, tester: "HaskellTester", test_file: str, result: Dict, feedback_open: Optional[IO] = None,
+    ) -> None:
+        """
+        Initialize a Haskell test created by tester.
+
+        The result was created after running the tests in test_file and test feedback
+        will be written to feedback_open.
+        """
         self._test_name = result.get("name")
         self._file_name = test_file
         self.status = result["status"]
@@ -15,13 +25,17 @@ class MarkusHaskellTest(MarkusTest):
         super().__init__(tester, feedback_open)
 
     @property
-    def test_name(self):
+    def test_name(self) -> str:
+        """ The name of this test """
         if self._test_name:
             return ".".join([self._file_name, self._test_name])
         return self._file_name
 
-    @MarkusTest.run_decorator
-    def run(self):
+    @Test.run_decorator
+    def run(self) -> str:
+        """
+        Return a json string containing all test result information.
+        """
         if self.status == "OK":
             return self.passed(message=self.message)
         elif self.status == "FAIL":
@@ -30,20 +44,23 @@ class MarkusHaskellTest(MarkusTest):
             return self.error(message=self.message)
 
 
-class MarkusHaskellTester(MarkusTester):
-    # column indexes of relevant data from tasty-stats csv
-    # reference: http://hackage.haskell.org/package/tasty-stats
+class HaskellTester(Tester):
     TASTYSTATS = {"name": 1, "time": 2, "result": 3, "description": -1}
 
-    def __init__(self, specs, test_class=MarkusHaskellTest):
+    def __init__(self, specs: TestSpecs, test_class: Type[HaskellTest] = HaskellTest,) -> None:
+        """
+        Initialize a Haskell tester using the specifications in specs.
+
+        This tester will create tests of type test_class.
+        """
         super().__init__(specs, test_class)
 
-    def _test_run_flags(self, test_file):
+    def _test_run_flags(self, test_file: str) -> List[str]:
         """
         Return a list of additional arguments to the tasty-discover executable
         """
         module_flag = f"--modules={os.path.basename(test_file)}"
-        stats_flag = "--ingredient=Test.Tasty.Stats.consoleStatsReporter"
+        stats_flag = "--ingredient=Stats.consoleStatsReporter"
         flags = [
             module_flag,
             stats_flag,
@@ -52,7 +69,7 @@ class MarkusHaskellTester(MarkusTester):
         ]
         return flags
 
-    def _parse_test_results(self, reader):
+    def _parse_test_results(self, reader: Iterator) -> List[Dict[str, Union[int, str]]]:
         """
         Return a list of test result dictionaries parsed from an open
         csv reader object. The reader should be reading a csv file which
@@ -69,7 +86,7 @@ class MarkusHaskellTester(MarkusTester):
             test_results.append(result)
         return test_results
 
-    def run_haskell_tests(self):
+    def run_haskell_tests(self) -> Dict[str, List[Dict[str, Union[int, str]]]]:
         """
         Return test results for each test file. Results contain a list of parsed test results.
 
@@ -78,32 +95,26 @@ class MarkusHaskellTester(MarkusTester):
         """
         results = {}
         this_dir = os.getcwd()
+        haskell_lib = os.path.join(os.path.dirname(os.path.realpath(__file__)), "lib")
         for test_file in self.specs["test_data", "script_files"]:
             with tempfile.NamedTemporaryFile(dir=this_dir) as f:
-                cmd = ["tasty-discover", ".", "_", f.name] + self._test_run_flags(
-                    test_file
-                )
-                subprocess.run(
-                    cmd, stdout=subprocess.DEVNULL, universal_newlines=True, check=True
-                )
+                cmd = ["tasty-discover", ".", "_", f.name] + self._test_run_flags(test_file)
+                subprocess.run(cmd, stdout=subprocess.DEVNULL, universal_newlines=True, check=True)
                 with tempfile.NamedTemporaryFile(mode="w+", dir=this_dir) as sf:
-                    cmd = ["runghc", f.name, f"--stats={sf.name}"]
-                    subprocess.run(
-                        cmd,
-                        stdout=subprocess.DEVNULL,
-                        stderr=subprocess.PIPE,
-                        universal_newlines=True,
-                        check=True,
-                    )
+                    cmd = ["runghc", "--", f"-i={haskell_lib}", f.name, f"--stats={sf.name}"]
+                    subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, universal_newlines=True)
                     results[test_file] = self._parse_test_results(csv.reader(sf))
         return results
 
-    @MarkusTester.run_decorator
-    def run(self):
+    @Tester.run_decorator
+    def run(self) -> None:
+        """
+        Runs all tests in this tester.
+        """
         try:
             results = self.run_haskell_tests()
         except subprocess.CalledProcessError as e:
-            raise MarkusTestError(e.stderr) from e
+            raise TestError(e.stderr) from e
         with self.open_feedback() as feedback_open:
             for test_file, result in results.items():
                 for res in result:

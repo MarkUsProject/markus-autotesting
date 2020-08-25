@@ -1,31 +1,25 @@
 """
-Custom Exception Type for use in MarkUs
+Custom Exception Types
 """
 
 
-class MarkUsError(Exception):
-    pass
+class AutotestError(Exception):
+    """ Generic Autotester Error """
 
 
-class TesterCreationError(MarkUsError):
-    pass
+class TesterCreationError(AutotestError):
+    """ Error raised when a tester environment could not be created """
 
 
-class TesterUserError(MarkUsError):
-    pass
+class TesterUserError(AutotestError):
+    """ Error raised when a tester user is not available """
 
 
-class JobArgumentError(MarkUsError):
-    pass
+class TestScriptFilesError(AutotestError):
+    """ Error raised when test script files cannot be found for a given test job """
 
 
-class InvalidQueueError(MarkUsError):
-    pass
-
-
-class TestScriptFilesError(MarkUsError):
-    pass
-
-
-class TestParameterError(MarkUsError):
-    pass
+class TestParameterError(AutotestError):
+    """
+    Error raised when the value of the arguments used to enqueue a test job are invalid
+    """

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 This student submission file is used to test the autotester
@@ -9,14 +9,4 @@ It represents the test case where:
 
 import json
 
-print(
-    json.dumps(
-        {
-            "name": "pass_test",
-            "output": "NA",
-            "marks_earned": 2,
-            "marks_total": 2,
-            "status": "pass",
-        }
-    )
-)
+print(json.dumps({"name": "pass_test", "output": "NA", "marks_earned": 2, "marks_total": 2, "status": "pass"}))
