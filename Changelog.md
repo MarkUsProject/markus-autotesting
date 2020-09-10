@@ -2,6 +2,9 @@
 All notable changes to this project will be documented here.
 
 ## [unreleased]
+- Fixed bug where relevant test data was not included in the client while enqueuing tests (#265)
+
+## [v1.10.0]
 - Updated development docker image to connect to the development MarkUs docker image (#238)
 - Removed Tasty-Stats as a dependency for the haskell tester and added our own ingredient instead to collect stats (#259)
 - Updated/improved the interface between the autotester and clients that use it (#257)
