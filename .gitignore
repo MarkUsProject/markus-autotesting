@@ -26,8 +26,7 @@ src/autotester/testers/*/specs/.installed
 src/autotester/testers/*/specs/install_settings.json
 
 # java
-src/autotester/testers/java/lib/.gradle
-src/autotester/testers/java/lib/build
+src/autotester/testers/java/lib/*.jar
 
 # racket
 src/autotester/testers/racket/**/compiled/

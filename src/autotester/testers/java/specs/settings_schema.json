@@ -18,6 +18,14 @@
           "timeout"
         ],
         "properties": {
+          "classpath": {
+            "title": "Java Class Path",
+            "type": "string"
+          },
+          "sources_path": {
+            "title": "Java Sources (glob)",
+            "type": "string"
+          },
           "script_files": {
             "title": "Test files",
             "type": "array",

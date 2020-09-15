@@ -15,16 +15,9 @@ install_packages() {
     sudo DEBIAN_FRONTEND=${debian_frontend} apt-get ${apt_yes} "${apt_opts[@]}" install openjdk-8-jdk
 }
 
-compile_tester() {
-    echo "[JAVA-INSTALL] Compiling tester"
-    pushd "${JAVADIR}" > /dev/null
-    ./gradlew installDist --no-daemon
-    popd > /dev/null
-}
-
-update_specs() {
-    echo "[JAVA-INSTALL] Updating specs"
-    echo '{}' | jq ".path_to_tester_jars = \"${JAVADIR}/build/install/JavaTester/lib\"" > "${SPECSDIR}/install_settings.json"
+install_requirements() {
+    echo "[JAVA-INSTALL] Installing requirements"
+    wget https://repo1.maven.org/maven2/org/junit/platform/junit-platform-console-standalone/1.7.0/junit-platform-console-standalone-1.7.0.jar -O "${JAVADIR}/junit-platform-console-standalone.jar"
 }
 
 # script starts here
@@ -42,6 +35,5 @@ NON_INTERACTIVE=$1
 
 # main
 install_packages
-compile_tester
-update_specs
+install_requirements
 touch "${SPECSDIR}/.installed"
