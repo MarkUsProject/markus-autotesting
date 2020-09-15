@@ -2,13 +2,7 @@
 
 remove_tester() {
     echo "[JAVA-UNINSTALL] Removing compiled tester"
-    rm -rf "${JAVADIR}/build"
-    rm -rf "${JAVADIR}/.gradle"
-}
-
-reset_specs() {
-    echo "[JAVA-UNINSTALL] Resetting specs"
-    rm -f "${SPECSDIR}/install_settings.json"
+    rm -r "${JAVADIR:?}/junit-platform-console-standalone.jar"
 }
 
 # script starts here
@@ -26,5 +20,5 @@ JAVADIR=$(readlink -f "${THISDIR}/../lib")
 # main
 remove_tester
 reset_specs
-echo "[JAVA-UNINSTALL] The following system packages have not been uninstalled: python3 openjdk-12-jdk jq. You may uninstall them if you wish."
+echo "[JAVA-UNINSTALL] The following system packages have not been uninstalled: python3 openjdk-8-jdk jq. You may uninstall them if you wish."
 rm -f "${SPECSDIR}/.installed"
