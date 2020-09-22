@@ -1,6 +1,9 @@
 # CHANGELOG
 All notable changes to this project will be documented here.
 
+## [v1.10.2]
+- Updated java tester to support configurable classpaths and source files (#268)
+
 ## [v1.10.1]
 - Fixed bug where relevant test data was not included in the client while enqueuing tests (#265)
 
@@ -8,6 +11,7 @@ All notable changes to this project will be documented here.
 - Updated development docker image to connect to the development MarkUs docker image (#238)
 - Removed Tasty-Stats as a dependency for the haskell tester and added our own ingredient instead to collect stats (#259)
 - Updated/improved the interface between the autotester and clients that use it (#257)
+
 
 ## [1.9.0]
 - allow tests to write to existing subdirectories but not overwrite existing test script files (#237).
