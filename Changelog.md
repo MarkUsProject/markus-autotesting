@@ -2,6 +2,8 @@
 All notable changes to this project will be documented here.
 
 ## [unreleased]
+
+## [v1.10.2]
 - Updated java tester to support configurable classpaths and source files (#268)
 
 ## [v1.10.1]

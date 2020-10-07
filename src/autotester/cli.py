@@ -95,6 +95,7 @@ def enqueue_tests(
     queue = _select_queue(len(test_data) > 1, request_high_priority)
     _print_queue_info(queue)
     for data in test_data:
+        client = get_client(client_type, {**client_data, **data})
         kwargs = {
             "client_type": client_type,
             "test_data": {**client_data, **data},
