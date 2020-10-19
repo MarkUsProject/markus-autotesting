@@ -36,7 +36,7 @@ class MarkUs(Client):
         zip_content = self._api.get_files_from_repo(self.assignment_id, self.group_id, collected=collected)
         if zip_content is None:
             raise TestScriptFilesError("No test files found")
-        extract_zip_stream(zip_content, destination, ignore_root_dirs=2)
+        extract_zip_stream(zip_content, destination, ignore_root_dirs=1)
 
     def send_test_results(self, results_data: Dict) -> None:
         """ Send test results to the client """
