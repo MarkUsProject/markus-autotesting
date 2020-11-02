@@ -10,6 +10,7 @@ from autotester.config import config
 POSTGRES_PREFIX = config["resources", "postgresql", "_prefix"]
 PGPASSFILE = os.path.join(config["workspace"], config["_workspace_contents", "_logs"], ".pgpass")
 PGHOST = config["resources", "postgresql", "host"]
+PGPORT = config["resources", "postgresql", "port"]
 
 
 def setup_database(test_username: str) -> Dict[str, str]:
@@ -27,7 +28,7 @@ def setup_database(test_username: str) -> Dict[str, str]:
     with open(PGPASSFILE) as f:
         password = f.read().strip()
 
-    with psycopg2.connect(database=database, user=user, password=password, host=PGHOST) as conn:
+    with psycopg2.connect(database=database, user=user, password=password, host=PGHOST, port=PGPORT) as conn:
         with conn.cursor() as cursor:
             cursor.execute("DROP OWNED BY CURRENT_USER;")
             if test_username != user:
@@ -40,5 +41,6 @@ def setup_database(test_username: str) -> Dict[str, str]:
         "PGPASSWORD": password,
         "PGUSER": user,
         "PGHOST": PGHOST,
+        "PGPORT": PGPORT,
         "AUTOTESTENV": "true",
     }

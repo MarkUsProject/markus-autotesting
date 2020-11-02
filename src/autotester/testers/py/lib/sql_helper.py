@@ -41,6 +41,7 @@ def connection(*args, **kwargs):
             "password": os.environ.get("PGPASSWORD"),
             "user": os.environ.get("PGUSER"),
             "host": os.environ.get("PGHOST"),
+            "port": os.environ.get("PGPORT")
         }
     return _unmockable_psycopg2_connect(*args, **kwargs)
 
@@ -100,7 +101,8 @@ def execute_psql_file(
     database: Optional[str] = None,
     password: Optional[str] = None,
     user: Optional[str] = None,
-    host: Optional[str] = None
+    host: Optional[str] = None,
+    port: Optional[str] = None,
 ) -> subprocess.CompletedProcess:
     """
     Return a CompletedProcess object returned after calling:
@@ -141,7 +143,8 @@ def execute_psql_file(
             "PGUSER": user or os.environ.get("PGUSER"),
             "PGPASSWORD": password or os.environ.get("PGPASSWORD"),
             "PGDATABASE": database or os.environ.get("PGDATABASE"),
-            "PGHOST": host or os.environ.get("PGHOST")
+            "PGHOST": host or os.environ.get("PGHOST"),
+            "PGPORT": port or os.environ.get("PGPORT")
         }
         env = {**os.environ, **db_vars}
     return subprocess.run(["psql", "-f", filename] + list(args), env=env, capture_output=True)
