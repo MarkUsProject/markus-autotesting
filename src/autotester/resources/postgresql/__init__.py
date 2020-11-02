@@ -39,5 +39,6 @@ def setup_database(test_username: str) -> Dict[str, str]:
         "PGDATABASE": database,
         "PGPASSWORD": password,
         "PGUSER": user,
+        "PGHOST": PGHOST,
         "AUTOTESTENV": "true",
     }
