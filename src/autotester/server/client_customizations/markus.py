@@ -73,7 +73,7 @@ class MarkUs(Client):
         Upload the feedback file to the group's repo.
         """
         if os.path.isfile(feedback_file):
-            with open(feedback_file) as feedback_open:
+            with open(feedback_file, 'rb') as feedback_open:
                 self._api.upload_file_to_repo(
                     self.assignment_id, self.group_id, os.path.basename(feedback_file), feedback_open.read()
                 )
@@ -83,7 +83,7 @@ class MarkUs(Client):
         Upload the feedback file using MarkUs' api.
         """
         if os.path.isfile(feedback_file):
-            with open(feedback_file) as feedback_open:
+            with open(feedback_file, 'rb') as feedback_open:
                 self._api.upload_feedback_file(
                     self.assignment_id, self.group_id, os.path.basename(feedback_file), feedback_open.read()
                 )
