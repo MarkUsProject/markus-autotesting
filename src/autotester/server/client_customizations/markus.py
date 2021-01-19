@@ -36,7 +36,7 @@ class MarkUs(Client):
         zip_content = self._api.get_files_from_repo(self.assignment_id, self.group_id, collected=collected)
         if zip_content is None:
             raise TestScriptFilesError("No test files found")
-        extract_zip_stream(zip_content, destination, ignore_root_dirs=2)
+        extract_zip_stream(zip_content, destination, ignore_root_dirs=1)
 
     def send_test_results(self, results_data: Dict) -> None:
         """ Send test results to the client """
@@ -73,7 +73,7 @@ class MarkUs(Client):
         Upload the feedback file to the group's repo.
         """
         if os.path.isfile(feedback_file):
-            with open(feedback_file) as feedback_open:
+            with open(feedback_file, 'rb') as feedback_open:
                 self._api.upload_file_to_repo(
                     self.assignment_id, self.group_id, os.path.basename(feedback_file), feedback_open.read()
                 )
@@ -83,7 +83,7 @@ class MarkUs(Client):
         Upload the feedback file using MarkUs' api.
         """
         if os.path.isfile(feedback_file):
-            with open(feedback_file) as feedback_open:
+            with open(feedback_file, 'rb') as feedback_open:
                 self._api.upload_feedback_file(
                     self.assignment_id, self.group_id, os.path.basename(feedback_file), feedback_open.read()
                 )

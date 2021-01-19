@@ -39,7 +39,7 @@ $ bin/install.sh [-p|--python-version python-version] [--non-interactive] [--doc
 
 options: 
 
-- `--python_version` : version of python to install/use to run the autotester (default is 3.8).
+- `--python_version` : version of python to install/use to run the autotester (default is 3.9).
 - `--non-interactive` : run the installer in non-interactive mode (all confirmations will be accepted without prompting the user).
 - `--docker` : run the installer for installing in docker. This installs in non-interactive mode and iptables, postgresql debian packages will not be installed.
 - `--all-testers` : install all testers as well as the server. See [Testers](#testers).
