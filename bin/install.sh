@@ -22,7 +22,7 @@ _check_python_version() {
 set_python_version() {
   # get the python version from the argument passed to this script or use python3.8 by default
   if [ -z "${PYTHON_VERSION}" ]; then
-    PYTHON_VERSION=3.8
+    PYTHON_VERSION=3.9
   else
     # check if both a major and minor version have been specified
     if [[ ${PYTHON_VERSION} != $(echo "${PYTHON_VERSION}" | grep -ow '^[0-9].[0-9]$') ]]; then

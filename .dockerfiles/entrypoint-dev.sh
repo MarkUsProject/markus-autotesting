@@ -3,7 +3,7 @@
 set -e
 
 if [ ! -f "${HOME}/.installed" ]; then
-  /app/bin/install.sh -p '3.8' --docker --all-testers
+  /app/bin/install.sh -p '3.9' --docker --all-testers
 
   echo "export REDIS_URL=${REDIS_URL}
         export PGHOST=${PGHOST}
