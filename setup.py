@@ -17,7 +17,7 @@ setup(
         "redis==3.3.8",
         "rq==1.1.0",
         "supervisor==4.1.0",
-        "PyYAML==5.1.2",
+        "PyYAML==5.4",
         "psycopg2-binary==2.8.6",
         "markusapi==0.2.0",
         "jsonschema==3.0.2",
