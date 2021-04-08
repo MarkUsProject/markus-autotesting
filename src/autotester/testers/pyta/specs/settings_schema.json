@@ -107,6 +107,11 @@
                 "title": "Upload feedback file for grading",
                 "type": "boolean",
                 "default": false
+              },
+              "upload_test_run_feedback_file": {
+                "title": "Upload feedback file for each test run",
+                "type": "boolean",
+                "default": false
               }
             }
           },

@@ -63,6 +63,8 @@ class MarkUs(Client):
                 hooks_error += self._return_error_str(self.upload_feedback_file)(feedback_file)
             if test_data.get("upload_feedback_to_repo"):
                 hooks_error += self._return_error_str(self.upload_feedback_to_repo)(feedback_file)
+            if test_data.get("upload_test_run_feedback_file"):
+                hooks_error += self._return_error_str(self.upload_feedback_file_with_test_run_id)(feedback_file)
         if annotation_file and test_data.get("upload_annotations"):
             annotation_file = os.path.join(cwd, annotation_file)
             hooks_error += self._return_error_str(self.upload_annotations)(annotation_file)
@@ -76,6 +78,16 @@ class MarkUs(Client):
             with open(feedback_file, 'rb') as feedback_open:
                 self._api.upload_file_to_repo(
                     self.assignment_id, self.group_id, os.path.basename(feedback_file), feedback_open.read()
+                )
+
+    def upload_feedback_file_with_test_run_id(self, feedback_file: str) -> None:
+        """
+        Upload the feedback file using MarkUs' api where the feedback file is associated by test_run_id.
+        """
+        if os.path.isfile(feedback_file):
+            with open(feedback_file, 'rb') as feedback_open:
+                self._api.upload_feedback_file_with_test_run_id(
+                    self.run_id, os.path.basename(feedback_file), feedback_open.read()
                 )
 
     def upload_feedback_file(self, feedback_file: str) -> None:
