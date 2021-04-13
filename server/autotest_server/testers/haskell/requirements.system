@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+dpkg -l ghc cabal-install &> /dev/null || DEBIAN_FRONTEND=noninteractive apt-get install -y -o 'Dpkg::Options::=--force-confdef' -o 'Dpkg::Options::=--force-confold' ghc cabal-install
+
+# TODO: install these without cabal so they can be properly isolated/uninstalled
+cabal update
+ghc-pkg describe tasty-discover &>/dev/null || cabal install tasty-discover --global
+ghc-pkg describe tasty-quickcheck &>/dev/null || cabal install tasty-quickcheck --global

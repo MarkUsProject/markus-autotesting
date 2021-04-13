@@ -1,0 +1,4 @@
+venv/
+supervisord.conf
+supervisord.pid
+autotest_server/testers/java/lib/
