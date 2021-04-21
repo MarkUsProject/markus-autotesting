@@ -48,7 +48,7 @@ def create_enqueuer_wrapper():
                 worker_args=f'--url {config["redis_url"]}',
                 queues=" ".join(worker_data["queues"]),
                 numprocs=1,
-                directory=os.path.join(os.path.dirname(os.path.realpath(__file__)), 'autotest_server'),
+                directory=os.path.dirname(os.path.realpath(__file__)),
             )
             f.write(c)
 

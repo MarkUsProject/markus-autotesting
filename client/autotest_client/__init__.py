@@ -85,6 +85,26 @@ def _authorize_tests(tests_id=None, settings_id=None, **_kw):
             abort(make_response(jsonify(message="Unauthorized"), 401))
 
 
+def _update_settings(settings_id, user):
+    test_settings = request.json.get('settings') or {}
+    file_url = request.json.get('file_url')
+    test_files = request.json.get('files') or []
+    for filename in test_files:
+        split_path = filename.split(os.path.sep)
+        if '..' in split_path:
+            raise Exception('.. not allowed in uploaded file path')
+        if os.path.isabs(filename):
+            raise Exception('uploaded files cannot include an absolute path')
+    error = form_management.validate_against_schema(test_settings, schema(), test_files)
+    if error:
+        abort(make_response(jsonify(message=error), 422))
+
+    queue = rq.Queue('settings', connection=redis_connection())
+    data = {'user': user, 'settings_id': settings_id, 'test_settings': test_settings, 'file_url': file_url}
+    queue.enqueue_call('autotest_server.update_test_settings', kwargs=data,
+                       job_id=f"settings_{settings_id}", timeout=SETTINGS_JOB_TIMEOUT)
+
+
 def authorize(func):
     # non-secure authorization
     @wraps(func)
@@ -150,31 +170,17 @@ def settings(settings_id, **_kw):
 @app.route('/settings', methods=['POST'])
 @authorize
 def create_settings(user):
-    id_ = redis_connection().incr('autotest:settings_id')
-    redis_connection().hset('autotest:settings', key=id_, value=json.dumps({'_user': user}))
-    return {'settings_id': id_}
+    settings_id = redis_connection().incr('autotest:settings_id')
+    redis_connection().hset('autotest:settings', key=settings_id, value=json.dumps({'_user': user}))
+    _update_settings(settings_id, user)
+    return {'settings_id': settings_id}
 
 
 @app.route('/settings/<settings_id>', methods=['PUT'])
 @authorize
 def update_settings(settings_id, user):
-    test_settings = request.args.get('settings') or {}
-    file_url = request.args.get('file_url')
-    test_files = request.args.getlist('files') or []
-    for filename in test_files:
-        split_path = filename.split(os.path.sep)
-        if '..' in split_path:
-            raise Exception('.. not allowed in uploaded file path')
-        if os.path.isabs(filename):
-            raise Exception('uploaded files cannot include an absolute path')
-    error = form_management.validate_against_schema(test_settings, schema(), test_files)
-    if error:
-        abort(make_response(jsonify(message=error), 422))
-
-    queue = rq.Queue('settings', connection=redis_connection())
-    data = {'user': user, 'settings_id': settings_id, 'test_settings': test_settings, 'file_url': file_url}
-    queue.enqueue_call('server.update_test_settings', kwargs=data,
-                       job_id=f"settings_{settings_id}", timeout=SETTINGS_JOB_TIMEOUT)
+    _update_settings(settings_id, user)
+    return {'settings_id': settings_id}
 
 
 @app.route('/settings/<settings_id>/test', methods=['PUT'])
@@ -197,7 +203,7 @@ def run_tests(settings_id, user):
         redis_connection().hset('autotest:tests', key=id_, value=settings_id)
         ids.append(id_)
         data = {"settings_id": settings_id, "files_url": url, "categories": categories, "user": user}
-        queue.enqueue_call('server.run_test', kwargs=data, job_id=id_, timeout=int(timeout*1.5))
+        queue.enqueue_call('autotest_server.run_test', kwargs=data, job_id=str(id_), timeout=int(timeout*1.5))
 
     return {'test_ids': ids}
 
@@ -209,4 +215,5 @@ def get_results(settings_id, tests_id, **_kw):
     result = json.loads(redis_connection().get(f'autotest:test_results:{tests_id}'))
     if keep_alive != 'true':
         redis_connection().delete(f'autotest:test_results:{tests_id}')
+        redis_connection().hdel('autotest:tests', tests_id)
     return result

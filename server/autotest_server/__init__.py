@@ -337,13 +337,13 @@ def update_test_settings(user, settings_id, test_settings, file_url):
     extract_zip_stream(r.content, files_dir, ignore_root_dirs=1)
 
     schema = json.loads(redis_connection().get('autotest:schema'))
-    installed_testers = schema['definitions']['installed_testers']
+    installed_testers = schema['definitions']['installed_testers']['enum']
 
     for i, tester_settings in enumerate(test_settings["testers"]):
         tester_type = tester_settings["tester_type"]
         if tester_type not in installed_testers:
             raise Exception(f'tester {tester_type} is not installed')
-        tester_install = importlib.import_module(f'.testers.{tester_type}.setup')
+        tester_install = importlib.import_module(f'autotest_server.testers.{tester_type}.setup')
         if tester_settings.get('env_data'):
             env_dir = os.path.join(settings_dir, f"{tester_type}_{i}")
             tester_settings["_env_loc"] = env_dir
