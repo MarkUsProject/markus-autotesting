@@ -294,7 +294,6 @@ def tester_user() -> Tuple[str, str]:
 def run_test(settings_id, files_url, categories, user):
     results = []
     error = None
-    test_id = rq.get_current_job().id
     try:
         settings = redis_connection().hget('autotest:settings', key=settings_id)
         test_username, tests_path = tester_user()
@@ -308,9 +307,7 @@ def run_test(settings_id, files_url, categories, user):
     except Exception as e:
         error = str(e)
     finally:
-        final_result = {"test_groups": results, "error": error}
-        redis_connection().set(f'autotest:test_results:{test_id}', json.dumps(final_result))
-        redis_connection().expire(f'autotest:test_results:{test_id}', 3600)  # TODO: make this a config option
+        return {"test_groups": results, "error": error}
 
 
 def ignore_missing_dir_error(

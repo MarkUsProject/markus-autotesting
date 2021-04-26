@@ -105,6 +105,15 @@ def _update_settings(settings_id, user):
                        job_id=f"settings_{settings_id}", timeout=SETTINGS_JOB_TIMEOUT)
 
 
+def _get_jobs(test_ids, settings_id):
+    for id_ in test_ids:
+        test_setting = redis_connection().hget('autotest:tests', id_)
+        if test_setting is None or test_setting != settings_id:
+            yield None
+        else:
+            yield rq.job.Job.fetch(id_, connection=redis_connection())
+
+
 def authorize(func):
     # non-secure authorization
     @wraps(func)
@@ -203,17 +212,44 @@ def run_tests(settings_id, user):
         redis_connection().hset('autotest:tests', key=id_, value=settings_id)
         ids.append(id_)
         data = {"settings_id": settings_id, "files_url": url, "categories": categories, "user": user}
-        queue.enqueue_call('autotest_server.run_test', kwargs=data, job_id=str(id_), timeout=int(timeout*1.5))
+        queue.enqueue_call('autotest_server.run_test',
+                           kwargs=data,
+                           job_id=str(id_),
+                           timeout=int(timeout*1.5),
+                           result_ttl=3600,  # TODO: make this configurable
+                           failure_ttl=3600)  # TODO: make this configurable
 
     return {'test_ids': ids}
 
 
 @app.route('/settings/<settings_id>/test/<tests_id>', methods=['GET'])
 @authorize
-def get_results(settings_id, tests_id, **_kw):
-    keep_alive = request.args.get("keep_alive")
-    result = json.loads(redis_connection().get(f'autotest:test_results:{tests_id}'))
-    if keep_alive != 'true':
-        redis_connection().delete(f'autotest:test_results:{tests_id}')
-        redis_connection().hdel('autotest:tests', tests_id)
+def get_result(settings_id, tests_id):
+    job = rq.job.Job.fetch(tests_id, connection=redis_connection())
+    job_status = job.get_status()
+    result = {'status': job_status}
+    if job_status == 'finished':
+        result.update(job.result)
+    elif job_status == 'failed':
+        result.update({"error": str(job.exc_info)})
     return result
+
+
+@app.route('/settings/<settings_id>/tests/status', methods=['GET'])
+@authorize
+def get_statuses(settings_id):
+    test_ids = request.args['test_ids']
+    result = {}
+    for id_, job in zip(test_ids, _get_jobs(test_ids, settings_id)):
+        result[id_] = job if job is None else job.get_status()
+    return result
+
+
+@app.route('/settings/<settings_id>/tests/cancel', methods=['DELETE'])
+@authorize
+def cancel_tests(settings_id):
+    test_ids = request.json['test_ids']
+    result = {}
+    for id_, job in zip(test_ids, _get_jobs(test_ids, settings_id)):
+        result[id_] = job if job is None else job.cancel()
+    return jsonify(success=True)
