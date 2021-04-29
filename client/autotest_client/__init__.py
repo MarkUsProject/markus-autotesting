@@ -232,6 +232,7 @@ def get_result(settings_id, tests_id):
         result.update(job.result)
     elif job_status == 'failed':
         result.update({"error": str(job.exc_info)})
+    job.delete()
     return result
 
 
