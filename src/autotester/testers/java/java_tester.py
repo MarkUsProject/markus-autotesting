@@ -97,7 +97,7 @@ class JavaTester(Tester):
         javac_command.extend(self._get_sources())
         # student files imported by tests will be compiled on cascade
         return subprocess.run(
-            javac_command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True, check=False,
+            javac_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, check=False,
         )
 
     def run_junit(self) -> subprocess.CompletedProcess:
