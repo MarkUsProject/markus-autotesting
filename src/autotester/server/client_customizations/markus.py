@@ -1,7 +1,7 @@
 import os
 import json
+import markusapi
 from typing import Dict
-from autotester.server.client_customizations.markusapi import Markus
 from autotester.server.client_customizations.client import Client
 from autotester.server.utils.file_management import extract_zip_stream
 from autotester.exceptions import TestScriptFilesError
@@ -17,7 +17,7 @@ class MarkUs(Client):
         self.group_id = kwargs.get("group_id")
         self.run_id = kwargs.get("run_id")
         self.user_type = kwargs.get("user_type")
-        self._api = Markus(self.api_key, self.url)
+        self._api = markusapi.Markus(self.api_key, self.url)
 
     def write_test_files(self, destination: str) -> None:
         """ Get test files from the client and write them to <destination> """
@@ -63,8 +63,6 @@ class MarkUs(Client):
                 hooks_error += self._return_error_str(self.upload_feedback_file)(feedback_file)
             if test_data.get("upload_feedback_to_repo"):
                 hooks_error += self._return_error_str(self.upload_feedback_to_repo)(feedback_file)
-            if test_data.get("upload_test_run_feedback_file"):
-                hooks_error += self._return_error_str(self.upload_feedback_file_with_test_run_id)(feedback_file)
         if annotation_file and test_data.get("upload_annotations"):
             annotation_file = os.path.join(cwd, annotation_file)
             hooks_error += self._return_error_str(self.upload_annotations)(annotation_file)
@@ -80,9 +78,9 @@ class MarkUs(Client):
                     self.assignment_id, self.group_id, os.path.basename(feedback_file), feedback_open.read()
                 )
 
-    def upload_feedback_file_with_test_run_id(self, feedback_file: str) -> None:
+    def upload_feedback_file(self, feedback_file: str) -> None:
         """
-        Upload the feedback file using MarkUs' api where the feedback file is associated by test_run_id.
+        Upload the feedback file using MarkUs' api.
         """
         if os.path.isfile(feedback_file):
             with open(feedback_file, 'rb') as feedback_open:
@@ -91,17 +89,7 @@ class MarkUs(Client):
                     self.group_id,
                     os.path.basename(feedback_file),
                     feedback_open.read(),
-                    test_run_id=self.run_id,
-                )
-
-    def upload_feedback_file(self, feedback_file: str) -> None:
-        """
-        Upload the feedback file using MarkUs' api.
-        """
-        if os.path.isfile(feedback_file):
-            with open(feedback_file, 'rb') as feedback_open:
-                self._api.upload_feedback_file(
-                    self.assignment_id, self.group_id, os.path.basename(feedback_file), feedback_open.read()
+                    test_run_id=self.run_id
                 )
 
     def upload_annotations(self, annotation_file: str) -> None:
