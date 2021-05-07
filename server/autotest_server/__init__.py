@@ -26,16 +26,7 @@ ResultData = Dict[str, Union[str, int, type(None), Dict]]
 
 
 def redis_connection() -> redis.Redis:
-    """
-    Return the currently open redis connection object. If there is no
-    connection currently open, one is created using the url specified in
-    REDIS_URL.
-    """
-    conn = rq.get_current_connection()
-    if conn:
-        return conn
-    rq.use_connection(redis=redis.Redis.from_url(REDIS_URL))
-    return rq.get_current_connection()
+    return redis.Redis.from_url(REDIS_URL, decode_responses=True)
 
 
 def run_test_command(test_username: Optional[str] = None) -> str:
@@ -46,14 +37,14 @@ def run_test_command(test_username: Optional[str] = None) -> str:
 
     >>> test_script = 'mysscript.py'
     >>> run_test_command('f').format(test_script)
-    'sudo -u f -- bash -c "./myscript.py"'
+    "sudo -u f -- ./myscript.py"
 
     >>> run_test_command().format(test_script)
     './myscript.py'
     """
     cmd = "{}"
     if test_username is not None:
-        cmd = " ".join(("sudo", "-Eu", test_username, "--", "bash", "-c", "'{}'".format(cmd)))
+        cmd = f"sudo -Eu {test_username} -- " + "{}"
 
     return cmd
 
@@ -92,13 +83,14 @@ def _create_test_script_command(env_dir: str, tester_type: str) -> str:
     import_line = f"from testers.{tester_type}.{tester_type}_tester import {tester_type.capitalize()}Tester as Tester"
     python_lines = [
         "import sys, json",
+        f'sys.path.append("{os.path.dirname(os.path.abspath(__file__))}")',
         import_line,
         "from testers.specs import TestSpecs",
         f"Tester(specs=TestSpecs.from_json(sys.stdin.read())).run()",
     ]
-    python_ex = os.path.join(os.path.join(TEST_SCRIPT_DIR, env_dir), "venv", "bin", "python")
+    python_ex = os.path.join(os.path.join(TEST_SCRIPT_DIR, env_dir), "bin", "python")
     python_str = "; ".join(python_lines)
-    return f'{python_ex} -c "{python_str}"'
+    return f"{python_ex} -c '{python_str}'"
 
 
 def get_available_port(min_, max_, host: str = "localhost") -> str:
@@ -291,11 +283,11 @@ def tester_user() -> Tuple[str, str]:
     return user_name, user_workspace
 
 
-def run_test(settings_id, files_url, categories, user):
+def run_test(settings_id, test_id, files_url, categories, user):
     results = []
     error = None
     try:
-        settings = redis_connection().hget('autotest:settings', key=settings_id)
+        settings = json.loads(redis_connection().hget('autotest:settings', key=settings_id))
         test_username, tests_path = tester_user()
         try:
             _setup_files(settings_id, user, files_url, tests_path, test_username)
@@ -307,7 +299,9 @@ def run_test(settings_id, files_url, categories, user):
     except Exception as e:
         error = str(e)
     finally:
-        return {"test_groups": results, "error": error}
+        key = f'autotest:test_result:{test_id}'
+        redis_connection().set(key, json.dumps({"test_groups": results, "error": error}))
+        redis_connection().expire(key, 3600)  # TODO: make this configurable
 
 
 def ignore_missing_dir_error(
@@ -324,7 +318,7 @@ def update_test_settings(user, settings_id, test_settings, file_url):
     settings_dir = os.path.join(TEST_SCRIPT_DIR, str(settings_id))
 
     os.makedirs(settings_dir, exist_ok=True)
-    os.chmod(TEST_SCRIPT_DIR, 0o700)
+    os.chmod(TEST_SCRIPT_DIR, 0o755)
 
     files_dir = os.path.join(settings_dir, 'files')
     shutil.rmtree(files_dir, onerror=ignore_missing_dir_error)
@@ -352,6 +346,7 @@ def update_test_settings(user, settings_id, test_settings, file_url):
             default_env = os.path.join(TEST_SCRIPT_DIR, DEFAULT_ENV_DIR)
             if not os.path.isdir(default_env):
                 subprocess.run([f'python3', '-m', 'venv', default_env], check=True)
+
             test_settings["_env_loc"] = default_env
         test_settings["testers"][i] = tester_settings
     test_settings['_user'] = user

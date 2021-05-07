@@ -12,7 +12,7 @@ class TextTestResults(unittest.TextTestResult):
     """
     Custom unittest.TextTestResult that saves results as
     a hash to self.results so they can be more easily
-    parsed by the PythonTest.run function
+    parsed by the PyTest.run function
     """
 
     def __init__(self, stream: TextIO, descriptions: bool, verbosity: int) -> None:
@@ -118,9 +118,9 @@ class PytestPlugin:
             }
 
 
-class PythonTest(Test):
+class PyTest(Test):
     def __init__(
-        self, tester: "PythonTester", test_file: str, result: Dict, feedback_open: Optional[IO] = None,
+        self, tester: "PyTester", test_file: str, result: Dict, feedback_open: Optional[IO] = None,
     ):
         """
         Initialize a Python test created by tester.
@@ -155,9 +155,9 @@ class PythonTest(Test):
             return self.error(message=self.message)
 
 
-class PythonTester(Tester):
+class PyTester(Tester):
     def __init__(
-        self, specs: TestSpecs, test_class: Type[PythonTest] = PythonTest,
+        self, specs: TestSpecs, test_class: Type[PyTest] = PyTest,
     ):
         """
         Initialize a python tester using the specifications in specs.

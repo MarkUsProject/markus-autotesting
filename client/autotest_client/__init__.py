@@ -35,6 +35,10 @@ def open_log(log, mode='a', fallback=sys.stdout):
 
 
 def redis_connection() -> redis.Redis:
+    return redis.Redis.from_url(REDIS_URL, decode_responses=True)
+
+
+def rq_connection() -> redis.Redis:
     """
     Return the currently open redis connection object. If there is no
     connection currently open, one is created using the url specified in
@@ -43,11 +47,11 @@ def redis_connection() -> redis.Redis:
     conn = rq.get_current_connection()
     if conn:
         return conn
-    rq.use_connection(redis=redis.Redis.from_url(REDIS_URL, decode_responses=True))
+    rq.use_connection(redis=redis.Redis.from_url(REDIS_URL))
     return rq.get_current_connection()
 
 
-@app.errorhandler(Exception)
+@app.errorhandler(500)
 def handle_error(e):
     code = 500
     error = 'server error'
@@ -99,7 +103,7 @@ def _update_settings(settings_id, user):
     if error:
         abort(make_response(jsonify(message=error), 422))
 
-    queue = rq.Queue('settings', connection=redis_connection())
+    queue = rq.Queue('settings', connection=rq_connection())
     data = {'user': user, 'settings_id': settings_id, 'test_settings': test_settings, 'file_url': file_url}
     queue.enqueue_call('autotest_server.update_test_settings', kwargs=data,
                        job_id=f"settings_{settings_id}", timeout=SETTINGS_JOB_TIMEOUT)
@@ -111,7 +115,10 @@ def _get_jobs(test_ids, settings_id):
         if test_setting is None or test_setting != settings_id:
             yield None
         else:
-            yield rq.job.Job.fetch(id_, connection=redis_connection())
+            try:
+                yield rq.job.Job.fetch(str(id_), connection=rq_connection())
+            except rq.exceptions.NoSuchJobError:
+                yield None
 
 
 def authorize(func):
@@ -199,7 +206,7 @@ def run_tests(settings_id, user):
     categories = request.json["categories"]
     high_priority = request.json.get('request_high_priority')
     queue_name = "batch" if len(file_urls) > 1 else ("high" if high_priority else "low")
-    queue = rq.Queue(queue_name, connection=redis_connection())
+    queue = rq.Queue(queue_name, connection=rq_connection())
 
     timeout = 0
     for settings_ in settings(settings_id)["testers"]:
@@ -211,12 +218,11 @@ def run_tests(settings_id, user):
         id_ = redis_connection().incr('autotest:tests_id')
         redis_connection().hset('autotest:tests', key=id_, value=settings_id)
         ids.append(id_)
-        data = {"settings_id": settings_id, "files_url": url, "categories": categories, "user": user}
+        data = {"settings_id": settings_id, "test_id": id_, "files_url": url, "categories": categories, "user": user}
         queue.enqueue_call('autotest_server.run_test',
                            kwargs=data,
                            job_id=str(id_),
                            timeout=int(timeout*1.5),
-                           result_ttl=3600,  # TODO: make this configurable
                            failure_ttl=3600)  # TODO: make this configurable
 
     return {'test_ids': ids}
@@ -224,22 +230,27 @@ def run_tests(settings_id, user):
 
 @app.route('/settings/<settings_id>/test/<tests_id>', methods=['GET'])
 @authorize
-def get_result(settings_id, tests_id):
-    job = rq.job.Job.fetch(tests_id, connection=redis_connection())
+def get_result(settings_id, tests_id, **_kw):
+    job = rq.job.Job.fetch(tests_id, connection=rq_connection())
     job_status = job.get_status()
     result = {'status': job_status}
     if job_status == 'finished':
-        result.update(job.result)
+        test_result = redis_connection().get(f"autotest:test_result:{tests_id}")
+        try:
+            result.update(json.loads(test_result))
+        except json.JSONDecodeError:
+            result.update({"error": f"invalid json: {test_result}"})
     elif job_status == 'failed':
         result.update({"error": str(job.exc_info)})
     job.delete()
+    redis_connection().delete(f"autotest:test_result:{tests_id}")
     return result
 
 
 @app.route('/settings/<settings_id>/tests/status', methods=['GET'])
 @authorize
-def get_statuses(settings_id):
-    test_ids = request.args['test_ids']
+def get_statuses(settings_id, **_kw):
+    test_ids = request.json['test_ids']
     result = {}
     for id_, job in zip(test_ids, _get_jobs(test_ids, settings_id)):
         result[id_] = job if job is None else job.get_status()

@@ -13,6 +13,8 @@ from typing import (
     List,
     Dict,
     Callable,
+    Optional,
+    Any
 )
 from collections.abc import Mapping
 import jsonschema
@@ -62,6 +64,19 @@ class _Config:
                     d = d[k]
                 return d
             raise
+
+    def get(self,
+            key: Union[str, Tuple[Union[str, int], ...]],
+            default: Optional[Any] = None) -> Optional[ConfigValues]:
+        """
+        Call self.__getitem__ with key. Return default if the key cannot
+        be found
+        """
+        try:
+            return self.__getitem__(key)
+        except KeyError:
+            return default
+
 
     def to_json(self) -> str:
         """
