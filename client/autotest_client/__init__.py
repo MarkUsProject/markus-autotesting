@@ -63,11 +63,26 @@ def handle_error(e):
     return make_response(jsonify(error=error), code)
 
 
+def _check_rate_limit(user_name):
+    conn = redis_connection()
+    key = f"autotest:ratelimit:{user_name}:{datetime.now().minute}"
+    n_requests = conn.get(key) or 0
+    user_limit = conn.get(f"autotest:ratelimit:{user_name}:limit") or 20  # TODO: make default limit configurable
+    if int(n_requests) > int(user_limit):
+        abort(make_response(jsonify(message="Too many requests"), 429))
+    else:
+        with conn.pipeline() as pipe:
+            pipe.incr(key)
+            pipe.expire(key, 59)
+            pipe.execute()
+
+
 def _authorize_user():
     api_key = request.headers.get('Api-Key')
     user_name = (redis_connection().hgetall('autotest:users') or {}).get(api_key)
     if user_name is None:
         abort(make_response(jsonify(message="Unauthorized"), 401))
+    _check_rate_limit(user_name)
     return user_name
 
 
