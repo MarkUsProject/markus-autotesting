@@ -6,8 +6,9 @@ import subprocess
 
 def create_environment(settings):
     env_loc = settings['_env_loc']
-    python_version = settings['env_data']['python_version']
-    pip_requirements = ['wheel'] + settings['env_data']['pip_requirements'].split()
+    env_data = settings.get('env_data', {})
+    python_version = env_data.get('python_version', '3')
+    pip_requirements = ['wheel'] + env_data.get('pip_requirements', '').split()
     requirements = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'requirements.txt')
     pip = os.path.join(env_loc, 'bin', 'pip')
     subprocess.run([f'python{python_version}', '-m', 'venv', env_loc], check=True)

@@ -61,7 +61,6 @@ class PytaTest(Test):
                 for msg in msg_group["occurrences"]:
                     self.annotations.append(
                         {
-                            "annotation_category_name": None,
                             "filename": result["filename"],
                             "content": msg["text"],
                             "line_start": msg["lineno"],

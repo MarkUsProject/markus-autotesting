@@ -1,9 +1,10 @@
-from flask import Flask, request, jsonify, abort, make_response
+from flask import Flask, request, jsonify, abort, make_response, send_file
 from werkzeug.exceptions import HTTPException
 import os
 import sys
 import rq
 import json
+import io
 from functools import wraps
 import base64
 import traceback
@@ -34,8 +35,8 @@ def open_log(log, mode='a', fallback=sys.stdout):
         yield fallback
 
 
-def redis_connection() -> redis.Redis:
-    return redis.Redis.from_url(REDIS_URL, decode_responses=True)
+def redis_connection(decode_responses=True) -> redis.Redis:
+    return redis.Redis.from_url(REDIS_URL, decode_responses=decode_responses)
 
 
 def rq_connection() -> redis.Redis:
@@ -260,6 +261,20 @@ def get_result(settings_id, tests_id, **_kw):
     job.delete()
     redis_connection().delete(f"autotest:test_result:{tests_id}")
     return result
+
+
+@app.route('/settings/<settings_id>/test/<tests_id>/feedback/<feedback_id>', methods=['GET'])
+@authorize
+def get_feedback_file(settings_id, tests_id, feedback_id, **_kw):
+    key = f"autotest:feedback_file:{tests_id}:{feedback_id}"
+    data = redis_connection(decode_responses=False).get(key)
+    if data is None:
+        abort(make_response(jsonify(message="File doesn't exist"), 404))
+    redis_connection().delete(key)
+    return send_file(io.BytesIO(data),
+                     mimetype='application/gzip',
+                     as_attachment=True,
+                     attachment_filename=str(feedback_id))
 
 
 @app.route('/settings/<settings_id>/tests/status', methods=['GET'])

@@ -5,13 +5,14 @@ import json
 import subprocess
 import signal
 import socket
-import rq
 import getpass
 import requests
 import gzip
 import redis
 import importlib
 import psycopg2
+import mimetypes
+import base64
 from typing import Optional, Dict, Union, List, Tuple, Callable, Type
 from types import TracebackType
 
@@ -50,7 +51,7 @@ def run_test_command(test_username: Optional[str] = None) -> str:
 
 
 def _create_test_group_result(
-    stdout: str, stderr: str, run_time: int, extra_info: Dict, timeout: Optional[int] = None,
+    stdout: str, stderr: str, run_time: int, extra_info: Dict, feedback: Dict, timeout: Optional[int] = None,
 ) -> ResultData:
     """
     Return the arguments passed to this function in a dictionary. If stderr is
@@ -64,6 +65,7 @@ def _create_test_group_result(
         "stderr": stderr or None,
         "malformed": stdout if malformed else None,
         "extra_info": extra_info or {},
+        **feedback
     }
 
 
@@ -125,27 +127,39 @@ def _get_env_vars(test_username: str) -> Dict[str, str]:
     return env_vars
 
 
-def _add_feedback_to_result(test_data, tests_path):
+def _get_feedback(test_data, tests_path, test_id):
     feedback_file = test_data.get("feedback_file_name")
     annotation_file = test_data.get("annotation_file")
+    result = {"feedback": None, "annotations": None}
     if feedback_file:
         feedback_path = os.path.join(tests_path, feedback_file)
         if os.path.isfile(feedback_path):
             with open(feedback_path, 'rb') as f:
-                test_data['feedback_file'] = {
-                    'filename': feedback_file, 'compression': 'gzip', 'content': gzip.compress(f.read())
+                now = int(time.time())
+                key = f"autotest:feedback_file:{test_id}:{now}"
+                conn = redis_connection()
+                conn.set(key, gzip.compress(f.read()))
+                conn.expire(key, 3600)  # TODO: make this configurable
+                result['feedback'] = {
+                    'filename': feedback_file,
+                    'mime_type': mimetypes.guess_type(feedback_path)[0],
+                    'compression': 'gzip',
+                    'id': now
                 }
     if annotation_file and test_data.get("upload_annotations"):
         annotation_path = os.path.join(tests_path, annotation_file)
         if os.path.isfile(annotation_path):
             with open(annotation_path, 'rb') as f:
-                test_data['annotation_file'] = {
-                    'filename': annotation_file, 'compression': 'gzip', 'content': gzip.compress(f.read())
-                }
+                try:
+                    result['annotations'] = json.load(f)
+                except json.JSONDecodeError as e:
+                    f.seek(0)
+                    raise Exception(f'Invalid annotation json: {f.read()}') from e
+    return result
 
 
 def _run_test_specs(
-    cmd: str, test_settings: dict, categories: List[str], tests_path: str, test_username: str,
+    cmd: str, test_settings: dict, categories: List[str], tests_path: str, test_username: str, test_id: Union[int, str]
 ) -> List[ResultData]:
     """
     Run each test script in test_scripts in the tests_path directory using the
@@ -192,13 +206,13 @@ def _run_test_specs(
                             _kill_user_processes(test_username)
                         out, err = proc.communicate()
                         timeout_expired = timeout
-                    _add_feedback_to_result(test_data, tests_path)
                 except Exception as e:
                     err += "\n\n{}".format(e)
                 finally:
                     duration = int(round(time.time() - start, 3) * 1000)
                     extra_info = test_data.get("extra_info", {})
-                    results.append(_create_test_group_result(out, err, duration, extra_info, timeout_expired))
+                    feedback = _get_feedback(test_data, tests_path, test_id)
+                    results.append(_create_test_group_result(out, err, duration, extra_info, feedback, timeout_expired))
     return results
 
 
@@ -292,7 +306,7 @@ def run_test(settings_id, test_id, files_url, categories, user):
         try:
             _setup_files(settings_id, user, files_url, tests_path, test_username)
             cmd = run_test_command(test_username=test_username)
-            results = _run_test_specs(cmd, settings, categories, tests_path, test_username)
+            results = _run_test_specs(cmd, settings, categories, tests_path, test_username, test_id)
         finally:
             _stop_tester_processes(test_username)
             _clear_working_directory(tests_path, test_username)
