@@ -63,11 +63,6 @@
         "dependencies": {
           "feedback_file_name": {
             "properties": {
-              "upload_feedback_to_repo": {
-                "title": "Add feedback file to repo",
-                "type": "boolean",
-                "default": false
-              },
               "upload_feedback_file": {
                 "title": "Upload feedback file for grading",
                 "type": "boolean",
