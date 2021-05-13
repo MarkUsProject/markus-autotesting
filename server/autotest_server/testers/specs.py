@@ -5,12 +5,12 @@ from typing import Any, Union, Tuple, Iterable, Optional
 
 class TestSpecs(Mapping):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        """ Initialize a TestSpecs instance """
+        """Initialize a TestSpecs instance"""
         self._specs = dict(*args, **kwargs)
 
     @classmethod
     def from_json(cls, json_str: str) -> "TestSpecs":
-        """ Return a TestSpecs instance created from a json string """
+        """Return a TestSpecs instance created from a json string"""
         return cls(json.loads(json_str))
 
     def __getitem__(self, key: Union[str, Tuple]) -> Any:
@@ -38,11 +38,11 @@ class TestSpecs(Mapping):
             raise
 
     def __iter__(self) -> Iterable:
-        """ Return an iterator over self._specs """
+        """Return an iterator over self._specs"""
         return iter(self._specs)
 
     def __len__(self) -> int:
-        """ Return the length of self._specs """
+        """Return the length of self._specs"""
         return len(self._specs)
 
     def get(self, *keys: str, default: Optional[Any] = None) -> Any:

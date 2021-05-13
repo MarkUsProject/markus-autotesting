@@ -8,7 +8,7 @@ import traceback
 
 
 class TestError(Exception):
-    """ Error raised when a test error occurs """
+    """Error raised when a test error occurs"""
 
 
 class Test(ABC):
@@ -21,7 +21,7 @@ class Test(ABC):
 
     @abstractmethod
     def __init__(self, tester: "Tester", feedback_open: Optional[IO] = None) -> None:
-        """ Initialize a Test """
+        """Initialize a Test"""
         self.tester = tester
         self.points_total = self.get_total_points()
         if self.points_total <= 0:
@@ -37,12 +37,17 @@ class Test(ABC):
         pass
 
     def get_total_points(self) -> int:
-        """ Return the total possible points for this test """
+        """Return the total possible points for this test"""
         return self.tester.specs.get("points", default={}).get(self.test_name, 1)
 
     @staticmethod
     def format_result(
-        test_name: str, status: str, output: str, points_earned: int, points_total: int, time: Optional[int] = None,
+        test_name: str,
+        status: str,
+        output: str,
+        points_earned: int,
+        points_total: int,
+        time: Optional[int] = None,
     ) -> str:
         """
         Formats a test result.
@@ -125,7 +130,11 @@ class Test(ABC):
         """
         if points_bonus < 0:
             raise ValueError("The test bonus points must be >= 0")
-        result = self.format(status=self.Status.PASS, output=message, points_earned=self.points_total + points_bonus,)
+        result = self.format(
+            status=self.Status.PASS,
+            output=message,
+            points_earned=self.points_total + points_bonus,
+        )
         if self.feedback_open:
             self.add_feedback(status=self.Status.PASS)
         return result
@@ -170,7 +179,12 @@ class Test(ABC):
             )
         return result
 
-    def failed(self, message: str, oracle_solution: Optional[str] = None, test_solution: Optional[str] = None,) -> str:
+    def failed(
+        self,
+        message: str,
+        oracle_solution: Optional[str] = None,
+        test_solution: Optional[str] = None,
+    ) -> str:
         """
         Fails this test with 0 points earned. If a feedback file is enabled, adds feedback to it.
         :param message: The failure message, will be shown as test output.
@@ -181,7 +195,10 @@ class Test(ABC):
         result = self.format(status=self.Status.FAIL, output=message, points_earned=0)
         if self.feedback_open:
             self.add_feedback(
-                status=self.Status.FAIL, feedback=message, oracle_solution=oracle_solution, test_solution=test_solution,
+                status=self.Status.FAIL,
+                feedback=message,
+                oracle_solution=oracle_solution,
+                test_solution=test_solution,
             )
         return result
 
@@ -271,7 +288,11 @@ class Test(ABC):
 
 class Tester(ABC):
     @abstractmethod
-    def __init__(self, specs: TestSpecs, test_class: Optional[Type[Test]] = Test,) -> None:
+    def __init__(
+        self,
+        specs: TestSpecs,
+        test_class: Optional[Type[Test]] = Test,
+    ) -> None:
         self.specs = specs
         self.test_class = test_class
 
@@ -286,7 +307,11 @@ class Tester(ABC):
         """
         status = Test.Status.ERROR if expected else Test.Status.ERROR_ALL
         return Test.format_result(
-            test_name="All tests", status=status, output=message, points_earned=0, points_total=points_total,
+            test_name="All tests",
+            status=status,
+            output=message,
+            points_earned=0,
+            points_total=points_total,
         )
 
     def before_tester_run(self) -> None:
@@ -319,7 +344,8 @@ class Tester(ABC):
                 print(Tester.error_all(message=str(e), expected=True), flush=True)
             except Exception as e:
                 print(
-                    Tester.error_all(message=f"{traceback.format_exc()}\n{e}"), flush=True,
+                    Tester.error_all(message=f"{traceback.format_exc()}\n{e}"),
+                    flush=True,
                 )
             finally:
                 self.after_tester_run()

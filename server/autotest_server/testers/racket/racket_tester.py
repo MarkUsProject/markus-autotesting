@@ -20,7 +20,7 @@ class RacketTest(Test):
 
     @property
     def test_name(self) -> None:
-        """ The name of this test """
+        """The name of this test"""
         return self._test_name
 
     @Test.run_decorator
@@ -60,7 +60,11 @@ class RacketTester(Tester):
                 suite_name = group.get("test_suite_name", "all-tests")
                 cmd = [autotester_rkt, "--test-suite", suite_name, test_file]
                 rkt = subprocess.run(
-                    cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, check=True,
+                    cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    universal_newlines=True,
+                    check=True,
                 )
                 results[test_file] = rkt.stdout
         return results

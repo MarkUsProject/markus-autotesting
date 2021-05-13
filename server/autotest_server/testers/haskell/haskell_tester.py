@@ -10,7 +10,11 @@ from ..specs import TestSpecs
 
 class HaskellTest(Test):
     def __init__(
-        self, tester: "HaskellTester", test_file: str, result: Dict, feedback_open: Optional[IO] = None,
+        self,
+        tester: "HaskellTester",
+        test_file: str,
+        result: Dict,
+        feedback_open: Optional[IO] = None,
     ) -> None:
         """
         Initialize a Haskell test created by tester.
@@ -26,7 +30,7 @@ class HaskellTest(Test):
 
     @property
     def test_name(self) -> str:
-        """ The name of this test """
+        """The name of this test"""
         if self._test_name:
             return ".".join([self._file_name, self._test_name])
         return self._file_name
@@ -47,7 +51,11 @@ class HaskellTest(Test):
 class HaskellTester(Tester):
     TASTYSTATS = {"name": 1, "time": 2, "result": 3, "description": -1}
 
-    def __init__(self, specs: TestSpecs, test_class: Type[HaskellTest] = HaskellTest,) -> None:
+    def __init__(
+        self,
+        specs: TestSpecs,
+        test_class: Type[HaskellTest] = HaskellTest,
+    ) -> None:
         """
         Initialize a Haskell tester using the specifications in specs.
 

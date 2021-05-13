@@ -33,7 +33,11 @@ class PytaTest(Test):
     ERROR_MSGS = {"reported": "{} error(s)"}
 
     def __init__(
-        self, tester: "PytaTester", student_file_path: str, max_points: int, feedback_open: Optional[IO] = None,
+        self,
+        tester: "PytaTester",
+        student_file_path: str,
+        max_points: int,
+        feedback_open: Optional[IO] = None,
     ) -> None:
         """
         Initialize a Python TA test that checks the student_file_path file,
@@ -47,7 +51,7 @@ class PytaTest(Test):
 
     @property
     def test_name(self) -> str:
-        """ The name of this test """
+        """The name of this test"""
         return f"Pyta {self.student_file}"
 
     def add_annotations(self, reporter: PytaReporter) -> None:
@@ -71,7 +75,7 @@ class PytaTest(Test):
                     )
 
     def after_successful_test_run(self) -> None:
-        """ Record all the annotations from this test in the tester object """
+        """Record all the annotations from this test in the tester object"""
         self.tester.annotations.extend(self.annotations)
 
     @Test.run_decorator

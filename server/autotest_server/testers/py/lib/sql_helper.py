@@ -137,7 +137,7 @@ def execute_psql_file(
             "PGPASSWORD": password or os.environ.get("PGPASSWORD"),
             "PGDATABASE": database or os.environ.get("PGDATABASE"),
             "PGHOST": host or os.environ.get("PGHOST"),
-            "PGPORT": port or os.environ.get("PGPORT")
+            "PGPORT": port or os.environ.get("PGPORT"),
         }
         env = {**os.environ, **db_vars}
     return subprocess.run(["psql", "-f", filename] + list(args), env=env, capture_output=True)
@@ -229,7 +229,11 @@ class PSQLTest:
 
     @classmethod
     def copy_schema(
-        cls, to_schema: str, tables: Optional[List[str]] = None, from_schema: str = "public", overwrite: bool = True,
+        cls,
+        to_schema: str,
+        tables: Optional[List[str]] = None,
+        from_schema: str = "public",
+        overwrite: bool = True,
     ) -> None:
         """
         Copies tables from <from_schema> to <to_schema>. <from_schema> is

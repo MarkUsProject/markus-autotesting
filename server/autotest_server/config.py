@@ -4,18 +4,7 @@
 import os
 import re
 import json
-from typing import (
-    Pattern,
-    Tuple,
-    Union,
-    TypeVar,
-    ClassVar,
-    List,
-    Dict,
-    Callable,
-    Optional,
-    Any
-)
+from typing import Pattern, Tuple, Union, TypeVar, ClassVar, List, Dict, Callable, Optional, Any
 from collections.abc import Mapping
 import jsonschema
 import yaml
@@ -65,9 +54,9 @@ class _Config:
                 return d
             raise
 
-    def get(self,
-            key: Union[str, Tuple[Union[str, int], ...]],
-            default: Optional[Any] = None) -> Optional[ConfigValues]:
+    def get(
+        self, key: Union[str, Tuple[Union[str, int], ...]], default: Optional[Any] = None
+    ) -> Optional[ConfigValues]:
         """
         Call self.__getitem__ with key. Return default if the key cannot
         be found
@@ -76,7 +65,6 @@ class _Config:
             return self.__getitem__(key)
         except KeyError:
             return default
-
 
     def to_json(self) -> str:
         """
@@ -135,7 +123,7 @@ class _Config:
         return constructor
 
     def _validate(self):
-        with open(os.path.join(DEFAULT_ROOT, 'settings_schema.json')) as f:
+        with open(os.path.join(DEFAULT_ROOT, "settings_schema.json")) as f:
             schema = json.load(f)
         jsonschema.Draft7Validator(schema).validate(self._settings)
 
@@ -145,9 +133,9 @@ class _Config:
         configuration files (default and user specified).
         """
         config_dicts = []
-        base_settings = os.path.join(DEFAULT_ROOT, 'settings.yml')
-        local_settings = os.path.join(DEFAULT_ROOT, 'settings.local.yml')
-        env_settings = os.environ.get('AUTOTESTER_CONFIG')
+        base_settings = os.path.join(DEFAULT_ROOT, "settings.yml")
+        local_settings = os.path.join(DEFAULT_ROOT, "settings.local.yml")
+        env_settings = os.environ.get("AUTOTESTER_CONFIG")
         for settings_file in (env_settings, local_settings, base_settings):
             if settings_file and os.path.isfile(settings_file):
                 with open(settings_file) as f:

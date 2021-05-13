@@ -6,7 +6,9 @@ from typing import Type, Generator, Dict, Union, List, Optional
 ValidatorType = type(Draft7Validator)
 
 
-def _extend_with_default(validator_class: Type[ValidatorType] = Draft7Validator,) -> ValidatorType:
+def _extend_with_default(
+    validator_class: Type[ValidatorType] = Draft7Validator,
+) -> ValidatorType:
     """
     Extends a validator class to add defaults before validation.
     From: https://github.com/Julian/jsonschema/blob/master/docs/faq.rst
@@ -15,9 +17,12 @@ def _extend_with_default(validator_class: Type[ValidatorType] = Draft7Validator,
     validate_array = validator_class.VALIDATORS["items"]
 
     def _set_defaults(
-        validator: ValidatorType, properties: Dict, instance: Union[Dict, List], schema: Dict,
+        validator: ValidatorType,
+        properties: Dict,
+        instance: Union[Dict, List],
+        schema: Dict,
     ) -> Generator[BaseException, None, None]:
-        """ Set defaults within a "properties" context """
+        """Set defaults within a "properties" context"""
         if not validator.is_type(instance, "object"):
             return
         for prop, subschema in properties.items():
@@ -38,7 +43,7 @@ def _extend_with_default(validator_class: Type[ValidatorType] = Draft7Validator,
     def _set_array_defaults(
         validator: ValidatorType, properties: Dict, instance: List, schema: Dict
     ) -> Generator[ValidationError, None, None]:
-        """ Set defaults within an "array" context """
+        """Set defaults within an "array" context"""
         if not validator.is_type(instance, "array"):
             return
 
@@ -103,7 +108,10 @@ def _extend_with_default(validator_class: Type[ValidatorType] = Draft7Validator,
 
 
 def _validate_with_defaults(
-    schema: Dict, obj: Union[Dict, List], validator_class: ValidatorType = Draft7Validator, best_only: bool = True,
+    schema: Dict,
+    obj: Union[Dict, List],
+    validator_class: ValidatorType = Draft7Validator,
+    best_only: bool = True,
 ) -> Union[ValidationError, List[ValidationError]]:
     """
     Return an iterator that yields errors from validating obj on schema

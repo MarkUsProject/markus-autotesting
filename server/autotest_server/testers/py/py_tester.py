@@ -120,7 +120,11 @@ class PytestPlugin:
 
 class PyTest(Test):
     def __init__(
-        self, tester: "PyTester", test_file: str, result: Dict, feedback_open: Optional[IO] = None,
+        self,
+        tester: "PyTester",
+        test_file: str,
+        result: Dict,
+        feedback_open: Optional[IO] = None,
     ):
         """
         Initialize a Python test created by tester.
@@ -137,7 +141,7 @@ class PyTest(Test):
 
     @property
     def test_name(self) -> str:
-        """ The name of this test """
+        """The name of this test"""
         if self.description:
             return f"{self._test_name} ({self.description})"
         return self._test_name
@@ -157,7 +161,9 @@ class PyTest(Test):
 
 class PyTester(Tester):
     def __init__(
-        self, specs: TestSpecs, test_class: Type[PyTest] = PyTest,
+        self,
+        specs: TestSpecs,
+        test_class: Type[PyTest] = PyTest,
     ):
         """
         Initialize a python tester using the specifications in specs.
@@ -185,7 +191,9 @@ class PyTester(Tester):
         test_suite = self._load_unittest_tests(test_file)
         with open(os.devnull, "w") as nullstream:
             test_runner = unittest.TextTestRunner(
-                verbosity=self.specs["test_data", "output_verbosity"], stream=nullstream, resultclass=TextTestResults,
+                verbosity=self.specs["test_data", "output_verbosity"],
+                stream=nullstream,
+                resultclass=TextTestResults,
             )
             test_result = test_runner.run(test_suite)
         return test_result.results

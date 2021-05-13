@@ -10,9 +10,9 @@ from ..specs import TestSpecs
 
 class JavaTest(Test):
     def __init__(self, tester, result, feedback_open=None):
-        self._test_name = result['name']
-        self.status = result['status']
-        self.message = result['message']
+        self._test_name = result["name"]
+        self.status = result["status"]
+        self.message = result["message"]
         super().__init__(tester, feedback_open)
 
     @property
@@ -42,7 +42,7 @@ class JavaTester(Tester):
         This tester will create tests of type test_class.
         """
         super().__init__(specs, test_class)
-        classpath = self.specs.get("test_data", "classpath", default='.') or '.'
+        classpath = self.specs.get("test_data", "classpath", default=".") or "."
         self.java_classpath = ":".join(self._parse_file_paths(classpath))
         self.out_dir = tempfile.TemporaryDirectory(dir=os.getcwd())
         self.reports_dir = tempfile.TemporaryDirectory(dir=os.getcwd())
@@ -53,16 +53,16 @@ class JavaTester(Tester):
         Return the real (absolute) paths of all files described by the glob <glob_string>.
         Only files that exist in the current directory (or its subdirectories) are returned.
         """
-        curr_path = os.path.realpath('.')
-        return [x for p in glob_string.split(':') for x in glob(os.path.realpath(p)) if curr_path in x]
+        curr_path = os.path.realpath(".")
+        return [x for p in glob_string.split(":") for x in glob(os.path.realpath(p)) if curr_path in x]
 
     def _get_sources(self) -> Set:
         """
         Return all java source files for this test.
         """
-        sources = self.specs.get("test_data", "sources_path", default='')
-        scripts = ':'.join(self.specs["test_data", "script_files"] + [sources])
-        return {path for path in self._parse_file_paths(scripts) if os.path.splitext(path)[1] == '.java'}
+        sources = self.specs.get("test_data", "sources_path", default="")
+        scripts = ":".join(self.specs["test_data", "script_files"] + [sources])
+        return {path for path in self._parse_file_paths(scripts) if os.path.splitext(path)[1] == ".java"}
 
     def _parse_junitxml(self):
         """
@@ -71,21 +71,21 @@ class JavaTester(Tester):
         for xml_filename in [self.JUNIT_JUPITER_RESULT, self.JUNIT_VINTAGE_RESULT]:
             tree = eTree.parse(os.path.join(self.reports_dir.name, xml_filename))
             root = tree.getroot()
-            for testcase in root.iterfind('testcase'):
+            for testcase in root.iterfind("testcase"):
                 result = {}
-                classname = testcase.attrib['classname']
-                testname = testcase.attrib['name']
-                result['name'] = '{}.{}'.format(classname, testname)
-                result['time'] = float(testcase.attrib.get('time', 0))
-                failure = testcase.find('failure')
+                classname = testcase.attrib["classname"]
+                testname = testcase.attrib["name"]
+                result["name"] = "{}.{}".format(classname, testname)
+                result["time"] = float(testcase.attrib.get("time", 0))
+                failure = testcase.find("failure")
                 if failure is not None:
-                    result['status'] = 'failure'
-                    failure_type = failure.attrib.get('type', '')
-                    failure_message = failure.attrib.get('message', '')
-                    result['message'] = f'{failure_type}: {failure_message}'
+                    result["status"] = "failure"
+                    failure_type = failure.attrib.get("type", "")
+                    failure_message = failure.attrib.get("message", "")
+                    result["message"] = f"{failure_type}: {failure_message}"
                 else:
-                    result['status'] = 'success'
-                    result['message'] = ''
+                    result["status"] = "success"
+                    result["message"] = ""
                 yield result
 
     def compile(self) -> subprocess.CompletedProcess:
@@ -97,7 +97,11 @@ class JavaTester(Tester):
         javac_command.extend(self._get_sources())
         # student files imported by tests will be compiled on cascade
         return subprocess.run(
-            javac_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, check=False,
+            javac_command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True,
+            check=False,
         )
 
     def run_junit(self) -> subprocess.CompletedProcess:
@@ -109,16 +113,12 @@ class JavaTester(Tester):
             "-jar",
             self.JUNIT_TESTER_JAR,
             f"-cp={self.java_classpath}:{self.out_dir.name}",
-            f"--reports-dir={self.reports_dir.name}"
+            f"--reports-dir={self.reports_dir.name}",
         ]
         classes = [f"-c={os.path.splitext(os.path.basename(f))[0]}" for f in self.specs["test_data", "script_files"]]
         java_command.extend(classes)
         java = subprocess.run(
-            java_command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            universal_newlines=True,
-            check=False
+            java_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, check=False
         )
         return java
 

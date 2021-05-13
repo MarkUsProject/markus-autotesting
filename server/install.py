@@ -13,11 +13,11 @@ from autotest_server.testers import install as install_testers
 
 
 def _print(*args, **kwargs):
-    print('[AUTOTESTER]', *args, **kwargs)
+    print("[AUTOTESTER]", *args, **kwargs)
 
 
 def check_dependencies():
-    _print('checking if redis url is valid:')
+    _print("checking if redis url is valid:")
     try:
         redis_connection().keys()
     except Exception as e:
@@ -26,31 +26,32 @@ def check_dependencies():
         pgurl = w.get("resources", {}).get("postgresql_url")
         username = w["user"]
         if pgurl is not None:
-            _print(f'checking if postgres url is valid for worker with username {username}')
+            _print(f"checking if postgres url is valid for worker with username {username}")
             try:
                 psycopg2.connect(pgurl)
             except Exception as e:
-                raise Exception(f'Cannot connect to postgres database with url: {pgurl}') from e
+                raise Exception(f"Cannot connect to postgres database with url: {pgurl}") from e
 
 
 def check_users_exist():
     groups = {grp.getgrgid(g).gr_name for g in os.getgroups()}
     for w in config["workers"]:
         username = w["user"]
-        _print(f'checking if worker with username {username} exists')
+        _print(f"checking if worker with username {username} exists")
         try:
             pwd.getpwnam(username)
         except KeyError:
-            raise Exception(f'user with username {username} does not exist')
-        _print(f'checking if worker with username {username} can be accessed by the current user {getpass.getuser()}')
+            raise Exception(f"user with username {username} does not exist")
+        _print(f"checking if worker with username {username} can be accessed by the current user {getpass.getuser()}")
         try:
-            subprocess.run(run_test_command(username).format('echo test'),
-                           stdout=subprocess.DEVNULL, shell=True, check=True)
+            subprocess.run(
+                run_test_command(username).format("echo test"), stdout=subprocess.DEVNULL, shell=True, check=True
+            )
         except Exception as e:
-            raise Exception(f'user {getpass.getuser()} cannot run commands as the {username} user') from e
-        _print(f'checking if the current user belongs to the {username} group')
+            raise Exception(f"user {getpass.getuser()} cannot run commands as the {username} user") from e
+        _print(f"checking if the current user belongs to the {username} group")
         if username not in groups:
-            raise Exception(f'user {getpass.getuser()} does not belong to group: {username}')
+            raise Exception(f"user {getpass.getuser()} does not belong to group: {username}")
 
 
 def create_workspace():
@@ -60,12 +61,12 @@ def create_workspace():
 
 def install_all_testers():
     settings = install_testers()
-    skeleton_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'autotest_server', 'schema_skeleton.json')
+    skeleton_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), "autotest_server", "schema_skeleton.json")
     with open(skeleton_file) as f:
         skeleton = json.load(f)
-        skeleton['definitions']['installed_testers']['enum'] = list(settings.keys())
-        skeleton['definitions']['tester_schemas']['oneOf'] = list(settings.values())
-        redis_connection().set('autotest:schema', json.dumps(skeleton))
+        skeleton["definitions"]["installed_testers"]["enum"] = list(settings.keys())
+        skeleton["definitions"]["tester_schemas"]["oneOf"] = list(settings.values())
+        redis_connection().set("autotest:schema", json.dumps(skeleton))
 
 
 def install():

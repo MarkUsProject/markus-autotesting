@@ -5,7 +5,7 @@ from ..specs import TestSpecs
 
 class CustomTester(Tester):
     def __init__(self, specs: TestSpecs) -> None:
-        """ Initialize a CustomTester """
+        """Initialize a CustomTester"""
         super().__init__(specs, test_class=None)
 
     @Tester.run_decorator

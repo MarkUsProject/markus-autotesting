@@ -6,10 +6,10 @@ import subprocess
 from autotest_server.config import config
 
 _THIS_DIR = os.path.dirname(os.path.realpath(__file__))
-_PID_FILE = os.path.join(_THIS_DIR, 'supervisord.pid')
-_CONF_FILE = os.path.join(_THIS_DIR, 'supervisord.conf')
-_SUPERVISORD = os.path.join(os.path.dirname(sys.executable), 'supervisord')
-_RQ = os.path.join(os.path.dirname(sys.executable), 'rq')
+_PID_FILE = os.path.join(_THIS_DIR, "supervisord.pid")
+_CONF_FILE = os.path.join(_THIS_DIR, "supervisord.conf")
+_SUPERVISORD = os.path.join(os.path.dirname(sys.executable), "supervisord")
+_RQ = os.path.join(os.path.dirname(sys.executable), "rq")
 
 HEADER = f"""[supervisord]
 
@@ -55,7 +55,7 @@ def create_enqueuer_wrapper():
 
 def start(extra_args):
     create_enqueuer_wrapper()
-    subprocess.run([_SUPERVISORD, '-c', _CONF_FILE, *extra_args], check=True)
+    subprocess.run([_SUPERVISORD, "-c", _CONF_FILE, *extra_args], check=True)
 
 
 def stop():
@@ -64,29 +64,29 @@ def stop():
             pid = int(f.read().strip())
             os.kill(pid, signal.SIGTERM)
     else:
-        sys.stderr.write('supervisor is already stopped')
+        sys.stderr.write("supervisor is already stopped")
 
 
 def stat(extra_args):
-    subprocess.run([_RQ, 'info', '--url', config["redis_url"], *extra_args], check=True)
+    subprocess.run([_RQ, "info", "--url", config["redis_url"], *extra_args], check=True)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    subparsers = parser.add_subparsers(dest='command')
+    subparsers = parser.add_subparsers(dest="command")
 
-    subparsers.add_parser('start', help='start the autotester')
-    subparsers.add_parser('stop', help='stop the autotester')
-    subparsers.add_parser('restart', help='restart the autotester')
-    subparsers.add_parser('stat', help='display current status of the autotester queues')
+    subparsers.add_parser("start", help="start the autotester")
+    subparsers.add_parser("stop", help="stop the autotester")
+    subparsers.add_parser("restart", help="restart the autotester")
+    subparsers.add_parser("stat", help="display current status of the autotester queues")
 
     args, remainder = parser.parse_known_args()
-    if args.command == 'start':
+    if args.command == "start":
         start(remainder)
-    elif args.command == 'stop':
+    elif args.command == "stop":
         stop()
-    elif args.command == 'restart':
+    elif args.command == "restart":
         stop()
         start(remainder)
-    elif args.command == 'stat':
+    elif args.command == "stat":
         stat(remainder)

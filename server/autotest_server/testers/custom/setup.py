@@ -11,5 +11,5 @@ def install():
 
 
 def settings():
-    with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'settings_schema.json')) as f:
+    with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "settings_schema.json")) as f:
         return json.load(f)

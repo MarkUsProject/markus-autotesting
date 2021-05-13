@@ -51,7 +51,12 @@ def run_test_command(test_username: Optional[str] = None) -> str:
 
 
 def _create_test_group_result(
-    stdout: str, stderr: str, run_time: int, extra_info: Dict, feedback: Dict, timeout: Optional[int] = None,
+    stdout: str,
+    stderr: str,
+    run_time: int,
+    extra_info: Dict,
+    feedback: Dict,
+    timeout: Optional[int] = None,
 ) -> ResultData:
     """
     Return the arguments passed to this function in a dictionary. If stderr is
@@ -65,7 +70,7 @@ def _create_test_group_result(
         "stderr": stderr or None,
         "malformed": stdout if malformed else None,
         "extra_info": extra_info or {},
-        **feedback
+        **feedback,
     }
 
 
@@ -96,8 +101,8 @@ def _create_test_script_command(env_dir: str, tester_type: str) -> str:
 
 
 def get_available_port(min_, max_, host: str = "localhost") -> str:
-    """ Return the next available open port on host. """
-    for next_port in range(min_, max_+1):
+    """Return the next available open port on host."""
+    for next_port in range(min_, max_ + 1):
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.bind((host, next_port))
@@ -109,12 +114,12 @@ def get_available_port(min_, max_, host: str = "localhost") -> str:
 
 
 def _get_env_vars(test_username: str) -> Dict[str, str]:
-    """ Return a dictionary containing all environment variables to pass to the next test """
+    """Return a dictionary containing all environment variables to pass to the next test"""
     env_vars = {}
-    worker_config = [w for w in config['workers'] if w['user'] == test_username][0]
-    resources_config = worker_config.get('resources', {})
+    worker_config = [w for w in config["workers"] if w["user"] == test_username][0]
+    resources_config = worker_config.get("resources", {})
     if resources_config:
-        port_config = resources_config.get('port')
+        port_config = resources_config.get("port")
         if port_config:
             env_vars["PORT"] = get_available_port(port_config["min"], port_config["max"])
         postgresql_url = resources_config.get("postgresql_url")
@@ -134,27 +139,27 @@ def _get_feedback(test_data, tests_path, test_id):
     if feedback_file:
         feedback_path = os.path.join(tests_path, feedback_file)
         if os.path.isfile(feedback_path):
-            with open(feedback_path, 'rb') as f:
+            with open(feedback_path, "rb") as f:
                 now = int(time.time())
                 key = f"autotest:feedback_file:{test_id}:{now}"
                 conn = redis_connection()
                 conn.set(key, gzip.compress(f.read()))
                 conn.expire(key, 3600)  # TODO: make this configurable
-                result['feedback'] = {
-                    'filename': feedback_file,
-                    'mime_type': mimetypes.guess_type(feedback_path)[0],
-                    'compression': 'gzip',
-                    'id': now
+                result["feedback"] = {
+                    "filename": feedback_file,
+                    "mime_type": mimetypes.guess_type(feedback_path)[0],
+                    "compression": "gzip",
+                    "id": now,
                 }
     if annotation_file and test_data.get("upload_annotations"):
         annotation_path = os.path.join(tests_path, annotation_file)
         if os.path.isfile(annotation_path):
-            with open(annotation_path, 'rb') as f:
+            with open(annotation_path, "rb") as f:
                 try:
-                    result['annotations'] = json.load(f)
+                    result["annotations"] = json.load(f)
                 except json.JSONDecodeError as e:
                     f.seek(0)
-                    raise Exception(f'Invalid annotation json: {f.read()}') from e
+                    raise Exception(f"Invalid annotation json: {f.read()}") from e
     return result
 
 
@@ -254,8 +259,8 @@ def _setup_files(settings_id: int, user: str, files_url: str, tests_path: str, t
         - student subdirectories:   rwxrwx---
         - student files:            rw-rw----
     """
-    creds = json.loads(redis_connection().hget('autotest:user_credentials', key=user))
-    r = requests.get(files_url, headers={'Authorization': f"{creds['auth_type']} {creds['credentials']}"})
+    creds = json.loads(redis_connection().hget("autotest:user_credentials", key=user))
+    r = requests.get(files_url, headers={"Authorization": f"{creds['auth_type']} {creds['credentials']}"})
     extract_zip_stream(r.content, tests_path, ignore_root_dirs=1)
     for fd, file_or_dir in recursive_iglob(tests_path):
         if fd == "d":
@@ -263,7 +268,7 @@ def _setup_files(settings_id: int, user: str, files_url: str, tests_path: str, t
         else:
             os.chmod(file_or_dir, 0o770)
         shutil.chown(file_or_dir, group=test_username)
-    test_script_dir = json.loads(redis_connection().hget('autotest:settings', settings_id))['_files']
+    test_script_dir = json.loads(redis_connection().hget("autotest:settings", settings_id))["_files"]
     script_files = copy_tree(test_script_dir, tests_path)
     for fd, file_or_dir in script_files:
         if fd == "d":
@@ -301,7 +306,7 @@ def run_test(settings_id, test_id, files_url, categories, user):
     results = []
     error = None
     try:
-        settings = json.loads(redis_connection().hget('autotest:settings', key=settings_id))
+        settings = json.loads(redis_connection().hget("autotest:settings", key=settings_id))
         test_username, tests_path = tester_user()
         try:
             _setup_files(settings_id, user, files_url, tests_path, test_username)
@@ -313,15 +318,17 @@ def run_test(settings_id, test_id, files_url, categories, user):
     except Exception as e:
         error = str(e)
     finally:
-        key = f'autotest:test_result:{test_id}'
+        key = f"autotest:test_result:{test_id}"
         redis_connection().set(key, json.dumps({"test_groups": results, "error": error}))
         redis_connection().expire(key, 3600)  # TODO: make this configurable
 
 
 def ignore_missing_dir_error(
-    _func: Callable, _path: str, excinfo: Tuple[Type[BaseException], BaseException, Optional[TracebackType]],
+    _func: Callable,
+    _path: str,
+    excinfo: Tuple[Type[BaseException], BaseException, Optional[TracebackType]],
 ) -> None:
-    """ Used by shutil.rmtree to ignore a FileNotFoundError """
+    """Used by shutil.rmtree to ignore a FileNotFoundError"""
     err_type, err_inst, traceback = excinfo
     if err_type == FileNotFoundError:
         return
@@ -334,35 +341,35 @@ def update_test_settings(user, settings_id, test_settings, file_url):
     os.makedirs(settings_dir, exist_ok=True)
     os.chmod(TEST_SCRIPT_DIR, 0o755)
 
-    files_dir = os.path.join(settings_dir, 'files')
+    files_dir = os.path.join(settings_dir, "files")
     shutil.rmtree(files_dir, onerror=ignore_missing_dir_error)
     os.makedirs(files_dir, exist_ok=True)
-    creds = json.loads(redis_connection().hget('autotest:user_credentials', key=user))
-    r = requests.get(file_url, headers={'Authorization': f"{creds['auth_type']} {creds['credentials']}"})
+    creds = json.loads(redis_connection().hget("autotest:user_credentials", key=user))
+    r = requests.get(file_url, headers={"Authorization": f"{creds['auth_type']} {creds['credentials']}"})
     extract_zip_stream(r.content, files_dir, ignore_root_dirs=1)
 
-    schema = json.loads(redis_connection().get('autotest:schema'))
-    installed_testers = schema['definitions']['installed_testers']['enum']
+    schema = json.loads(redis_connection().get("autotest:schema"))
+    installed_testers = schema["definitions"]["installed_testers"]["enum"]
 
     for i, tester_settings in enumerate(test_settings["testers"]):
         tester_type = tester_settings["tester_type"]
         if tester_type not in installed_testers:
-            raise Exception(f'tester {tester_type} is not installed')
-        tester_install = importlib.import_module(f'autotest_server.testers.{tester_type}.setup')
-        if tester_settings.get('env_data'):
+            raise Exception(f"tester {tester_type} is not installed")
+        tester_install = importlib.import_module(f"autotest_server.testers.{tester_type}.setup")
+        if tester_settings.get("env_data"):
             env_dir = os.path.join(settings_dir, f"{tester_type}_{i}")
             tester_settings["_env_loc"] = env_dir
             try:
                 tester_install.create_environment(tester_settings)
             except Exception as e:
-                raise Exception('create tester environment failed') from e
+                raise Exception("create tester environment failed") from e
         else:
             default_env = os.path.join(TEST_SCRIPT_DIR, DEFAULT_ENV_DIR)
             if not os.path.isdir(default_env):
-                subprocess.run([f'python3', '-m', 'venv', default_env], check=True)
+                subprocess.run([f"python3", "-m", "venv", default_env], check=True)
 
             test_settings["_env_loc"] = default_env
         test_settings["testers"][i] = tester_settings
-    test_settings['_user'] = user
-    test_settings['_files'] = files_dir
-    redis_connection().hset('autotest:settings', key=settings_id, value=json.dumps(test_settings))
+    test_settings["_user"] = user
+    test_settings["_files"] = files_dir
+    redis_connection().hset("autotest:settings", key=settings_id, value=json.dumps(test_settings))

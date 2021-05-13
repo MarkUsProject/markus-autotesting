@@ -72,14 +72,12 @@ class TestExecutable(unittest.TestCase):
             cls.compiled = True
 
     def setUp(self) -> None:
-        """If the compilation was not successful, automatically fail every test.
-        """
+        """If the compilation was not successful, automatically fail every test."""
         if not self.compiled:
             self.fail("Test did not run due to a compilation error.")
 
     def _check_compiler_warnings(self) -> None:
-        """Assert that compilation occurred without errors or warnings.
-        """
+        """Assert that compilation occurred without errors or warnings."""
         self.assertEqual(self.compile_out, "")
         self.assertEqual(self.compile_err, "")
 
@@ -317,8 +315,7 @@ class Trace:
 
 
 def run_through_regexes(regexes, trace_line):
-    """Parse trace_line against the collection of regexes.
-    """
+    """Parse trace_line against the collection of regexes."""
     for key, regex in regexes.items():
         parser = re.compile(regex)
         result = parser.match(trace_line)
@@ -447,7 +444,12 @@ class TestGenerator:
             setattr(
                 test_klass,
                 "test_" + name,
-                simple_test(args, expected_stdout=test_out, expected_stderr=test_err, input_=test_in,),
+                simple_test(
+                    args,
+                    expected_stdout=test_out,
+                    expected_stderr=test_err,
+                    input_=test_in,
+                ),
             )
 
 
