@@ -4,7 +4,7 @@ from typing import TextIO, Tuple, Optional, Type, Dict, IO, List
 from types import TracebackType
 import pytest
 import sys
-from ..tester import Tester, Test, TestError
+from ..tester import Tester, Test
 from ..specs import TestSpecs
 
 

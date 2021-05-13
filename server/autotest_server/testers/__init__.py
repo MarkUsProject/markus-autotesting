@@ -15,8 +15,8 @@ def install(testers=_TESTERS):
             msg = (
                 f"{tester} install failed with: {e}\n"
                 "You may try to install the tester manually by running the following script:\n\t"
-                + os.path.join(os.path.dirname(os.path.realpath(mod.__file__)), "requirements.system")
-                + " and then rerunning this function."
+                f"{os.path.join(os.path.dirname(os.path.realpath(mod.__file__)), 'requirements.system')}"
+                " and then rerunning this function."
             )
             raise Exception(msg) from e
         settings[tester] = mod.settings()

@@ -12,7 +12,6 @@ import redis
 import importlib
 import psycopg2
 import mimetypes
-import base64
 from typing import Optional, Dict, Union, List, Tuple, Callable, Type
 from types import TracebackType
 
