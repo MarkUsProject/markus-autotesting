@@ -8,9 +8,9 @@ WORKDIR /app
 COPY . .
 
 RUN python3 -m venv /tmp/venv-server && \
-    /tmp/venv-server/pip install /app/server/requirements.txt && \
-    /tmp/venv-server/pytest /app/server
+    /tmp/venv-server/bin/pip install /app/server/requirements.txt && \
+    /tmp/venv-server/bin/pytest /app/server
 
 RUN python3 -m venv /tmp/venv-client && \
-    /tmp/venv-client/pip install /app/server/requirements.txt && \
-    /tmp/venv-client/pytest /app/server
+    /tmp/venv-client/bin/pip install /app/server/requirements.txt && \
+    /tmp/venv-client/bin/pytest /app/server
