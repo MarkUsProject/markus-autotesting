@@ -9,27 +9,3 @@ __pycache__
 venv
 venv2
 build
-
-# tmp files
-.installed
-
-# bin
-bin/kill_worker_procs
-
-# server
-src/autotester/server/venv
-src/autotester/server/workspace
-src/autotester/server/bin/kill_worker_procs
-
-# testers
-src/autotester/testers/*/specs/.installed
-src/autotester/testers/*/specs/install_settings.json
-
-# java
-src/autotester/testers/java/lib/*.jar
-
-# racket
-src/autotester/testers/racket/**/compiled/
-
-# haskell
-markus_cabal

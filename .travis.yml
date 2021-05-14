@@ -5,6 +5,11 @@ python:
   - "3.7"
   - "3.8"
   - "3.9"
-# command to run tests
+env:
+  - TESTDIR=client
+  - TESTDIR=server
+install:
+  - pip install -r $TESTDIR/requirements.txt
+  - pip install pytest
 script:
-  - python setup.py test
+  - pytest $TESTDIR
