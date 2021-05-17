@@ -27,7 +27,7 @@ app = Flask(__name__)
 
 
 @contextmanager
-def open_log(log, mode="a", fallback=sys.stdout):
+def _open_log(log, mode="a", fallback=sys.stdout):
     if log:
         with open(log, mode) as f:
             yield f
@@ -35,11 +35,11 @@ def open_log(log, mode="a", fallback=sys.stdout):
         yield fallback
 
 
-def redis_connection(decode_responses=True) -> redis.Redis:
+def _redis_connection(decode_responses=True) -> redis.Redis:
     return redis.Redis.from_url(REDIS_URL, decode_responses=decode_responses)
 
 
-def rq_connection() -> redis.Redis:
+def _rq_connection() -> redis.Redis:
     """
     Return the currently open redis connection object. If there is no
     connection currently open, one is created using the url specified in
@@ -53,19 +53,19 @@ def rq_connection() -> redis.Redis:
 
 
 @app.errorhandler(500)
-def handle_error(e):
+def _handle_error(e):
     code = 500
     error = "server error"
     if isinstance(e, HTTPException):
         code = e.code
         error = str(e)
-    with open_log(ERROR_LOG, fallback=sys.stderr) as f:
+    with _open_log(ERROR_LOG, fallback=sys.stderr) as f:
         f.write(f"{datetime.now()}\nuser: {_authorize_user()}\n{traceback.format_exc()}\n\n")
     return make_response(jsonify(error=error), code)
 
 
 def _check_rate_limit(user_name):
-    conn = redis_connection()
+    conn = _redis_connection()
     key = f"autotest:ratelimit:{user_name}:{datetime.now().minute}"
     n_requests = conn.get(key) or 0
     user_limit = conn.get(f"autotest:ratelimit:{user_name}:limit") or 20  # TODO: make default limit configurable
@@ -80,7 +80,7 @@ def _check_rate_limit(user_name):
 
 def _authorize_user():
     api_key = request.headers.get("Api-Key")
-    user_name = (redis_connection().hgetall("autotest:users") or {}).get(api_key)
+    user_name = (_redis_connection().hgetall("autotest:users") or {}).get(api_key)
     if user_name is None:
         abort(make_response(jsonify(message="Unauthorized"), 401))
     _check_rate_limit(user_name)
@@ -89,7 +89,7 @@ def _authorize_user():
 
 def _authorize_settings(user, settings_id=None, **_kw):
     if settings_id:
-        settings_ = redis_connection().hget("autotest:settings", settings_id)
+        settings_ = _redis_connection().hget("autotest:settings", settings_id)
         if settings_ is None:
             abort(make_response(jsonify(message="Settings not found"), 404))
         if json.loads(settings_).get("_user") != user:
@@ -98,7 +98,7 @@ def _authorize_settings(user, settings_id=None, **_kw):
 
 def _authorize_tests(tests_id=None, settings_id=None, **_kw):
     if settings_id and tests_id:
-        test_setting = redis_connection().hget("autotest:tests", tests_id)
+        test_setting = _redis_connection().hget("autotest:tests", tests_id)
         if test_setting is None:
             abort(make_response(jsonify(message="Test not found"), 404))
         if test_setting != settings_id:
@@ -119,7 +119,7 @@ def _update_settings(settings_id, user):
     if error:
         abort(make_response(jsonify(message=error), 422))
 
-    queue = rq.Queue("settings", connection=rq_connection())
+    queue = rq.Queue("settings", connection=_rq_connection())
     data = {"user": user, "settings_id": settings_id, "test_settings": test_settings, "file_url": file_url}
     queue.enqueue_call(
         "autotest_server.update_test_settings",
@@ -131,12 +131,12 @@ def _update_settings(settings_id, user):
 
 def _get_jobs(test_ids, settings_id):
     for id_ in test_ids:
-        test_setting = redis_connection().hget("autotest:tests", id_)
+        test_setting = _redis_connection().hget("autotest:tests", id_)
         if test_setting is None or test_setting != settings_id:
             yield None
         else:
             try:
-                yield rq.job.Job.fetch(str(id_), connection=rq_connection())
+                yield rq.job.Job.fetch(str(id_), connection=_rq_connection())
             except rq.exceptions.NoSuchJobError:
                 yield None
 
@@ -156,7 +156,7 @@ def authorize(func):
             log_msg = f"UNAUTHORIZED\n{datetime.now()}\nurl: {request.url}\nuser: {user}\n\n"
             raise e
         finally:
-            with open_log(ACCESS_LOG) as f:
+            with _open_log(ACCESS_LOG) as f:
                 f.write(log_msg)
         return func(*args, **kwargs, user=user)
 
@@ -169,15 +169,15 @@ def register():
     user_name = request.json["user_name"]
     auth_type = request.json.get("auth_type")
     credentials = request.json.get("credentials")
-    users = redis_connection().hgetall("autotest:users") or {}
+    users = _redis_connection().hgetall("autotest:users") or {}
     if user_name in users:
         abort(make_response(jsonify(message="User already exists"), 400))
     key = base64.b64encode(os.urandom(24)).decode("utf-8")
     while key in users:
         key = base64.b64encode(os.urandom(24)).decode("utf-8")
     data = {"auth_type": auth_type, "credentials": credentials}
-    redis_connection().hset("autotest:users", key=key, value=user_name)
-    redis_connection().hset("autotest:user_credentials", key=user_name, value=json.dumps(data))
+    _redis_connection().hset("autotest:users", key=key, value=user_name)
+    _redis_connection().hset("autotest:user_credentials", key=user_name, value=json.dumps(data))
     return {"user_name": user_name, "api_key": key}
 
 
@@ -187,28 +187,28 @@ def reset_credentials(user):
     auth_type = request.json.get("auth_type")
     credentials = request.json.get("credentials")
     data = {"auth_type": auth_type, "credentials": credentials}
-    redis_connection().hset("autotest:user_credentials", key=user, value=json.dumps(data))
+    _redis_connection().hset("autotest:user_credentials", key=user, value=json.dumps(data))
     return jsonify(success=True)
 
 
 @app.route("/schema", methods=["GET"])
 @authorize
 def schema(**_kwargs):
-    return json.loads(redis_connection().get("autotest:schema") or {})
+    return json.loads(_redis_connection().get("autotest:schema") or {})
 
 
 @app.route("/settings/<settings_id>", methods=["GET"])
 @authorize
 def settings(settings_id, **_kw):
-    settings_ = json.loads(redis_connection().hget("autotest:settings", key=settings_id) or "{}")
+    settings_ = json.loads(_redis_connection().hget("autotest:settings", key=settings_id) or "{}")
     return {k: v for k, v in settings_.items() if not k.startswith("_")}
 
 
 @app.route("/settings", methods=["POST"])
 @authorize
 def create_settings(user):
-    settings_id = redis_connection().incr("autotest:settings_id")
-    redis_connection().hset("autotest:settings", key=settings_id, value=json.dumps({"_user": user}))
+    settings_id = _redis_connection().incr("autotest:settings_id")
+    _redis_connection().hset("autotest:settings", key=settings_id, value=json.dumps({"_user": user}))
     _update_settings(settings_id, user)
     return {"settings_id": settings_id}
 
@@ -227,7 +227,7 @@ def run_tests(settings_id, user):
     categories = request.json["categories"]
     high_priority = request.json.get("request_high_priority")
     queue_name = "batch" if len(file_urls) > 1 else ("high" if high_priority else "low")
-    queue = rq.Queue(queue_name, connection=rq_connection())
+    queue = rq.Queue(queue_name, connection=_rq_connection())
 
     timeout = 0
     for settings_ in settings(settings_id)["testers"]:
@@ -236,8 +236,8 @@ def run_tests(settings_id, user):
 
     ids = []
     for url in file_urls:
-        id_ = redis_connection().incr("autotest:tests_id")
-        redis_connection().hset("autotest:tests", key=id_, value=settings_id)
+        id_ = _redis_connection().incr("autotest:tests_id")
+        _redis_connection().hset("autotest:tests", key=id_, value=settings_id)
         ids.append(id_)
         data = {"settings_id": settings_id, "test_id": id_, "files_url": url, "categories": categories, "user": user}
         queue.enqueue_call(
@@ -250,11 +250,11 @@ def run_tests(settings_id, user):
 @app.route("/settings/<settings_id>/test/<tests_id>", methods=["GET"])
 @authorize
 def get_result(settings_id, tests_id, **_kw):
-    job = rq.job.Job.fetch(tests_id, connection=rq_connection())
+    job = rq.job.Job.fetch(tests_id, connection=_rq_connection())
     job_status = job.get_status()
     result = {"status": job_status}
     if job_status == "finished":
-        test_result = redis_connection().get(f"autotest:test_result:{tests_id}")
+        test_result = _redis_connection().get(f"autotest:test_result:{tests_id}")
         try:
             result.update(json.loads(test_result))
         except json.JSONDecodeError:
@@ -262,7 +262,7 @@ def get_result(settings_id, tests_id, **_kw):
     elif job_status == "failed":
         result.update({"error": str(job.exc_info)})
     job.delete()
-    redis_connection().delete(f"autotest:test_result:{tests_id}")
+    _redis_connection().delete(f"autotest:test_result:{tests_id}")
     return result
 
 
@@ -270,10 +270,10 @@ def get_result(settings_id, tests_id, **_kw):
 @authorize
 def get_feedback_file(settings_id, tests_id, feedback_id, **_kw):
     key = f"autotest:feedback_file:{tests_id}:{feedback_id}"
-    data = redis_connection(decode_responses=False).get(key)
+    data = _redis_connection(decode_responses=False).get(key)
     if data is None:
         abort(make_response(jsonify(message="File doesn't exist"), 404))
-    redis_connection().delete(key)
+    _redis_connection().delete(key)
     return send_file(
         io.BytesIO(data), mimetype="application/gzip", as_attachment=True, attachment_filename=str(feedback_id)
     )

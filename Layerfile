@@ -9,10 +9,12 @@ COPY . .
 
 RUN python3 -m venv /tmp/venv-server && \
     /tmp/venv-server/bin/pip install -r /app/server/requirements.txt && \
-    /tmp/venv-server/bin/pip install pytest && \
-    /tmp/venv-server/bin/pytest /app/server
+    /tmp/venv-server/bin/pip install pytest fakeredis
 
 RUN python3 -m venv /tmp/venv-client && \
     /tmp/venv-client/bin/pip install -r /app/server/requirements.txt && \
-    /tmp/venv-client/bin/pip install pytest && \
-    /tmp/venv-client/bin/pytest /app/server
+    /tmp/venv-client/bin/pip install pytest fakeredis
+
+RUN /tmp/venv-server/bin/pytest /app/server
+
+RUN /tmp/venv-client/bin/pytest /app/client

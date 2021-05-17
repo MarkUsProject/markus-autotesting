@@ -10,6 +10,6 @@ env:
   - TESTDIR=server
 install:
   - pip install -r $TESTDIR/requirements.txt
-  - pip install pytest
+  - pip install pytest fakeredis
 script:
   - pytest $TESTDIR
