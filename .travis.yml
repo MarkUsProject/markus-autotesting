@@ -7,7 +7,7 @@ python:
   - "3.9"
 env:
   - TESTDIR=client
-  - TESTDIR=server
+  - TESTDIR=server AUTOTESTER_CONFIG=$TRAVIS_BUILD_DIR/server/autotest_server/tests/fixtures/test_config.yml
 install:
   - pip install -r $TESTDIR/requirements.txt
   - pip install pytest fakeredis

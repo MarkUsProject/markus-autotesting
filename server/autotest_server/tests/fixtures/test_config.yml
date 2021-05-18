@@ -1,0 +1,9 @@
+workspace: /tmp/markus-autotesting-testing-workspace
+redis_url: fake_url
+supervisor_url: fake_url
+workers:
+  - user: fake_user
+    queues:
+      - high
+      - low
+      - batch

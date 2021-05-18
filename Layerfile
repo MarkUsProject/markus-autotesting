@@ -12,9 +12,9 @@ RUN python3 -m venv /tmp/venv-server && \
     /tmp/venv-server/bin/pip install pytest fakeredis
 
 RUN python3 -m venv /tmp/venv-client && \
-    /tmp/venv-client/bin/pip install -r /app/server/requirements.txt && \
+    /tmp/venv-client/bin/pip install -r /app/client/requirements.txt && \
     /tmp/venv-client/bin/pip install pytest fakeredis
 
-RUN /tmp/venv-server/bin/pytest /app/server
+RUN AUTOTESTER_CONFIG=/app/server/autotest_server/tests/fixtures/test_config.yml /tmp/venv-server/bin/pytest /app/server
 
 RUN /tmp/venv-client/bin/pytest /app/client
