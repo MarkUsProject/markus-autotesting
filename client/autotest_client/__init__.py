@@ -201,6 +201,8 @@ def schema(**_kwargs):
 @authorize
 def settings(settings_id, **_kw):
     settings_ = json.loads(_redis_connection().hget("autotest:settings", key=settings_id) or "{}")
+    if settings_.get("_error"):
+        raise Exception(f"Settings Error: {settings_['_error']}")
     return {k: v for k, v in settings_.items() if not k.startswith("_")}
 
 
@@ -230,6 +232,7 @@ def run_tests(settings_id, user):
     queue = rq.Queue(queue_name, connection=_rq_connection())
 
     timeout = 0
+
     for settings_ in settings(settings_id)["testers"]:
         for test_data in settings_["test_data"]:
             timeout += test_data["timeout"]

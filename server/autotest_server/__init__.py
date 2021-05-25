@@ -1,4 +1,5 @@
 import os
+import sys
 import shutil
 import time
 import json
@@ -335,40 +336,46 @@ def ignore_missing_dir_error(
 
 
 def update_test_settings(user, settings_id, test_settings, file_url):
-    settings_dir = os.path.join(TEST_SCRIPT_DIR, str(settings_id))
+    try:
+        settings_dir = os.path.join(TEST_SCRIPT_DIR, str(settings_id))
 
-    os.makedirs(settings_dir, exist_ok=True)
-    os.chmod(TEST_SCRIPT_DIR, 0o755)
+        os.makedirs(settings_dir, exist_ok=True)
+        os.chmod(TEST_SCRIPT_DIR, 0o755)
 
-    files_dir = os.path.join(settings_dir, "files")
-    shutil.rmtree(files_dir, onerror=ignore_missing_dir_error)
-    os.makedirs(files_dir, exist_ok=True)
-    creds = json.loads(redis_connection().hget("autotest:user_credentials", key=user))
-    r = requests.get(file_url, headers={"Authorization": f"{creds['auth_type']} {creds['credentials']}"})
-    extract_zip_stream(r.content, files_dir, ignore_root_dirs=1)
+        files_dir = os.path.join(settings_dir, "files")
+        shutil.rmtree(files_dir, onerror=ignore_missing_dir_error)
+        os.makedirs(files_dir, exist_ok=True)
+        creds = json.loads(redis_connection().hget("autotest:user_credentials", key=user))
+        r = requests.get(file_url, headers={"Authorization": f"{creds['auth_type']} {creds['credentials']}"})
+        extract_zip_stream(r.content, files_dir, ignore_root_dirs=1)
 
-    schema = json.loads(redis_connection().get("autotest:schema"))
-    installed_testers = schema["definitions"]["installed_testers"]["enum"]
+        schema = json.loads(redis_connection().get("autotest:schema"))
+        installed_testers = schema["definitions"]["installed_testers"]["enum"]
 
-    for i, tester_settings in enumerate(test_settings["testers"]):
-        tester_type = tester_settings["tester_type"]
-        if tester_type not in installed_testers:
-            raise Exception(f"tester {tester_type} is not installed")
-        tester_install = importlib.import_module(f"autotest_server.testers.{tester_type}.setup")
-        if tester_settings.get("env_data"):
-            env_dir = os.path.join(settings_dir, f"{tester_type}_{i}")
-            tester_settings["_env_loc"] = env_dir
-            try:
-                tester_install.create_environment(tester_settings)
-            except Exception as e:
-                raise Exception("create tester environment failed") from e
-        else:
-            default_env = os.path.join(TEST_SCRIPT_DIR, DEFAULT_ENV_DIR)
-            if not os.path.isdir(default_env):
-                subprocess.run([f"python3", "-m", "venv", default_env], check=True)
+        for i, tester_settings in enumerate(test_settings["testers"]):
+            tester_type = tester_settings["tester_type"]
+            if tester_type not in installed_testers:
+                raise Exception(f"tester {tester_type} is not installed")
+            tester_install = importlib.import_module(f"autotest_server.testers.{tester_type}.setup")
+            if tester_settings.get("env_data"):
+                env_dir = os.path.join(settings_dir, f"{tester_type}_{i}")
+                tester_settings["_env_loc"] = env_dir
+                try:
+                    tester_install.create_environment(tester_settings)
+                except Exception as e:
+                    raise Exception("create tester environment failed") from e
+            else:
+                default_env = os.path.join(TEST_SCRIPT_DIR, DEFAULT_ENV_DIR)
+                if not os.path.isdir(default_env):
+                    subprocess.run([sys.executable, "-m", "venv", default_env], check=True)
 
-            test_settings["_env_loc"] = default_env
-        test_settings["testers"][i] = tester_settings
-    test_settings["_user"] = user
-    test_settings["_files"] = files_dir
-    redis_connection().hset("autotest:settings", key=settings_id, value=json.dumps(test_settings))
+                tester_settings["_env_loc"] = default_env
+            test_settings["testers"][i] = tester_settings
+        test_settings["_user"] = user
+        test_settings["_files"] = files_dir
+        test_settings.pop("_error", None)
+    except Exception as e:
+        test_settings["_error"] = str(e)
+        raise
+    finally:
+        redis_connection().hset("autotest:settings", key=settings_id, value=json.dumps(test_settings))
