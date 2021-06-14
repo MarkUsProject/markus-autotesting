@@ -5,7 +5,7 @@ import fakeredis
 
 @pytest.fixture
 def client():
-    autotest_client.app.config['TESTING'] = True
+    autotest_client.app.config["TESTING"] = True
     with autotest_client.app.test_client() as client:
         yield client
 
@@ -23,14 +23,15 @@ def fake_rq_conn():
 
 @pytest.fixture(autouse=True)
 def fake_redis_db(monkeypatch, fake_redis_conn):
-    monkeypatch.setattr(autotest_client.redis.Redis, 'from_url', lambda *a, **kw: fake_redis_conn)
+    monkeypatch.setattr(autotest_client.redis.Redis, "from_url", lambda *a, **kw: fake_redis_conn)
 
 
 class TestRegister:
     def test_no_username(self, client):
-        with pytest.raises(TypeError):
-            client.post('/register')
+        resp = client.post("/register")
+        assert resp.status_code == 500
+        assert resp.json['message'] == "'NoneType' object is not subscriptable"
 
     def test_with_username(self, client, fake_redis_conn):
-        client.post('/register', json={"user_name": "test"})
-        assert 'test' in fake_redis_conn.hgetall('autotest:users').values()
+        client.post("/register", json={"user_name": "test"})
+        assert "test" in fake_redis_conn.hgetall("autotest:users").values()

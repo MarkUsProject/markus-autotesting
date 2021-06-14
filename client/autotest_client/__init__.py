@@ -52,16 +52,20 @@ def _rq_connection() -> redis.Redis:
     return rq.get_current_connection()
 
 
-@app.errorhandler(500)
+@app.errorhandler(Exception)
 def _handle_error(e):
     code = 500
-    error = "server error"
+    error = str(e)
     if isinstance(e, HTTPException):
         code = e.code
-        error = str(e)
     with _open_log(ERROR_LOG, fallback=sys.stderr) as f:
-        f.write(f"{datetime.now()}\nuser: {_authorize_user()}\n{traceback.format_exc()}\n\n")
-    return make_response(jsonify(error=error), code)
+        try:
+            user = _authorize_user()
+        except Exception:
+            user = "ERROR: user not found"
+        f.write(f"{datetime.now()}\n\tuser: {user}\n\t{traceback.format_exc()}\n")
+        f.flush()
+    return jsonify(message=error), code
 
 
 def _check_rate_limit(user_name):
@@ -151,13 +155,18 @@ def authorize(func):
             user = _authorize_user()
             _authorize_settings(**kwargs, user=user)
             _authorize_tests(**kwargs)
-            log_msg = f"AUTHORIZED\n{datetime.now()}\nurl: {request.url}\nuser: {user}\n\n"
+            log_msg = f"AUTHORIZED\n\t{datetime.now()}\n\turl: {request.url}\n\tuser: {user}\n"
         except HTTPException as e:
-            log_msg = f"UNAUTHORIZED\n{datetime.now()}\nurl: {request.url}\nuser: {user}\n\n"
+            log_msg = (
+                f"UNAUTHORIZED\n\t{datetime.now()}\n\t"
+                f"url: {request.url}\n\tuser: {user}\n\tresponse: {e.response.response}\n"
+            )
             raise e
         finally:
-            with _open_log(ACCESS_LOG) as f:
-                f.write(log_msg)
+            if log_msg:
+                with _open_log(ACCESS_LOG) as f:
+                    f.write(log_msg)
+                    f.flush()
         return func(*args, **kwargs, user=user)
 
     return _f
