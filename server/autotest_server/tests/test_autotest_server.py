@@ -10,7 +10,7 @@ def fake_redis_conn():
 
 @pytest.fixture(autouse=True)
 def fake_redis_db(monkeypatch, fake_redis_conn):
-    monkeypatch.setattr(autotest_server.redis.Redis, 'from_url', lambda *a, **kw: fake_redis_conn)
+    monkeypatch.setattr(autotest_server.redis.Redis, "from_url", lambda *a, **kw: fake_redis_conn)
 
 
 def test_redis_connection(fake_redis_conn):

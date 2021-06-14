@@ -371,11 +371,11 @@ def update_test_settings(user, settings_id, test_settings, file_url):
 
                 tester_settings["_env_loc"] = default_env
             test_settings["testers"][i] = tester_settings
-        test_settings["_user"] = user
         test_settings["_files"] = files_dir
         test_settings.pop("_error", None)
     except Exception as e:
         test_settings["_error"] = str(e)
         raise
     finally:
+        test_settings["_user"] = user
         redis_connection().hset("autotest:settings", key=settings_id, value=json.dumps(test_settings))
