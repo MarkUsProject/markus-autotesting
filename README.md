@@ -77,6 +77,8 @@ The autotester currently supports testers for the following languages and testin
     - [Pytest](https://docs.pytest.org/en/latest/)
 - `pyta`
     - [PythonTa](https://github.com/pyta-uoft/pyta)
+- `jupyter`
+    - [Jupyter Notebook](https://jupyter.org/)
 - `racket`
     - [RackUnit](https://docs.racket-lang.org/rackunit/)
 - `custom`

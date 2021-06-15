@@ -18,7 +18,8 @@ RUN apt-get update -y && \
                        redis-server \
                        postgresql-client \
                        libpq-dev \
-                       sudo
+                       sudo \
+                       git
 
 RUN useradd -ms /bin/bash $LOGIN_USER && \
     usermod -aG sudo $LOGIN_USER && \
