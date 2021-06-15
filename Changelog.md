@@ -3,6 +3,7 @@ All notable changes to this project will be documented here.
 
 ## [unreleased]
 - Full rewrite of autotester with a server/client architecture (#283)
+- Add Jupyter tester (#284)
 
 ## [v1.10.3]
 - Fix bug where zip archive was unpacked two levels deep instead of just one (#271) 
