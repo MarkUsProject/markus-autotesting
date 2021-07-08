@@ -55,7 +55,7 @@ def create_enqueuer_wrapper():
 
 def start(extra_args):
     create_enqueuer_wrapper()
-    subprocess.run([_SUPERVISORD, "-c", _CONF_FILE, *extra_args], check=True)
+    subprocess.run([_SUPERVISORD, "-c", _CONF_FILE, *extra_args], check=True, cwd=_THIS_DIR)
 
 
 def stop():
