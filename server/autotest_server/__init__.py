@@ -174,7 +174,7 @@ def _run_test_specs(
 
     for settings in test_settings["testers"]:
         tester_type = settings["tester_type"]
-        env_dir = settings.get("_env_loc")
+        env_dir = settings["_env_loc"]
 
         cmd_str = _create_test_script_command(env_dir, tester_type)
         args = cmd.format(cmd_str)
@@ -248,7 +248,7 @@ def _stop_tester_processes(test_username: str) -> None:
         _kill_user_processes(test_username)
 
 
-def _setup_files(settings_id: int, user: str, files_url: str, tests_path: str, test_username: str) -> None:
+def _setup_files(test_script_dir: str, user: str, files_url: str, tests_path: str, test_username: str) -> None:
     """
     Copy test script files and student files to the working directory tests_path,
     then make it the current working directory.
@@ -268,7 +268,6 @@ def _setup_files(settings_id: int, user: str, files_url: str, tests_path: str, t
         else:
             os.chmod(file_or_dir, 0o770)
         shutil.chown(file_or_dir, group=test_username)
-    test_script_dir = json.loads(redis_connection().hget("autotest:settings", settings_id))["_files"]
     script_files = copy_tree(test_script_dir, tests_path)
     for fd, file_or_dir in script_files:
         if fd == "d":
@@ -308,8 +307,12 @@ def run_test(settings_id, test_id, files_url, categories, user):
     try:
         settings = json.loads(redis_connection().hget("autotest:settings", key=settings_id))
         test_username, tests_path = tester_user()
+        test_script_dir = settings["_files"]
+        environments = [s["_env_loc"] for s in settings["testers"]]
+        if not (os.path.isdir(test_script_dir) and all(os.path.isdir(env) for env in environments)):
+            update_test_settings(user, settings_id, settings, settings["_file_url"])
         try:
-            _setup_files(settings_id, user, files_url, tests_path, test_username)
+            _setup_files(test_script_dir, user, files_url, tests_path, test_username)
             cmd = run_test_command(test_username=test_username)
             results = _run_test_specs(cmd, settings, categories, tests_path, test_username, test_id)
         finally:
@@ -378,4 +381,5 @@ def update_test_settings(user, settings_id, test_settings, file_url):
         raise
     finally:
         test_settings["_user"] = user
+        test_settings["_file_url"] = file_url
         redis_connection().hset("autotest:settings", key=settings_id, value=json.dumps(test_settings))
