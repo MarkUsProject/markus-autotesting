@@ -1,6 +1,10 @@
 # CHANGELOG
 All notable changes to this project will be documented here.
 
+## [v2.0.0]
+- Full rewrite of autotester with a server/client architecture (#283)
+- Add Jupyter tester (#284)
+
 ## [v1.10.3]
 - Fix bug where zip archive was unpacked two levels deep instead of just one (#271) 
 - Pass PGHOST and PGINFO environment variables to tests (#272)

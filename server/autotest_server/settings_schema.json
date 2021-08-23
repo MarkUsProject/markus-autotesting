@@ -1,0 +1,81 @@
+{
+  "type": "object",
+  "properties": {
+    "required": [
+      "workspace",
+      "redis_url",
+      "supervisor_url",
+      "workers"
+    ],
+    "workspace": {
+      "type": "string",
+      "minLength": 1
+    },
+    "redis_url": {
+      "type": "string",
+      "minLength": 1
+    },
+    "supervisor_url": {
+      "type": "string",
+      "minLength": 1
+    },
+    "rlimit_settings": {
+      "type": "object"
+    },
+    "workers": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "properties": {
+          "required": [
+            "user",
+            "queues"
+          ],
+          "user": {
+            "type": "string",
+            "minLength": 1
+          },
+          "queues": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "high",
+                "low",
+                "batch",
+                "settings"
+              ]
+            },
+            "uniqueItems": true,
+            "minItems": 1
+          },
+          "resources": {
+            "type": "object",
+            "properties": {
+              "port": {
+                "required": [
+                  "min",
+                  "max"
+                ],
+                "properties": {
+                  "min": {
+                    "type": "number",
+                    "minimum": 1
+                  },
+                  "max": {
+                    "type": "number",
+                    "minimum": 1
+                  }
+                }
+              },
+              "postgresql_url": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

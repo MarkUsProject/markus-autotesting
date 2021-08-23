@@ -1,0 +1,12 @@
+workers:
+  - user: autotst0
+    queues: &queues
+      - high
+      - low
+      - batch
+  - user: autotst1
+    queues: *queues
+  - user: autotst2
+    queues: *queues
+  - user: autotst3
+    queues: *queues
