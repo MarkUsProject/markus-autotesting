@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+if ! dpkg -l racket &> /dev/null; then
+  apt-get -y update
+  DEBIAN_FRONTEND=noninteractive apt-get install -y -o 'Dpkg::Options::=--force-confdef' -o 'Dpkg::Options::=--force-confold' racket
+fi

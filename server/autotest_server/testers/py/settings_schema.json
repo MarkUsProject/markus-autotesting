@@ -1,0 +1,144 @@
+{
+  "type": "object",
+  "required": [
+    "env_data"
+  ],
+  "properties": {
+    "tester_type": {
+      "type": "string",
+      "enum": [
+        "py"
+      ]
+    },
+    "env_data": {
+      "title": "Python environment",
+      "type": "object",
+      "required": [
+        "python_version"
+      ],
+      "properties": {
+        "python_version": {
+          "title": "Python version",
+          "type": "string",
+          "enum": []
+        },
+        "pip_requirements": {
+          "title": "Package requirements",
+          "type": "string"
+        }
+      }
+    },
+    "test_data": {
+      "title": "Test Groups",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "script_files",
+          "timeout",
+          "tester",
+          "output_verbosity"
+        ],
+        "properties": {
+          "script_files": {
+            "title": "Test files",
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "$ref": "#/definitions/files_list"
+            },
+            "uniqueItems": true
+          },
+          "category": {
+            "title": "Category",
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/test_data_categories"
+            },
+            "uniqueItems": true
+          },
+          "timeout": {
+            "title": "Timeout",
+            "type": "integer",
+            "default": 30
+          },
+          "tester": {
+            "title": "Test runner",
+            "type": "string",
+            "enum": [
+              "pytest",
+              "unittest"
+            ],
+            "default": "pytest"
+          },
+          "feedback_file_name": {
+            "title": "Feedback file",
+            "type": "string"
+          },
+          "extra_info": {
+            "$ref": "#/definitions/extra_group_data"
+          }
+        },
+        "dependencies": {
+          "feedback_file_name": {
+            "properties": {
+              "upload_feedback_file": {
+                "title": "Upload feedback file for grading",
+                "type": "boolean",
+                "default": false
+              }
+            }
+          },
+          "tester": {
+            "oneOf": [
+              {
+                "properties": {
+                  "tester": {
+                    "type": "string",
+                    "enum": [
+                      "pytest"
+                    ]
+                  },
+                  "output_verbosity": {
+                    "title": "Pytest output verbosity",
+                    "type": "string",
+                    "enum": [
+                      "short",
+                      "auto",
+                      "long",
+                      "no",
+                      "line",
+                      "native"
+                    ],
+                    "default": "short"
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "tester": {
+                    "type": "string",
+                    "enum": [
+                      "unittest"
+                    ]
+                  },
+                  "output_verbosity": {
+                    "title": "Unittest output verbosity",
+                    "type": "integer",
+                    "enum": [
+                      2,
+                      1,
+                      0
+                    ],
+                    "default": 2
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

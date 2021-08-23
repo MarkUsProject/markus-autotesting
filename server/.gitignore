@@ -1,0 +1,9 @@
+venv/
+supervisord.conf
+supervisord.pid
+supervisord.log
+autotest_server/testers/java/lib/
+.idea
+__pycache__
+.DS_Store
+.hypothesis/

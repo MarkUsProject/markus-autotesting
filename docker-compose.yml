@@ -1,57 +1,64 @@
 version: '3.7'
 
 services:
-  app: &app
+  server:
     build:
-      context: .
+      context: ./server
       dockerfile: ./.dockerfiles/Dockerfile
       args:
         UBUNTU_VERSION: '18.04'
         LOGIN_USER: 'docker'
-    image: autotest-dev:1.0.0
-    stdin_open: true
-    tty: true
-    user: docker
+    image: markus-autotest-server-dev:1.0.0
     volumes:
-      - .:/app:cached
-      - ssh_pub_key:/ssh_pub_key:ro
+      - ./server:/app:cached
       - workspace:/home/docker/.autotesting:rw
     environment:
-      - USER=docker
-      - REDIS_URL=redis://redis_autotest:6379/
-      - PGHOST=postgres_autotest
-      - PGPORT=5432
-      - EDITOR=vi
+      - REDIS_URL=redis://redis:6379/
+      - WORKSPACE=/home/docker/.autotesting
+      - SUPERVISOR_URL=127.0.0.1:9001
       - AUTOTESTER_CONFIG=/app/.dockerfiles/docker-config.yml
+    depends_on:
+      - postgres
+      - redis
+
+  client:
+    build:
+      context: ./client
+      dockerfile: ./.dockerfiles/Dockerfile
+      args:
+        UBUNTU_VERSION: '18.04'
+    image: markus-autotest-client-dev:1.0.0
+    container_name: 'autotest-client'
+    volumes:
+      - ./client:/app:cached
+    environment:
+      - REDIS_URL=redis://redis:6379/
+      - FLASK_HOST=0.0.0.0
+    ports:
+      - '5000:5000'
+    depends_on:
+      - redis
+      - server
     networks:
       - default
       - markus_dev
-    depends_on:
-      - postgres_autotest
-      - redis_autotest
 
-  autotest:
-    <<: *app
-    entrypoint: .dockerfiles/entrypoint-dev.sh
-    container_name: autotest
-    command: './bin/start-stop.sh start --nodaemon --logfile -'
-
-  postgres_autotest:
+  postgres:
     image: postgres:10
     volumes:
-    - postgres_autotest:/var/lib/postgresql/data
+      - postgres_autotest:/var/lib/postgresql/data
     environment:
-    - PSQL_HISTFILE=/root/log/.psql_history
-    - POSTGRES_HOST_AUTH_METHOD=trust
+      - PSQL_HISTFILE=/root/log/.psql_history
+      - POSTGRES_HOST_AUTH_METHOD=trust
     ports:
-    - '45432:5432'
+      - '45432:5432'
 
-  redis_autotest:
+  redis:
     image: redis:3.2-alpine
     volumes:
-    - redis_autotest:/data
+      - redis_autotest:/data
     ports:
-    - 6379
+      - 6379
 
   rq_dashboard:
     image: eoranged/rq-dashboard
@@ -60,14 +67,12 @@ services:
     ports:
       - '9181:9181'
     depends_on:
-      - redis_autotest
+      - redis
 
 volumes:
   postgres_autotest:
   redis_autotest:
   workspace:
-  ssh_pub_key:
-     name: ssh_pub_key
 
 networks:
   markus_dev:

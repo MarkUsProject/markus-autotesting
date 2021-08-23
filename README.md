@@ -77,6 +77,8 @@ The autotester currently supports testers for the following languages and testin
     - [Pytest](https://docs.pytest.org/en/latest/)
 - `pyta`
     - [PythonTa](https://github.com/pyta-uoft/pyta)
+- `jupyter`
+    - [Jupyter Notebook](https://jupyter.org/)
 - `racket`
     - [RackUnit](https://docs.racket-lang.org/rackunit/)
 - `custom`
@@ -118,32 +120,25 @@ workspace: # an absolute path to a directory containing all files/workspaces req
 server_user: # the username of the user designated to run the autotester itself. Default is the current user
 
 workers:
-  - users:
-      - name: # the username of a user designated to run tests for the autotester
-        reaper: # the username of a user used to clean up test processes. This value can be null (see details below)
+  - user: # the username of a user designated to run tests for the autotester
     queues: # a list of queue names that these users will monitor and select test jobs from. 
             # The order of this list indicates which queues have priority when selecting tests to run
             # This list may only contain the strings 'high', 'low', and 'batch'.
             # default is ['high', 'low', 'batch']
+    resources:
+      port: # set a range of ports available for use by this test user (see details below).
+        min: 50000 # For example, this sets the range of ports from 50000 to 65535
+        max: 65535
+      postgresql_url: # url to an empty postgres database for use in running tests, should be unique for each user
 
-redis:
-  url: # url for the redis database. default is: redis://127.0.0.1:6379/0
+redis_url: # url for the redis database. default is: redis://127.0.0.1:6379/0
 
-supervisor:
-  url: # url used by the supervisor process. default is: '127.0.0.1:9001'
+supervisor_url: # url used by the supervisor process. default is: '127.0.0.1:9001'
 
 rlimit_settings: # RLIMIT settings (see details below)
   nproc: # for example, this setting sets the hard and soft limits for the number of processes available to 300
     - 300
     - 300
-
-resources:
-  port: # set a range of ports available for use by the tests (see details below).
-    min: 50000 # For example, this sets the range of ports from 50000 to 65535
-    max: 65535
-  postgresql:
-    port: # port the postgres server is running on
-    host: # host the postgres server is running on
 ```
 
 ### Environment variables
@@ -169,13 +164,6 @@ resources:
 ```
 
 ### autotesting configuration details
-
-#### reaper users
-
-Each reaper user is associated with a single worker user. The reaper user's sole job is to safely kill any processes 
-still running after a test has completed. If these users do not exist before the server is installed they will be created.
-If no reaper username is given in the configuration file, no new users will be created and tests will be terminated in a
-slightly less secure way (though probably still good enough for most cases). 
 
 #### rlimit settings
 
