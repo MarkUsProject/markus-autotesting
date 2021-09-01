@@ -8,61 +8,99 @@ It also allows students to run a separate set of tests and self-assess their sub
 
 Jobs are enqueued using the gem Resque with a first in first out strategy, and served one at a time or concurrently.
 
-## Install and run
+## Technical Overview
 
-### Client
+This autotester is composed of two different parts; an autotester service that runs tests and generates results, and an
+API that schedules tests to be run and reports the results. These two parts communicate by passing data using a shared 
+Redis database.
 
-The autotester currently only supports a MarkUs instance as a client. The autotesting client component is already 
-included in a MarkUs installation. See the [Markus Configuration Options](#markus-configuration-options) section for how
-to configure your MarkUs installation to run tests with the autotester.
+## Installation
 
-If you would like to use a different client, please contact the developers of this project to discuss how to get the
-autotester to work with your client.
+Both the autotester and the API are designed to be run on Ubuntu 20.04 (or sufficiently similar OS).
 
-Client requirements:
+#### Installing up the autotester
 
-- REST Api that allows:
-        - download test script files
-        - download test settings
-        - download student files
-        - upload results
-        - optional: upload feedback files
-        - optional: upload source code annotations
+1. Make sure that your system has python3 installed (at least version 3.6, but we recommend the latest version if 
+   possible).
+2. Create or assign one user to run the autotester. For example, you may create a user named `autotest` for this purpose.
+3. Create or assign at least one user to run test code. For example, you may create 3 users named `test1`, `test2`, `test3`
+   for this purpose.
+   - The `autotest` user should be able to execute commands as these users. For example, you should be able to run the 
+     following:
+     
+     ```bash
+     autotest:/$ sudo -u test1 -- some command here 
+     ```
+     
+     To acheive this, you can update the sudoers file (for each test user):
+     
+     ```bash
+     root:/# echo "autotest ALL=(test1) NOPASSWD:ALL" | EDITOR="tee -a" visudo
+     ```
+   - The `autotest` user should also belong to each test user's group. To acheive this you can run the following (for
+     each test user):
+    
+     ```bash
+     root:/# usermod -aG test1 autotest
+     ```
+   - **Performance Recomendation**: The more users you create the more tests you will be able to run in parallel. Do not
+     create so many users that you will over-tax the resources of your server.
+   - **Security Recomendation**: You *can* skip this step and use the same user to run test code and run the autotester 
+     itself but that will expose your server to security vulnerabilities since this user will be running arbitrary code 
+     on your system.
+   - **Security Recomendation 2**: These users should have the minimal permissions required to run tests. We recommend
+     the following:
+     - test users _should not_ belong to any additional groups
+     - test users _should not_ have permission to read/write/execute any files on your server that you would not want a
+       random person logged in to your machine to have access to.
+     - test users _should not_ have access to the redis database that the autotester and API use to communicate.
+4. Download the source code from github:
 
-### Server
+   ```shell
+   autotest:/$ git clone -b release https://github.com/MarkUsProject/markus-autotesting.git
+   ```
+5. Install the python requirements:
 
-To install the autotesting server, run the `install.sh` script from the `bin` directory with options:
+   ```shell
+   autotest:/$ pip3 install -r markus-autotesting/server/requirements.txt
+   ```
 
-```
-$ bin/install.sh [-p|--python-version python-version] [--non-interactive] [--docker] [--a|--all-testers] [-t|--testers tester ...]
-```
+6. [Configure the autotester](#autotester-configuration-options)
+7. Optionally install additional python versions.
+   
+   The `py` (python3) and `pyta` testers can be run using any version of python between versions 3.6 and 3.10. When
+   these testers are installed the autotester will search the PATH for available python executables. If you want users
+   to be able to run tests with a specific python version, ensure that it is visible in the PATH of both the user running
+   the autotester and all users who run tests.
+    
+8. Run the installer:
 
-options: 
+   ```shell
+   autotest:/$ python3 markus-autotesting/server/install.py
+   ```
 
-- `--python_version` : version of python to install/use to run the autotester (default is 3.9).
-- `--non-interactive` : run the installer in non-interactive mode (all confirmations will be accepted without prompting the user).
-- `--docker` : run the installer for installing in docker. This installs in non-interactive mode and iptables, postgresql debian packages will not be installed.
-- `--all-testers` : install all testers as well as the server. See [Testers](#testers).
-- `--testers` : install the individual named testers (See [Testers](#testers)). This option will be ignored if the --all-testers flag is used.
+   This script does the following:
 
-The server can be uninstalled by running the `uninstall.sh` script in the same directory.
+    - checks that you can connect to the redis database using the url set in the configuration file
+    - checks that each test user has been created properly (see above)
+    - checks that each test user can to the postgresql database set in the configuration file (if set)
+    - creates the workspace at the location set in the configuration file. This is a directory where test files will be 
+      copied and run.
+    - installs all [testers](#testers). Depending on the tester, this script may attempt to install some additional 
+      [dependencies](#tester-dependencies). If the current user does not have sufficient permissions, the script will 
+      display which commands to run (as a more privileged user) to install the necessary dependencies.
 
-#### Dependencies
+#### Installing the API
 
-Installing the server will also install the following debian packages:
+1. Make sure that your system has python3 installed (at least version 3.6, but we recommend the latest version if 
+   possible).
+2. Install the python requirements:
 
-- python3.X  (the python3 minor version can specified as an argument to the install script; see above)
-- python3.X-venv
-- redis-server 
-- jq 
-- postgresql-client
-- libpq-dev
-- openssh-server
-- gcc
-- postgresql (if not running in a docker environment)
-- iptables (if not running in a docker environment)
-
-This script may also add new users and create new postgres databases. See the [configuration](#autotesting-configuration-options) section for more details.
+   ```shell
+   autotest:/$ pip3 install -r markus-autotesting/client/requirements.txt
+   ```
+3. Configure the [API settings](#api-configuration-options) 
+4. Run the API as you would any other simple [Flask application](https://flask.palletsprojects.com/en/2.0.x/)  
 
 ### Testers
 
@@ -84,9 +122,9 @@ The autotester currently supports testers for the following languages and testin
 - `custom`
     - see more information [here](#the-custom-tester)
 
-#### Dependencies
+#### Tester Dependencies
 
-Installing each tester will also install the following additional packages:
+Installing each tester will also install the following additional packages (system-wide):
 - `haskell`
     - ghc 
     - cabal-install 
@@ -106,18 +144,17 @@ Installing each tester will also install the following additional packages:
 
 ## Autotester configuration options
 
-These settings can be overridden or extended by including a configuration file in one of two locations:
+These settings can be overridden or extended by including a local configuration file in 
+`server/autotest_server/settings.local.yml`:
 
-- `${HOME}/.autotester_config` (where `${HOME}` is the home directory of the user running the supervisor process)
-- `/etc/autotester_config` (for a system wide configuration)
-
-An example configuration file can be found in `doc/config_example.yml`. Please see below for a description of all options and defaults:
+Please see below for a description of all options and defaults:
 
 ```yaml
 workspace: # an absolute path to a directory containing all files/workspaces required to run the autotester. Default is
-           # ${HOME}/.autotesting/workspace where ${HOME} is the home directory of the user running the autotester
+           # ${HOME}/.autotesting/workspace where ${HOME} is the home directory of the user running the autotester.
+           
 
-server_user: # the username of the user designated to run the autotester itself. Default is the current user
+server_user: # the username of the user designated to run the autotester itself. Default is the current user. 
 
 workers:
   - user: # the username of a user designated to run tests for the autotester
@@ -131,9 +168,11 @@ workers:
         max: 65535
       postgresql_url: # url to an empty postgres database for use in running tests, should be unique for each user
 
-redis_url: # url for the redis database. default is: redis://127.0.0.1:6379/0
+redis_url: # url of the redis database. default is: redis://127.0.0.1:6379/0
+           # This can also be set with the REDIS_URL environment variable.
 
 supervisor_url: # url used by the supervisor process. default is: '127.0.0.1:9001'
+                # This can also be set with the SUPERVISOR_URL environment variable.
 
 rlimit_settings: # RLIMIT settings (see details below)
   nproc: # for example, this setting sets the hard and soft limits for the number of processes available to 300
@@ -141,29 +180,7 @@ rlimit_settings: # RLIMIT settings (see details below)
     - 300
 ```
 
-### Environment variables
-
-Certain settings can be specified with environment variables. If these environment variables are set, they will override
-the corresponding setting in the configuration files:
-
-```yaml
-workspace: # AUTOTESTER_WORKSPACE
-
-redis:
-  url: # REDIS_URL
-
-server_user: # AUTOTESTER_SERVER_USER
-
-supervisor:
-  url: # AUTOTESTER_SUPERVISOR_URL
-
-resources:
-  postgresql:
-    port: # PGPORT
-    host: # PGHOST
-```
-
-### autotesting configuration details
+### autotester configuration details
 
 #### rlimit settings
 
@@ -203,57 +220,27 @@ to select jobs in the 'high' queue first, then the jobs in the 'low' queue, and 
 Note that not all workers need to be monitoring all queues. However, you should have at least one worker monitoring every
 queue or else some jobs may never be run!
 
-When a client sends the test to the autotester, in order to decide which queue to put the test in, we inspect the json 
-string passed as an argument to the `autotester` command (using either the `-j` or `-f` flags). If there is more
-than one test to enqueue, all jobs will be put in the 'batch' queue; if there is a single test and the `request_high_priority`
+When a client sends test to the API to run, the client may send 1 or more tests at a time. If there is more than one 
+test to enqueue, all jobs will be put in the 'batch' queue; if there is a single test and the `request_high_priority`
 keyword argument is `True`, the job will be put in the 'high' queue; otherwise, the job will be put in the 'low' queue.
+
+## API configuration options
+
+The API can be configured by updating the `client/.env` file. Since the API is a [Flask](https://flask.palletsprojects.com/en/2.0.x/) 
+application, you can also put any environment variables required to configure a Flask application (if needed). 
+
+Please see below for a description of all options and defaults:
+
+```shell
+REDIS_URL=  # url of the redis database (this should be the same url set for the autotester or else the two cannot communicate)
+ACCESS_LOG= # file to write access log information to (default is stdout)
+ERROR_LOG= # file to write error log informatoin to (default is stderr)
+SETTINGS_JOB_TIMEOUT= # the maximum runtime (in seconds) of a job that updates settings before it is interrupted (default is 60) 
+```
 
 ## MarkUs configuration options
 
-After installing the autotester, the next step is to update the configuration settings for MarkUs.
-These settings are in the MarkUs configuration files typically found in the `config/environments` directory of your MarkUs installation:
-
-##### config.x.autotest.enable
-Enables autotesting.
-Should be set to `true`
-
-##### config.x.autotest.student_test_buffer
-With student tests enabled, a student can't request a new test if they already have a test in execution, to prevent
-denial of service. If the test script fails unexpectedly and does not return a result, a student would effectively be
-locked out from further testing.
-
-This is the amount of time after which a student can request a new test anyway.
-
-##### config.x.autotest.client_dir
-The directory where the test files for assignments are stored.
-
-(the user running MarkUs must be able to write here)
-
-##### config.x.autotest.server_host
-The server host name that the markus-autotesting server is installed on.
-
-(use `localhost` if the server runs on the same machine)
-
-##### config.x.autotest.server_username
-The server user to copy the tester and student files over.
-
-This should be the same as the `server_user` in the markus-autotesting configuration file.
-
-(SSH passwordless login must be set up for the user running MarkUs to connect with this user on the server;
-multiple MarkUs instances can use the same user;
-can be `nil`, forcing `config.x.autotest.server_host` to be `localhost` and local file system copy to be used)
-
-##### config.x.autotest.server_dir
-The directory on the autotest server where temporary files are copied. 
-
-This should be the same as the `workspace` directory in the autotesting config file.
-
-(multiple MarkUs instances can use the same directory)
-
-##### config.x.autotest.server_command
-The command to run on the autotesting server that runs the wrapper script that calls `autotester`.
-
-In most cases, this should be set to `'autotest_enqueuer'`
+After installing the autotester and the API, the next step is to [register the MarkUs instance with the autotester](https://github.com/MarkUsProject/Markus/wiki/Installation#autotester-installation-steps).
 
 ## The Custom Tester
 
