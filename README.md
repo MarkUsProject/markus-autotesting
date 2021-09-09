@@ -90,6 +90,16 @@ Both the autotester and the API are designed to be run on Ubuntu 20.04 (or suffi
       [dependencies](#tester-dependencies). If the current user does not have sufficient permissions, the script will 
       display which commands to run (as a more privileged user) to install the necessary dependencies.
 
+9. Start the autotester:
+
+   ```shell
+   autotest:/$ python3 markus-autotesting/server/start_stop.py start
+   ```
+
+   This will generate a `supervisord.conf` file based on your settings in `settings.local.yml` and start the rq workers
+   running using supervisor. This script can also be used to stop, restart, or check the status of the autotester.
+   Run the `start_stop.py` script with the `--help` flag to see all options.
+
 #### Installing the API
 
 1. Make sure that your system has python3 installed (at least version 3.6, but we recommend the latest version if 
@@ -101,6 +111,15 @@ Both the autotester and the API are designed to be run on Ubuntu 20.04 (or suffi
    ```
 3. Configure the [API settings](#api-configuration-options) 
 4. Run the API as you would any other simple [Flask application](https://flask.palletsprojects.com/en/2.0.x/)  
+
+   For example, if you would like to run the API using [gunicorn](https://gunicorn.org/), you could start the API with:
+   
+   ```shell
+   autotest:/$ gunicorn --chdir markus-autotesting/client --bind localhost:5000 run:app
+   ```
+   
+   and configure an httpd service (such as [apache](https://httpd.apache.org/) or [nginx](https://www.nginx.com/)) 
+   to proxy the local server that gunicorn is running.  
 
 ### Testers
 
