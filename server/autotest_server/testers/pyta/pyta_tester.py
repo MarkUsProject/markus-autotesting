@@ -1,31 +1,11 @@
-import os
 import sys
+import io
 import json
-from typing import Optional, IO, Type, Dict
+from typing import Optional, IO, Type, Dict, List
 
 import python_ta
-from pylint.config import VALIDATORS
-from python_ta.reporters import PositionReporter, PlainReporter
 from ..tester import Tester, Test
 from ..specs import TestSpecs
-
-
-class PytaReporter(PositionReporter):
-    def print_messages(self, level="all"):
-        """
-        Print error and warning messages to a feedback file
-        """
-        PlainReporter.print_messages(self, level)
-        self._sorted_error_messages.clear()
-        self._sorted_style_messages.clear()
-        super().print_messages(level)
-
-    def output_blob(self) -> None:
-        """
-        Override this method so that the default json string report
-        doesn't get written to stdout.
-        """
-        pass
 
 
 class PytaTest(Test):
@@ -54,23 +34,21 @@ class PytaTest(Test):
         """The name of this test"""
         return f"Pyta {self.student_file}"
 
-    def add_annotations(self, reporter: PytaReporter) -> None:
+    def add_annotations(self, data: List[Dict]) -> None:
         """
         Records annotations from the results extracted from reporter.
         """
-        for result in reporter._output["results"]:
-            if "filename" not in result:
-                continue
-            for msg_group in result.get("msg_errors", []) + result.get("msg_styles", []):
-                for msg in msg_group["occurrences"]:
+        for result in data:
+            if result.get('filename') == self.student_file:
+                for msg in result['msgs']:
                     self.annotations.append(
                         {
                             "filename": result["filename"],
-                            "content": msg["text"],
-                            "line_start": msg["lineno"],
-                            "line_end": msg["end_lineno"],
-                            "column_start": msg["col_offset"],
-                            "column_end": msg["end_col_offset"],
+                            "content": msg["msg"],
+                            "line_start": msg["line"],
+                            "line_end": msg["line_end"],
+                            "column_start": msg["column"],
+                            "column_end": msg["column_end"],
                         }
                     )
 
@@ -83,31 +61,35 @@ class PytaTest(Test):
         """
         Return a json string containing all test result information.
         """
+        tmp_stdout = io.StringIO()
+        tmp_stderr = io.StringIO()
         try:
-            # run Pyta and collect annotations
-            sys.stdout = self.feedback_open if self.feedback_open is not None else self.tester.devnull
-            sys.stderr = self.tester.devnull
-            reporter = python_ta.check_all(self.student_file, config=self.tester.pyta_config)
-            if reporter.current_file_linted is None:
-                # No files were checked. The mark is set to 0.
-                num_messages = 0
-                points_earned = 0
-            else:
-                self.add_annotations(reporter)
-                # deduct 1 point per message occurrence (not type)
-                num_messages = len(self.annotations)
-                points_earned = max(0, self.points_total - num_messages)
-            message = self.ERROR_MSGS["reported"].format(num_messages) if num_messages > 0 else ""
-            return self.done(points_earned, message)
-        except Exception as e:
-            self.annotations = []
-            return self.error(message=str(e))
+            sys.stderr = tmp_stderr
+            sys.stdout = tmp_stdout
+            python_ta.check_all(self.student_file, config=self.tester.pyta_config)
         finally:
             sys.stderr = sys.__stderr__
             sys.stdout = sys.__stdout__
+        tmp_stdout.seek(0)
+        try:
+            data = json.load(tmp_stdout)
+        except json.JSONDecodeError:
+            tmp_stderr.seek(0)
+            tmp_stdout.seek(0)
+            self.annotations = []
+            return self.error(message=f'{tmp_stderr.read()}\n\n{tmp_stdout.read()}')
+
+        self.add_annotations(data)
+        num_messages = len(self.annotations)
+        points_earned = max(0, self.points_total - num_messages)
+
+        message = self.ERROR_MSGS["reported"].format(num_messages) if num_messages > 0 else ""
+        return self.done(points_earned, message)
 
 
 class PytaTester(Tester):
+    test_class: Type[PytaTest]
+
     def __init__(self, specs: TestSpecs, test_class: Type[PytaTest] = PytaTest):
         """
         Initialize a Python TA tester using the specifications in specs.
@@ -119,8 +101,6 @@ class PytaTester(Tester):
         self.annotation_file = self.specs.get("test_data", "annotation_file")
         self.pyta_config = self.update_pyta_config()
         self.annotations = []
-        self.devnull = open(os.devnull, "w")
-        VALIDATORS[PytaReporter.__name__] = PytaReporter
 
     def update_pyta_config(self) -> Dict:
         """
@@ -138,9 +118,7 @@ class PytaTester(Tester):
         else:
             config_dict = {}
 
-        config_dict["pyta-reporter"] = "PytaReporter"
-        if self.feedback_file:
-            config_dict["pyta-output-file"] = self.feedback_file
+        config_dict["output-format"] = "python_ta.reporters.JSONReporter"
 
         return config_dict
 
@@ -152,8 +130,6 @@ class PytaTester(Tester):
         if self.annotation_file and self.annotations:
             with open(self.annotation_file, "w") as annotations_open:
                 json.dump(self.annotations, annotations_open)
-        if self.devnull:
-            self.devnull.close()
 
     @Tester.run_decorator
     def run(self) -> None:

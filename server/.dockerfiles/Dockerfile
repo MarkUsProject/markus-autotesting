@@ -2,6 +2,8 @@ ARG UBUNTU_VERSION
 
 FROM ubuntu:$UBUNTU_VERSION as base
 
+ENV DEBIAN_FRONTEND=noninteractive 
+
 ARG LOGIN_USER
 
 RUN apt-get update -y && \
