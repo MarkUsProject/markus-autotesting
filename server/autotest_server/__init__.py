@@ -363,7 +363,7 @@ def update_test_settings(user, settings_id, test_settings, file_url):
                 try:
                     tester_install.create_environment(tester_settings)
                 except Exception as e:
-                    raise Exception("create tester environment failed") from e
+                    raise Exception(f"create tester environment failed:\n{e}") from e
             else:
                 default_env = os.path.join(TEST_SCRIPT_DIR, DEFAULT_ENV_DIR)
                 if not os.path.isdir(default_env):
