@@ -203,7 +203,7 @@ def reset_credentials(user):
 @app.route("/schema", methods=["GET"])
 @authorize
 def schema(**_kwargs):
-    return json.loads(_redis_connection().get("autotest:schema") or {})
+    return json.loads(_redis_connection().get("autotest:schema") or "{}")
 
 
 @app.route("/settings/<settings_id>", methods=["GET"])
