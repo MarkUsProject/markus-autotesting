@@ -1,3 +1,4 @@
+import os
 import sys
 import io
 import json
@@ -6,6 +7,11 @@ from typing import Optional, IO, Type, Dict, List
 import python_ta
 from ..tester import Tester, Test
 from ..specs import TestSpecs
+
+
+class PytaReporter(python_ta.reporters.json_reporter.JSONReporter,
+                   python_ta.reporters.plain_reporter.PlainReporter):
+    pass
 
 
 class PytaTest(Test):
@@ -61,12 +67,18 @@ class PytaTest(Test):
         """
         Return a json string containing all test result information.
         """
-        tmp_stdout = io.StringIO()
         tmp_stderr = io.StringIO()
         try:
             sys.stderr = tmp_stderr
-            sys.stdout = tmp_stdout
-            python_ta.check_all(self.student_file, config=self.tester.pyta_config)
+            with open(os.devnull, 'w') as devnull:
+                sys.stdout = devnull
+                reporter = python_ta.check_all(self.student_file, config=self.tester.pyta_config)
+            tmp_stdout = io.StringIO()
+            reporter.out = tmp_stdout
+            reporter.display_messages(None)
+            if self.feedback_open:
+                reporter.out = self.feedback_open
+                reporter.print_messages()
         finally:
             sys.stderr = sys.__stderr__
             sys.stdout = sys.__stdout__
@@ -118,7 +130,7 @@ class PytaTester(Tester):
         else:
             config_dict = {}
 
-        config_dict["output-format"] = "python_ta.reporters.JSONReporter"
+        config_dict["output-format"] = "testers.pyta.pyta_tester.PytaReporter"
 
         return config_dict
 
