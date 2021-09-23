@@ -253,7 +253,12 @@ def run_tests(settings_id, user):
         ids.append(id_)
         data = {"settings_id": settings_id, "test_id": id_, "files_url": url, "categories": categories, "user": user}
         queue.enqueue_call(
-            "autotest_server.run_test", kwargs=data, job_id=str(id_), timeout=int(timeout * 1.5), failure_ttl=3600
+            "autotest_server.run_test",
+            kwargs=data,
+            job_id=str(id_),
+            timeout=int(timeout * 1.5),
+            failure_ttl=3600,
+            result_ttl=3600,
         )  # TODO: make this configurable
 
     return {"test_ids": ids}

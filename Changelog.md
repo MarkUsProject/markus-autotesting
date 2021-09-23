@@ -1,6 +1,11 @@
 # CHANGELOG
 All notable changes to this project will be documented here.
 
+## [unreleased]
+
+## [v2.0.2]
+- Keep result object alive for longer than the default 500 seconds (#302)
+
 ## [v2.0.1]
 - Update python-ta tester to be compatible with python-ta version 2 (#296)
 - Improve error message when tester virtual environment fails (#297)
