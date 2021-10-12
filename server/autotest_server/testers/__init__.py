@@ -1,6 +1,6 @@
 import os
 
-_TESTERS = ("custom", "haskell", "java", "jupyter", "py", "pyta", "racket")
+_TESTERS = ("custom", "haskell", "java", "jupyter", "py", "pyta", "racket", "r")
 
 
 def install(testers=_TESTERS):
