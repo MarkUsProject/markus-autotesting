@@ -96,7 +96,7 @@ def _create_test_script_command(tester_type: str) -> str:
         f"Tester(specs=TestSpecs.from_json(sys.stdin.read())).run()",
     ]
     python_str = "; ".join(python_lines)
-    return f"$PYTHON -c '{python_str}'"
+    return f"\"${{PYTHON}}\" -c '{python_str}'"
 
 
 def get_available_port(min_, max_, host: str = "localhost") -> str:
