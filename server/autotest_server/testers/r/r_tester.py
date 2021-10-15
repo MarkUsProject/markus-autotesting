@@ -21,7 +21,7 @@ class RTest(Test):
         The result was created after running the tests in test_file and test feedback
         will be written to feedback_open.
         """
-        self._test_name = f"{test_file}:{result.get('context', '')}:{result['test']}"
+        self._test_name = ':'.join(info for info in [test_file, result.get('context'), result['test']] if info)
         self.result = result["results"]
         super().__init__(tester, feedback_open)
         self.points_total = 0
@@ -67,9 +67,6 @@ class RTester(Tester):
     def run_r_tests(self) -> Dict[str, List[Dict[str, Union[int, str]]]]:
         """
         Return test results for each test file. Results contain a list of parsed test results.
-
-        Tests are run by first discovering all tests from a specific module (using tasty-discover)
-        and then running all the discovered tests and parsing the results from a csv file.
         """
         results = {}
         r_tester = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'lib', 'r_tester.R')
