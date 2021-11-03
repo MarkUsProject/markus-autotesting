@@ -1,3 +1,4 @@
+sink(file="/dev/null")
 library(testthat)
 library(rjson)
 args <- commandArgs(TRUE)
@@ -10,4 +11,5 @@ for (i in 1:length(test_results)) {
   }
 }
 json <- toJSON(test_results)
+sink()
 cat(json)
