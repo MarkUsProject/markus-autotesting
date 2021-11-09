@@ -8,7 +8,8 @@ services:
       args:
         UBUNTU_VERSION: '18.04'
         LOGIN_USER: 'docker'
-    image: markus-autotest-server-dev:1.0.0
+        WORKSPACE: '/home/docker/.autotesting'
+    image: markus-autotest-server-dev:1.0.1
     volumes:
       - ./server:/app:cached
       - workspace:/home/docker/.autotesting:rw

@@ -5,6 +5,7 @@ FROM ubuntu:$UBUNTU_VERSION as base
 ENV DEBIAN_FRONTEND=noninteractive 
 
 ARG LOGIN_USER
+ARG WORKSPACE
 
 RUN apt-get update -y && \
     apt-get -y install software-properties-common && \
@@ -37,6 +38,8 @@ RUN python3.9 -m venv /markus_venv && \
     /markus_venv/bin/pip install -r /app/requirements.txt && \
     find /app/autotest_server/testers -name requirements.system -exec {} \; && \
     rm -rf /app/*
+
+RUN mkdir -p ${WORKSPACE} && chown ${LOGIN_USER} ${WORKSPACE}
 
 WORKDIR /home/${LOGIN_USER}
 

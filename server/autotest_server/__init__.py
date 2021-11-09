@@ -82,7 +82,7 @@ def _kill_user_processes(test_username: str) -> None:
     subprocess.run(kill_cmd, shell=True)
 
 
-def _create_test_script_command(env_dir: str, tester_type: str) -> str:
+def _create_test_script_command(tester_type: str) -> str:
     """
     Return string representing a command line command to
     run tests.
@@ -95,9 +95,8 @@ def _create_test_script_command(env_dir: str, tester_type: str) -> str:
         "from testers.specs import TestSpecs",
         f"Tester(specs=TestSpecs.from_json(sys.stdin.read())).run()",
     ]
-    python_ex = os.path.join(os.path.join(TEST_SCRIPT_DIR, env_dir), "bin", "python")
     python_str = "; ".join(python_lines)
-    return f"{python_ex} -c '{python_str}'"
+    return f"\"${{PYTHON}}\" -c '{python_str}'"
 
 
 def get_available_port(min_, max_, host: str = "localhost") -> str:
@@ -174,9 +173,8 @@ def _run_test_specs(
 
     for settings in test_settings["testers"]:
         tester_type = settings["tester_type"]
-        env_dir = settings.get("_env_loc")
 
-        cmd_str = _create_test_script_command(env_dir, tester_type)
+        cmd_str = _create_test_script_command(tester_type)
         args = cmd.format(cmd_str)
 
         for test_data in settings["test_data"]:
@@ -198,7 +196,7 @@ def _run_test_specs(
                         stdin=subprocess.PIPE,
                         preexec_fn=set_rlimits_before_test,
                         universal_newlines=True,
-                        env={**os.environ, **env_vars},
+                        env={**os.environ, **env_vars, **settings["_env"]},
                     )
                     try:
                         settings_json = json.dumps({**settings, "test_data": test_data})
@@ -356,20 +354,15 @@ def update_test_settings(user, settings_id, test_settings, file_url):
             tester_type = tester_settings["tester_type"]
             if tester_type not in installed_testers:
                 raise Exception(f"tester {tester_type} is not installed")
+            env_dir = os.path.join(settings_dir, f"{tester_type}_{i}")
             tester_install = importlib.import_module(f"autotest_server.testers.{tester_type}.setup")
-            if tester_settings.get("env_data"):
-                env_dir = os.path.join(settings_dir, f"{tester_type}_{i}")
-                tester_settings["_env_loc"] = env_dir
-                try:
-                    tester_install.create_environment(tester_settings)
-                except Exception as e:
-                    raise Exception(f"create tester environment failed:\n{e}") from e
-            else:
-                default_env = os.path.join(TEST_SCRIPT_DIR, DEFAULT_ENV_DIR)
-                if not os.path.isdir(default_env):
-                    subprocess.run([sys.executable, "-m", "venv", default_env], check=True)
-
-                tester_settings["_env_loc"] = default_env
+            default_env = os.path.join(TEST_SCRIPT_DIR, DEFAULT_ENV_DIR)
+            if not os.path.isdir(default_env):
+                subprocess.run([sys.executable, "-m", "venv", default_env], check=True)
+            try:
+                tester_settings["_env"] = tester_install.create_environment(tester_settings, env_dir, default_env)
+            except Exception as e:
+                raise Exception(f"create tester environment failed:\n{e}") from e
             test_settings["testers"][i] = tester_settings
         test_settings["_files"] = files_dir
         test_settings.pop("_error", None)

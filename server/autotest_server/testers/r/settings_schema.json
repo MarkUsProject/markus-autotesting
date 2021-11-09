@@ -7,22 +7,14 @@
     "tester_type": {
       "type": "string",
       "enum": [
-        "jupyter"
+        "r"
       ]
     },
     "env_data": {
-      "title": "Python environment",
+      "title": "R environment",
       "type": "object",
-      "required": [
-        "python_version"
-      ],
       "properties": {
-        "python_version": {
-          "title": "Python version",
-          "type": "string",
-          "enum": []
-        },
-        "pip_requirements": {
+        "requirements": {
           "title": "Package requirements",
           "type": "string"
         }
@@ -40,30 +32,13 @@
         ],
         "properties": {
           "script_files": {
-            "items": {
-              "type": "object",
-              "required": ["test_file", "student_file", "test_merge"],
-              "properties": {
-                "test_file": {
-                  "title": "Test file",
-                  "$ref": "#/definitions/files_list"
-                },
-                "student_file": {
-                  "title": "Student file",
-                  "type": "string"
-                },
-                "test_merge": {
-                  "title": "Test that files can be merged",
-                  "type": "boolean",
-                  "default": false
-                }
-              }
-            },
-            "minItems": 1,
             "title": "Test files",
             "type": "array",
-            "uniqueItems": true,
-            "default": []
+            "minItems": 1,
+            "items": {
+              "$ref": "#/definitions/files_list"
+            },
+            "uniqueItems": true
           },
           "category": {
             "title": "Category",
