@@ -63,7 +63,7 @@ class JupyterPlugin:
 
 
 class IpynbFile(pytest.File):
-    TEST_PATTERN = re.compile(r"(?i)^\s*#+\s*(test\w*)\s*$")
+    TEST_PATTERN = re.compile(r"(?i)^\s*#+\s*(test.*?)\s*$")
 
     def collect(self):
         mod = importer.import_from_path(self.fspath)
