@@ -138,6 +138,8 @@ The autotester currently supports testers for the following languages and testin
     - [Jupyter Notebook](https://jupyter.org/)
 - `racket`
     - [RackUnit](https://docs.racket-lang.org/rackunit/)
+- `R`
+    - [TestThat](https://testthat.r-lib.org/)
 - `custom`
     - see more information [here](#the-custom-tester)
 
@@ -158,6 +160,8 @@ Installing each tester will also install the following additional packages (syst
     - none
 - `racket`
     - racket
+- `R`
+    - R
 - `custom`
     - none
 

@@ -1,7 +1,8 @@
 # CHANGELOG
 All notable changes to this project will be documented here.
 
-## [unreleased]
+## [v2.1.0]
+- Add R tester (#310)
 
 ## [v2.0.2]
 - Keep result object alive for longer than the default 500 seconds (#302)

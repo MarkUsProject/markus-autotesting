@@ -308,7 +308,7 @@ def get_statuses(settings_id, **_kw):
 
 @app.route("/settings/<settings_id>/tests/cancel", methods=["DELETE"])
 @authorize
-def cancel_tests(settings_id):
+def cancel_tests(settings_id, **_kw):
     test_ids = request.json["test_ids"]
     result = {}
     for id_, job in zip(test_ids, _get_jobs(test_ids, settings_id)):
