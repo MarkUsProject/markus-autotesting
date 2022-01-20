@@ -34,4 +34,4 @@ class TestRegister:
 
     def test_with_username(self, client, fake_redis_conn):
         client.post("/register", json={"user_name": "test"})
-        assert "test" in fake_redis_conn.hgetall("autotest:users").values()
+        assert "test" in fake_redis_conn.hgetall("autotest:user_credentials")

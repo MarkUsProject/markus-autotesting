@@ -84,11 +84,11 @@ def _check_rate_limit(user_name):
 
 def _authorize_user():
     api_key = request.headers.get("Api-Key")
-    user_name = (_redis_connection().hgetall("autotest:users") or {}).get(api_key)
+    user_name = (_redis_connection().hgetall("autotest:user_credentials") or {}).get(api_key)
     if user_name is None:
         abort(make_response(jsonify(message="Unauthorized"), 401))
     _check_rate_limit(user_name)
-    return user_name
+    return api_key
 
 
 def _authorize_settings(user, settings_id=None, **_kw):
@@ -175,19 +175,13 @@ def authorize(func):
 @app.route("/register", methods=["POST"])
 def register():
     # non-secure registration
-    user_name = request.json["user_name"]
     auth_type = request.json.get("auth_type")
     credentials = request.json.get("credentials")
-    users = _redis_connection().hgetall("autotest:users") or {}
-    if user_name in users:
-        abort(make_response(jsonify(message="User already exists"), 400))
     key = base64.b64encode(os.urandom(24)).decode("utf-8")
-    while key in users:
-        key = base64.b64encode(os.urandom(24)).decode("utf-8")
     data = {"auth_type": auth_type, "credentials": credentials}
-    _redis_connection().hset("autotest:users", key=key, value=user_name)
-    _redis_connection().hset("autotest:user_credentials", key=user_name, value=json.dumps(data))
-    return {"user_name": user_name, "api_key": key}
+    while not _redis_connection().hsetnx("autotest:user_credentials", key=key, value=json.dumps(data)):
+        key = base64.b64encode(os.urandom(24)).decode("utf-8")
+    return {"api_key": key}
 
 
 @app.route("/reset_credentials", methods=["PUT"])
