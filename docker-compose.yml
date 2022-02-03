@@ -64,7 +64,7 @@ services:
   rq_dashboard:
     image: eoranged/rq-dashboard
     environment:
-      - RQ_DASHBOARD_REDIS_URL=redis://redis_autotest:6379/
+      - RQ_DASHBOARD_REDIS_URL=redis://redis:6379/
     ports:
       - '9181:9181'
     depends_on:
