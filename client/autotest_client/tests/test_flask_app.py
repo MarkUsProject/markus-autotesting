@@ -1,6 +1,7 @@
 import autotest_client
 import pytest
 import fakeredis
+import json
 
 
 @pytest.fixture
@@ -27,11 +28,20 @@ def fake_redis_db(monkeypatch, fake_redis_conn):
 
 
 class TestRegister:
-    def test_no_username(self, client):
-        resp = client.post("/register")
-        assert resp.status_code == 500
-        assert resp.json['message'] == "'NoneType' object is not subscriptable"
 
-    def test_with_username(self, client, fake_redis_conn):
-        client.post("/register", json={"user_name": "test"})
-        assert "test" in fake_redis_conn.hgetall("autotest:users").values()
+    @pytest.fixture
+    def credentials(self):
+        return {'auth_type': 'test', 'credentials': '12345'}
+
+    @pytest.fixture
+    def response(self, client, credentials):
+        return client.post("/register", json=credentials)
+
+    def test_status(self, response):
+        assert response.status_code == 200
+
+    def test_api_key_set(self, response):
+        assert response.json['api_key']
+
+    def test_credentials_set(self, response, fake_redis_conn, credentials):
+        assert json.loads(fake_redis_conn.hget('autotest:user_credentials', response.json['api_key'])) == credentials
