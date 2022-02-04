@@ -1,6 +1,9 @@
 # CHANGELOG
 All notable changes to this project will be documented here.
 
+## [v2.1.1]
+- Remove the requirement for clients to send unique user name (#318)
+
 ## [v2.1.0]
 - Add R tester (#310)
 
