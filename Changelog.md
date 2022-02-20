@@ -2,6 +2,7 @@
 All notable changes to this project will be documented here.
 
 ## [unreleased]
+- Support dependencies on specific package versions and non-CRAN sources for R tester (#323) 
 
 ## [v2.1.0]
 - Add R tester (#310)
