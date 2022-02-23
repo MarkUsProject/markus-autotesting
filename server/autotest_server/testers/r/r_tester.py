@@ -34,6 +34,7 @@ class RTest(Test):
     def run(self):
         messages = []
         successes = 0
+        error = False
         for result in self.result:
             messages.append(result["message"])
             if result["type"] == "expectation_success":
@@ -41,9 +42,15 @@ class RTest(Test):
                 successes += 1
             elif result["type"] == "expectation_failure":
                 self.points_total += 1
+            elif result["type"] == "expectation_error":
+                error = True
+                self.points_total += 1
+                messages.append('\n'.join(result["trace"]))
 
         message = "\n\n".join(messages)
-        if successes == self.points_total:
+        if error:
+            return self.error(message=message)
+        elif successes == self.points_total:
             return self.passed(message=message)
         elif successes > 0:
             return self.partially_passed(points_earned=successes, message=message)
@@ -74,7 +81,9 @@ class RTester(Tester):
             proc = subprocess.run(['Rscript', r_tester, test_file],
                                   stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE,
-                                  universal_newlines=True)
+                                  universal_newlines=True,
+                                  # NO_COLOR is used to ensure R tracebacks are printed without ANSI color codes
+                                  env={**os.environ, 'NO_COLOR': '1'})
             if not results.get(test_file):
                 results[test_file] = []
             if proc.returncode == 0:
