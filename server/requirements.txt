@@ -2,7 +2,7 @@ rq==1.8.0
 click<8.0
 redis==3.5.3
 pyyaml==5.4.1
-jsonschema==3.2.0
+jsonschema==4.4.0
 requests==2.27.1
 psycopg2-binary==2.8.6
 supervisor==4.2.1
