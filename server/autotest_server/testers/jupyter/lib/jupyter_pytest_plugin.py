@@ -99,7 +99,7 @@ class IpynbItem(pytest.Item):
 
     def repr_failure(self, excinfo, style=None):
         for tb in reversed(excinfo.traceback):
-            if tb.frame.code.path == self.mod.__file__:
+            if excinfo.typename == "SyntaxError" or tb.frame.code.path.startswith(self.mod.__file__):
                 err_line = tb.lineno
                 cell_lines = [
                     f"-> {l}" if i == err_line else f"   {l}"
