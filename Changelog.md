@@ -1,7 +1,7 @@
 # CHANGELOG
 All notable changes to this project will be documented here.
 
-## [unreleased]
+## [v2.1.2]
 - Support dependencies on specific package versions and non-CRAN sources for R tester (#323) 
 
 ## [v2.1.1]
