@@ -345,7 +345,7 @@ def update_test_settings(user, settings_id, test_settings, file_url):
         os.makedirs(files_dir, exist_ok=True)
         creds = json.loads(redis_connection().hget("autotest:user_credentials", key=user))
         r = requests.get(file_url, headers={"Authorization": f"{creds['auth_type']} {creds['credentials']}"})
-        extract_zip_stream(r.content, files_dir, ignore_root_dirs=1)
+        extract_zip_stream(r.content, files_dir, ignore_root_dirs=0)
 
         schema = json.loads(redis_connection().get("autotest:schema"))
         installed_testers = schema["definitions"]["installed_testers"]["enum"]
