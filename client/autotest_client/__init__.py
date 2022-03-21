@@ -20,7 +20,7 @@ dotenv.load_dotenv(dotenv_path=DOTENVFILE)
 
 ERROR_LOG = os.environ.get("ERROR_LOG")
 ACCESS_LOG = os.environ.get("ACCESS_LOG")
-SETTINGS_JOB_TIMEOUT = os.environ.get("SETTINGS_JOB_TIMEOUT", 60)
+SETTINGS_JOB_TIMEOUT = os.environ.get("SETTINGS_JOB_TIMEOUT", 600)
 REDIS_URL = os.environ["REDIS_URL"]
 
 app = Flask(__name__)
