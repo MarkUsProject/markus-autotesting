@@ -1,6 +1,7 @@
 import pytest
 from notebook_helper import importer
 import re
+import traceback
 
 
 class JupyterPlugin:
@@ -98,15 +99,18 @@ class IpynbItem(pytest.Item):
         return self.test_cell
 
     def repr_failure(self, excinfo, style=None):
-        for tb in reversed(excinfo.traceback):
-            if excinfo.typename == "SyntaxError" or tb.frame.code.path.startswith(self.mod.__file__):
-                err_line = tb.lineno
-                cell_lines = [
-                    f"-> {l}" if i == err_line else f"   {l}"
-                    for i, l in enumerate("".join(self._last_cell.source).splitlines())
-                ]
-                lines = "\n".join(cell_lines)
-                return f"{lines}\n\n{excinfo.exconly()}"
+        try:
+            for tb in reversed(excinfo.traceback):
+                if excinfo.typename == "SyntaxError" or str(tb.frame.code.path).startswith(self.mod.__file__):
+                    err_line = tb.lineno
+                    cell_lines = [
+                        f"-> {l}" if i == err_line else f"   {l}"
+                        for i, l in enumerate("".join(self._last_cell.source).splitlines())
+                    ]
+                    lines = "\n".join(cell_lines)
+                    return f"{lines}\n\n{excinfo.exconly()}"
+        except Exception:
+            return f"Error when reporting test failure for {self.name}:\n{traceback.format_exc()}"
 
     def reportinfo(self):
         return self.fspath, 0, self.name
