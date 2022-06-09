@@ -67,6 +67,8 @@ class PytaTest(Test):
         """
         Return a json string containing all test result information.
         """
+        if not os.path.exists(self.student_file):
+            return self.error(message=f'File does not exist: {self.student_file}')
         tmp_stderr = io.StringIO()
         try:
             sys.stderr = tmp_stderr
