@@ -20,7 +20,7 @@ Both the autotester and the API are designed to be run on Ubuntu 20.04 (or suffi
 
 #### Installing up the autotester
 
-1. Make sure that your system has python3 installed (at least version 3.6, but we recommend the latest version if 
+1. Make sure that your system has python3 installed (at least version 3.7, but we recommend the latest version if 
    possible).
 2. Create or assign one user to run the autotester. For example, you may create a user named `autotest` for this purpose.
 3. Create or assign at least one user to run test code. For example, you may create 3 users named `test1`, `test2`, `test3`
@@ -68,7 +68,7 @@ Both the autotester and the API are designed to be run on Ubuntu 20.04 (or suffi
 6. [Configure the autotester](#autotester-configuration-options)
 7. Optionally install additional python versions.
    
-   The `py` (python3) and `pyta` testers can be run using any version of python between versions 3.6 and 3.10. When
+   The `py` (python3) and `pyta` testers can be run using any version of python between versions 3.7 and 3.10. When
    these testers are installed the autotester will search the PATH for available python executables. If you want users
    to be able to run tests with a specific python version, ensure that it is visible in the PATH of both the user running
    the autotester and all users who run tests.
@@ -102,7 +102,7 @@ Both the autotester and the API are designed to be run on Ubuntu 20.04 (or suffi
 
 #### Installing the API
 
-1. Make sure that your system has python3 installed (at least version 3.6, but we recommend the latest version if 
+1. Make sure that your system has python3 installed (at least version 3.7, but we recommend the latest version if 
    possible).
 2. Install the python requirements:
 

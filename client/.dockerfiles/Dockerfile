@@ -7,6 +7,7 @@ RUN apt-get update -y && apt-get install -y python3 python3-venv
 COPY ./requirements.txt /requirements.txt
 
 RUN python3 -m venv /markus_venv && \
+    /markus_venv/bin/pip install wheel && \
     /markus_venv/bin/pip install -r /requirements.txt
 
 WORKDIR /app
