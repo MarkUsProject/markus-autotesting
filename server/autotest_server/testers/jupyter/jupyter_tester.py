@@ -75,7 +75,7 @@ class JupyterTester(Tester):
             try:
                 sys.stdout = null_out
                 plugin = JupyterPlugin()
-                pytest.main([test_file], plugins=[plugin])
+                pytest.main([test_file], plugins=['notebook_helper.pytest.notebook_collector_plugin', plugin])
                 results.extend(plugin.results.values())
             finally:
                 sys.stdout = sys.__stdout__
