@@ -139,16 +139,16 @@ def _get_feedback(test_data, tests_path, test_id):
         feedback_path = os.path.join(tests_path, feedback_file)
         if os.path.isfile(feedback_path):
             with open(feedback_path, "rb") as f:
-                now = int(time.time())
-                key = f"autotest:feedback_file:{test_id}:{now}"
                 conn = redis_connection()
+                id_ = conn.incr("autotest:feedbacks_id")
+                key = f"autotest:feedback_file:{test_id}:{id_}"
                 conn.set(key, gzip.compress(f.read()))
                 conn.expire(key, 3600)  # TODO: make this configurable
                 result["feedback"] = {
                     "filename": feedback_file,
                     "mime_type": mimetypes.guess_type(feedback_path)[0],
                     "compression": "gzip",
-                    "id": now,
+                    "id": id_,
                 }
     if annotation_file and test_data.get("upload_annotations"):
         annotation_path = os.path.join(tests_path, annotation_file)
