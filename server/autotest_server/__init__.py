@@ -140,7 +140,7 @@ def _get_feedback(test_data, tests_path, test_id):
         if os.path.isfile(feedback_path):
             with open(feedback_path, "rb") as f:
                 conn = redis_connection()
-                id_ = conn.incr("autotest:feedbacks_id")
+                id_ = conn.incr("autotest:feedback_files_id")
                 key = f"autotest:feedback_file:{test_id}:{id_}"
                 conn.set(key, gzip.compress(f.read()))
                 conn.expire(key, 3600)  # TODO: make this configurable
