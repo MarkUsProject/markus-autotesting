@@ -162,8 +162,29 @@ def _get_feedback(test_data, tests_path, test_id):
     return result
 
 
+def _update_env_vars(base_env: Dict, test_env: Dict) -> Dict:
+    """
+    Update base_env with the key/value pairs in test_env.
+    If any keys in test_env also occur in base_env, raise an error.
+    Since, the content of test_env is defined by the client, this ensures that the client cannot overwrite environment
+    variables set by this autotester.
+    """
+    conflict = base_env.keys() & test_env.keys()
+    if conflict:
+        raise Exception(
+            f"The following environment variables cannot be overwritten for this test: {', '.join(conflict)}"
+        )
+    return {**base_env, **test_env}
+
+
 def _run_test_specs(
-    cmd: str, test_settings: dict, categories: List[str], tests_path: str, test_username: str, test_id: Union[int, str]
+    cmd: str,
+    test_settings: dict,
+    categories: List[str],
+    tests_path: str,
+    test_username: str,
+    test_id: Union[int, str],
+    test_env_vars: Dict[str, str],
 ) -> List[ResultData]:
     """
     Run each test script in test_scripts in the tests_path directory using the
@@ -185,7 +206,8 @@ def _run_test_specs(
                 timeout_expired = None
                 timeout = test_data.get("timeout")
                 try:
-                    env_vars = _get_env_vars(test_username)
+                    env_vars = {**os.environ, **_get_env_vars(test_username), **settings["_env"]}
+                    env_vars = _update_env_vars(env_vars, test_env_vars)
                     proc = subprocess.Popen(
                         args,
                         start_new_session=True,
@@ -300,7 +322,7 @@ def tester_user() -> Tuple[str, str]:
     return user_name, user_workspace
 
 
-def run_test(settings_id, test_id, files_url, categories, user):
+def run_test(settings_id, test_id, files_url, categories, user, test_env_vars):
     results = []
     error = None
     try:
@@ -309,7 +331,7 @@ def run_test(settings_id, test_id, files_url, categories, user):
         try:
             _setup_files(settings_id, user, files_url, tests_path, test_username)
             cmd = run_test_command(test_username=test_username)
-            results = _run_test_specs(cmd, settings, categories, tests_path, test_username, test_id)
+            results = _run_test_specs(cmd, settings, categories, tests_path, test_username, test_id, test_env_vars)
         finally:
             _stop_tester_processes(test_username)
             _clear_working_directory(tests_path, test_username)
