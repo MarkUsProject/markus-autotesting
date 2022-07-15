@@ -13,17 +13,15 @@ class RTest(Test):
         tester: "RTester",
         test_file: str,
         result: Dict,
-        feedback_open: Optional[IO] = None,
     ) -> None:
         """
         Initialize a R test created by tester.
 
-        The result was created after running the tests in test_file and test feedback
-        will be written to feedback_open.
+        The result was created after running the tests in test_file.
         """
         self._test_name = ':'.join(info for info in [test_file, result.get('context'), result['test']] if info)
         self.result = result["results"]
-        super().__init__(tester, feedback_open)
+        super().__init__(tester)
         self.points_total = 0
 
     @property
@@ -101,8 +99,7 @@ class RTester(Tester):
             results = self.run_r_tests()
         except subprocess.CalledProcessError as e:
             raise TestError(e.stderr) from e
-        with self.open_feedback() as feedback_open:
-            for test_file, result in results.items():
-                for res in result:
-                    test = self.test_class(self, test_file, res, feedback_open)
-                    print(test.run(), flush=True)
+        for test_file, result in results.items():
+            for res in result:
+                test = self.test_class(self, test_file, res)
+                print(test.run(), flush=True)

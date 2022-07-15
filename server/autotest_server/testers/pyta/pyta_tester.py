@@ -2,7 +2,8 @@ import os
 import sys
 import io
 import json
-from typing import Optional, IO, Type, Dict, List
+from contextlib import contextmanager
+from typing import Type, Dict, List, IO, Optional
 
 import python_ta
 from ..tester import Tester, Test
@@ -23,17 +24,17 @@ class PytaTest(Test):
         tester: "PytaTester",
         student_file_path: str,
         max_points: int,
-        feedback_open: Optional[IO] = None,
+        report_file: Optional[IO] = None,
     ) -> None:
         """
         Initialize a Python TA test that checks the student_file_path file,
-        removes 1 point per error from a possible max_points total, and
-        writes results to feedback_open.
+        removes 1 point per error from a possible max_points total.
         """
         self.student_file = student_file_path
-        super().__init__(tester, feedback_open)
+        super().__init__(tester)
         self.points_total = max_points
         self.annotations = []
+        self.report_file = report_file
 
     @property
     def test_name(self) -> str:
@@ -78,8 +79,8 @@ class PytaTest(Test):
             tmp_stdout = io.StringIO()
             reporter.out = tmp_stdout
             reporter.display_messages(None)
-            if self.feedback_open:
-                reporter.out = self.feedback_open
+            if self.report_file:
+                reporter.out = self.report_file
                 reporter.print_messages()
         finally:
             sys.stderr = sys.__stderr__
@@ -111,7 +112,6 @@ class PytaTester(Tester):
         This tester will create tests of type test_class.
         """
         super().__init__(specs, test_class)
-        self.feedback_file = self.specs.get("test_data", "feedback_file_name")
         self.annotation_file = self.specs.get("test_data", "annotation_file")
         self.pyta_config = self.update_pyta_config()
         self.annotations = []
@@ -145,14 +145,24 @@ class PytaTester(Tester):
             with open(self.annotation_file, "w") as annotations_open:
                 json.dump(self.annotations, annotations_open)
 
+    @contextmanager
+    def report_file(self):
+        report_file_path = self.specs.get("test_data", "report_file")
+        if report_file_path:
+            with open(report_file_path, 'w') as f:
+                yield f
+        else:
+            yield None
+
     @Tester.run_decorator
     def run(self) -> None:
         """
         Runs all tests in this tester.
         """
-        with self.open_feedback(self.feedback_file) as feedback_open:
+        with self.report_file() as report_file:
             for test_data in self.specs.get("test_data", "student_files", default=[]):
                 student_file_path = test_data["file_path"]
                 max_points = test_data.get("max_points", 10)
-                test = self.test_class(self, student_file_path, max_points, feedback_open)
+                test = self.test_class(self, student_file_path, max_points, report_file)
                 print(test.run())
+

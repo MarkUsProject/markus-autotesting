@@ -132,10 +132,13 @@ def _get_env_vars(test_username: str) -> Dict[str, str]:
 
 
 def _get_feedback(test_data, tests_path, test_id):
-    feedback_file = test_data.get("feedback_file_name")
+    feedback_files = test_data.get("feedback_file_names", [])
+    report_file = test_data.get("report_file")
+    if report_file:
+        feedback_files.append(report_file)
     annotation_file = test_data.get("annotation_file")
-    result = {"feedback": None, "annotations": None}
-    if feedback_file:
+    result = {"feedback": [], "annotations": None}
+    for feedback_file in feedback_files:
         feedback_path = os.path.join(tests_path, feedback_file)
         if os.path.isfile(feedback_path):
             with open(feedback_path, "rb") as f:
@@ -144,13 +147,13 @@ def _get_feedback(test_data, tests_path, test_id):
                 key = f"autotest:feedback_file:{test_id}:{id_}"
                 conn.set(key, gzip.compress(f.read()))
                 conn.expire(key, 3600)  # TODO: make this configurable
-                result["feedback"] = {
+                result["feedback"].append({
                     "filename": feedback_file,
-                    "mime_type": mimetypes.guess_type(feedback_path)[0],
+                    "mime_type": mimetypes.guess_type(feedback_path)[0] or "text/plain",
                     "compression": "gzip",
                     "id": id_,
-                }
-    if annotation_file and test_data.get("upload_annotations"):
+                })
+    if annotation_file:
         annotation_path = os.path.join(tests_path, annotation_file)
         if os.path.isfile(annotation_path):
             with open(annotation_path, "rb") as f:
