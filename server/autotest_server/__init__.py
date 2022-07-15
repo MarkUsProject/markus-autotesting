@@ -133,9 +133,6 @@ def _get_env_vars(test_username: str) -> Dict[str, str]:
 
 def _get_feedback(test_data, tests_path, test_id):
     feedback_files = test_data.get("feedback_file_names", [])
-    report_file = test_data.get("report_file")
-    if report_file:
-        feedback_files.append(report_file)
     annotation_file = test_data.get("annotation_file")
     result = {"feedback": [], "annotations": None}
     for feedback_file in feedback_files:

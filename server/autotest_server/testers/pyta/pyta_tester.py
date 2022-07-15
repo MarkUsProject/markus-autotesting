@@ -2,7 +2,6 @@ import os
 import sys
 import io
 import json
-from contextlib import contextmanager
 from typing import Type, Dict, List, IO, Optional
 
 import python_ta
@@ -24,7 +23,6 @@ class PytaTest(Test):
         tester: "PytaTester",
         student_file_path: str,
         max_points: int,
-        report_file: Optional[IO] = None,
     ) -> None:
         """
         Initialize a Python TA test that checks the student_file_path file,
@@ -34,7 +32,6 @@ class PytaTest(Test):
         super().__init__(tester)
         self.points_total = max_points
         self.annotations = []
-        self.report_file = report_file
 
     @property
     def test_name(self) -> str:
@@ -79,13 +76,15 @@ class PytaTest(Test):
             tmp_stdout = io.StringIO()
             reporter.out = tmp_stdout
             reporter.display_messages(None)
-            if self.report_file:
-                reporter.out = self.report_file
-                reporter.print_messages()
+
+            report_stdout = io.StringIO()
+            reporter.out = report_stdout
+            reporter.print_messages()
         finally:
             sys.stderr = sys.__stderr__
             sys.stdout = sys.__stdout__
         tmp_stdout.seek(0)
+        report_stdout.seek(0)
         try:
             data = json.load(tmp_stdout)
         except json.JSONDecodeError:
@@ -98,7 +97,7 @@ class PytaTest(Test):
         num_messages = len(self.annotations)
         points_earned = max(0, self.points_total - num_messages)
 
-        message = self.ERROR_MSGS["reported"].format(num_messages) if num_messages > 0 else ""
+        message = report_stdout.read()
         return self.done(points_earned, message)
 
 
@@ -145,24 +144,14 @@ class PytaTester(Tester):
             with open(self.annotation_file, "w") as annotations_open:
                 json.dump(self.annotations, annotations_open)
 
-    @contextmanager
-    def report_file(self):
-        report_file_path = self.specs.get("test_data", "report_file")
-        if report_file_path:
-            with open(report_file_path, 'w') as f:
-                yield f
-        else:
-            yield None
-
     @Tester.run_decorator
     def run(self) -> None:
         """
         Runs all tests in this tester.
         """
-        with self.report_file() as report_file:
-            for test_data in self.specs.get("test_data", "student_files", default=[]):
-                student_file_path = test_data["file_path"]
-                max_points = test_data.get("max_points", 10)
-                test = self.test_class(self, student_file_path, max_points, report_file)
-                print(test.run())
+        for test_data in self.specs.get("test_data", "student_files", default=[]):
+            student_file_path = test_data["file_path"]
+            max_points = test_data.get("max_points", 10)
+            test = self.test_class(self, student_file_path, max_points)
+            print(test.run())
 

@@ -83,10 +83,6 @@
               "type": "string"
             }
           },
-          "report_file": {
-            "title": "PyTA report file",
-            "type": "string"
-          },
           "annotation_file": {
             "title": "Annotation file",
             "type": "string"
