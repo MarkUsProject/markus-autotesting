@@ -150,6 +150,8 @@ def _get_feedback(test_data, tests_path, test_id):
                     "compression": "gzip",
                     "id": id_,
                 })
+        else:
+            raise Exception(f"Cannot find feedback file at '{feedback_path}'.")
     if annotation_file:
         annotation_path = os.path.join(tests_path, annotation_file)
         if os.path.isfile(annotation_path):
