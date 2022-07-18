@@ -1,7 +1,7 @@
 import json
 from abc import ABC, abstractmethod
 from functools import wraps
-from typing import Optional, Callable, Any, Type
+from typing import Optional, Callable, Any, Type, Dict, List
 from testers.specs import TestSpecs
 import traceback
 
@@ -88,6 +88,15 @@ class Test(ABC):
         :return The formatted test result.
         """
         return Test.format_result(self.test_name, status, output, points_earned, self.points_total)
+
+    @staticmethod
+    def format_annotations(annotation_data: List[Dict[str, Any]]) -> str:
+        """
+        Formats annotation data.
+        :param annotation_data: a dictionary containing annotation data
+        :return a json string representation of the annotation data.
+        """
+        return json.dumps({"annotations": annotation_data})
 
     def passed_with_bonus(self, points_bonus: int, message: str = "") -> str:
         """

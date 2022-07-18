@@ -56,22 +56,30 @@ def _create_test_group_result(
     run_time: int,
     extra_info: Dict,
     feedback: Dict,
-    timeout: Optional[int] = None,
+    timeout: Optional[int] = None
 ) -> ResultData:
     """
     Return the arguments passed to this function in a dictionary. If stderr is
     falsy, change it to None. Load the json string in stdout as a dictionary.
     """
-    test_results, malformed = loads_partial_json(stdout, dict)
-    return {
+    all_results, malformed = loads_partial_json(stdout, dict)
+    result = {
         "time": run_time,
         "timeout": timeout,
-        "tests": test_results,
+        "tests": [],
         "stderr": stderr or None,
         "malformed": stdout if malformed else None,
         "extra_info": extra_info or {},
+        "annotations": None,
         **feedback,
     }
+    for res in all_results:
+        if "annotations" in res:
+            result["annotations"] = res["annotations"]
+        else:
+            result["tests"].append(res)
+
+    return result
 
 
 def _kill_user_processes(test_username: str) -> None:
@@ -152,15 +160,6 @@ def _get_feedback(test_data, tests_path, test_id):
                 })
         else:
             raise Exception(f"Cannot find feedback file at '{feedback_path}'.")
-    if annotation_file:
-        annotation_path = os.path.join(tests_path, annotation_file)
-        if os.path.isfile(annotation_path):
-            with open(annotation_path, "rb") as f:
-                try:
-                    result["annotations"] = json.load(f)
-                except json.JSONDecodeError as e:
-                    f.seek(0)
-                    raise Exception(f"Invalid annotation json: {f.read()}") from e
     return result
 
 

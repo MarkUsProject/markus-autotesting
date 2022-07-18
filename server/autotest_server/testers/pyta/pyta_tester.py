@@ -111,7 +111,7 @@ class PytaTester(Tester):
         This tester will create tests of type test_class.
         """
         super().__init__(specs, test_class)
-        self.annotation_file = self.specs.get("test_data", "annotation_file")
+        self.upload_annotations = self.specs.get("test_data", "upload_annotations")
         self.pyta_config = self.update_pyta_config()
         self.annotations = []
 
@@ -137,12 +137,10 @@ class PytaTester(Tester):
 
     def after_tester_run(self) -> None:
         """
-        Write annotations extracted from the test results to the
-        annotation_file.
+        Write annotations extracted from the test results to stdout.
         """
-        if self.annotation_file and self.annotations:
-            with open(self.annotation_file, "w") as annotations_open:
-                json.dump(self.annotations, annotations_open)
+        if self.upload_annotations:
+            print(self.test_class.format_annotations(self.annotations))
 
     @Tester.run_decorator
     def run(self) -> None:
