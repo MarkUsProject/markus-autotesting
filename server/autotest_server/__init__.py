@@ -55,7 +55,7 @@ def _create_test_group_result(
     stderr: str,
     run_time: int,
     extra_info: Dict,
-    feedback: Dict,
+    feedback: List,
     timeout: Optional[int] = None
 ) -> ResultData:
     """
@@ -71,7 +71,7 @@ def _create_test_group_result(
         "malformed": stdout if malformed else None,
         "extra_info": extra_info or {},
         "annotations": None,
-        **feedback,
+        "feedback": feedback,
     }
     for res in all_results:
         if "annotations" in res:
@@ -141,8 +141,7 @@ def _get_env_vars(test_username: str) -> Dict[str, str]:
 
 def _get_feedback(test_data, tests_path, test_id):
     feedback_files = test_data.get("feedback_file_names", [])
-    annotation_file = test_data.get("annotation_file")
-    result = {"feedback": [], "annotations": None}
+    feedback = []
     for feedback_file in feedback_files:
         feedback_path = os.path.join(tests_path, feedback_file)
         if os.path.isfile(feedback_path):
@@ -152,7 +151,7 @@ def _get_feedback(test_data, tests_path, test_id):
                 key = f"autotest:feedback_file:{test_id}:{id_}"
                 conn.set(key, gzip.compress(f.read()))
                 conn.expire(key, 3600)  # TODO: make this configurable
-                result["feedback"].append({
+                feedback.append({
                     "filename": feedback_file,
                     "mime_type": mimetypes.guess_type(feedback_path)[0] or "text/plain",
                     "compression": "gzip",
@@ -160,7 +159,7 @@ def _get_feedback(test_data, tests_path, test_id):
                 })
         else:
             raise Exception(f"Cannot find feedback file at '{feedback_path}'.")
-    return result
+    return feedback
 
 
 def _run_test_specs(
