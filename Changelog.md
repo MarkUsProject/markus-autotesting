@@ -2,7 +2,10 @@
 All notable changes to this project will be documented here.
 
 ## [unreleased]
-- Support dependencies on specific package versions and non-CRAN sources for R tester (#323) 
+- Support dependencies on specific package versions and non-CRAN sources for R tester (#323)
+- Testers no longer generate automated content for feedback files (#375)
+- Multiple feedback files can now be created per test run (#375)
+- PyTA plaintext reports are sent as part of the test result, not as a feedback file (#375)
 
 ## [v2.1.0]
 - Add R tester (#310)
