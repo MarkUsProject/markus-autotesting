@@ -151,4 +151,3 @@ class PytaTester(Tester):
             max_points = test_data.get("max_points", 10)
             test = self.test_class(self, student_file_path, max_points)
             print(test.run())
-

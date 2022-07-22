@@ -124,11 +124,7 @@ class Test(ABC):
         result = self.format(status=self.Status.PASS, output=message, points_earned=self.points_total)
         return result
 
-    def partially_passed(
-        self,
-        points_earned: int,
-        message: str
-    ) -> str:
+    def partially_passed(self, points_earned: int, message: str) -> str:
         """
         Partially passes this test with some points earned. If a feedback file is enabled, adds feedback to it.
         :param points_earned: The points earned by the test, must be an int > 0 and < the test total points.
@@ -154,11 +150,7 @@ class Test(ABC):
         result = self.format(status=self.Status.FAIL, output=message, points_earned=0)
         return result
 
-    def done(
-        self,
-        points_earned: int,
-        message: str = ""
-    ) -> str:
+    def done(self, points_earned: int, message: str = "") -> str:
         """
         Passes, partially passes or fails this test depending on the points earned. If the points are <= 0 this test is
         failed with 0 points earned, if the points are >= test total points this test is passed earning the test total
@@ -297,7 +289,6 @@ class Tester(ABC):
                 self.after_tester_run()
 
         return run_func_wrapper
-
 
     @abstractmethod
     def run(self) -> None:

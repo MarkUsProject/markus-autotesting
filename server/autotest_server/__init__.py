@@ -51,12 +51,7 @@ def run_test_command(test_username: Optional[str] = None) -> str:
 
 
 def _create_test_group_result(
-    stdout: str,
-    stderr: str,
-    run_time: int,
-    extra_info: Dict,
-    feedback: List,
-    timeout: Optional[int] = None
+    stdout: str, stderr: str, run_time: int, extra_info: Dict, feedback: List, timeout: Optional[int] = None
 ) -> ResultData:
     """
     Return the arguments passed to this function in a dictionary. If stderr is
@@ -151,12 +146,14 @@ def _get_feedback(test_data, tests_path, test_id):
                 key = f"autotest:feedback_file:{test_id}:{id_}"
                 conn.set(key, gzip.compress(f.read()))
                 conn.expire(key, 3600)  # TODO: make this configurable
-                feedback.append({
-                    "filename": feedback_file,
-                    "mime_type": mimetypes.guess_type(feedback_path)[0] or "text/plain",
-                    "compression": "gzip",
-                    "id": id_,
-                })
+                feedback.append(
+                    {
+                        "filename": feedback_file,
+                        "mime_type": mimetypes.guess_type(feedback_path)[0] or "text/plain",
+                        "compression": "gzip",
+                        "id": id_,
+                    }
+                )
         else:
             raise Exception(f"Cannot find feedback file at '{feedback_path}'.")
     return feedback
