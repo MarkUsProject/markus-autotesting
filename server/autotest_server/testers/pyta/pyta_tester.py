@@ -2,7 +2,7 @@ import os
 import sys
 import io
 import json
-from typing import Type, Dict, List, IO, Optional
+from typing import Type, Dict, List
 
 import python_ta
 from ..tester import Tester, Test

@@ -2,7 +2,7 @@ import subprocess
 import os
 import tempfile
 import csv
-from typing import Dict, Optional, IO, Type, List, Iterator, Union
+from typing import Dict, Type, List, Iterator, Union
 
 from ..tester import Tester, Test, TestError
 from ..specs import TestSpecs

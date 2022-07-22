@@ -1,7 +1,7 @@
 import os
 import sys
 import re
-from typing import Optional, Type, Dict, IO, List, ContextManager
+from typing import Type, Dict, List, ContextManager
 import pytest
 import nbformat
 import tempfile

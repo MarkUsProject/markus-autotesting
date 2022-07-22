@@ -1,6 +1,6 @@
 import os
 import unittest
-from typing import TextIO, Tuple, Optional, Type, Dict, IO, List
+from typing import TextIO, Tuple, Optional, Type, Dict, List
 from types import TracebackType
 import pytest
 import sys

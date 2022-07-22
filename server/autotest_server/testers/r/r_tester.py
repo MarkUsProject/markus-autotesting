@@ -1,7 +1,7 @@
 import subprocess
 import os
 import json
-from typing import Dict, Optional, IO, Type, List, Union
+from typing import Dict, Type, List, Union
 
 from ..tester import Tester, Test, TestError
 from ..specs import TestSpecs

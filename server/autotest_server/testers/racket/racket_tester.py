@@ -1,7 +1,7 @@
 import json
 import subprocess
 import os
-from typing import Dict, Optional, IO, Type
+from typing import Dict, Type
 from ..tester import Tester, Test, TestError
 
 
