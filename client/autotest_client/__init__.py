@@ -228,24 +228,33 @@ def update_settings(settings_id, user):
 @app.route("/settings/<settings_id>/test", methods=["PUT"])
 @authorize
 def run_tests(settings_id, user):
-    file_urls = request.json["file_urls"]
+    test_data = request.json["test_data"]
     categories = request.json["categories"]
     high_priority = request.json.get("request_high_priority")
-    queue_name = "batch" if len(file_urls) > 1 else ("high" if high_priority else "low")
+    queue_name = "batch" if len(test_data) > 1 else ("high" if high_priority else "low")
     queue = rq.Queue(queue_name, connection=_rq_connection())
 
     timeout = 0
 
     for settings_ in settings(settings_id)["testers"]:
-        for test_data in settings_["test_data"]:
-            timeout += test_data["timeout"]
+        for data in settings_["test_data"]:
+            timeout += data["timeout"]
 
     ids = []
-    for url in file_urls:
+    for data in test_data:
+        url = data["file_url"]
+        test_env_vars = data.get("env_vars", {})
         id_ = _redis_connection().incr("autotest:tests_id")
         _redis_connection().hset("autotest:tests", key=id_, value=settings_id)
         ids.append(id_)
-        data = {"settings_id": settings_id, "test_id": id_, "files_url": url, "categories": categories, "user": user}
+        data = {
+            "settings_id": settings_id,
+            "test_id": id_,
+            "files_url": url,
+            "categories": categories,
+            "user": user,
+            "test_env_vars": test_env_vars,
+        }
         queue.enqueue_call(
             "autotest_server.run_test",
             kwargs=data,
@@ -285,9 +294,7 @@ def get_feedback_file(settings_id, tests_id, feedback_id, **_kw):
     if data is None:
         abort(make_response(jsonify(message="File doesn't exist"), 404))
     _redis_connection().delete(key)
-    return send_file(
-        io.BytesIO(data), mimetype="application/gzip", as_attachment=True, attachment_filename=str(feedback_id)
-    )
+    return send_file(io.BytesIO(data), mimetype="application/gzip", as_attachment=True, download_name=str(feedback_id))
 
 
 @app.route("/settings/<settings_id>/tests/status", methods=["GET"])

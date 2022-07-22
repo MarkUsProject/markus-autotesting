@@ -9,8 +9,7 @@ from ..tester import Tester, Test
 from ..specs import TestSpecs
 
 
-class PytaReporter(python_ta.reporters.json_reporter.JSONReporter,
-                   python_ta.reporters.plain_reporter.PlainReporter):
+class PytaReporter(python_ta.reporters.json_reporter.JSONReporter, python_ta.reporters.plain_reporter.PlainReporter):
     pass
 
 
@@ -43,8 +42,8 @@ class PytaTest(Test):
         Records annotations from the results extracted from reporter.
         """
         for result in data:
-            if result.get('filename') == self.student_file:
-                for msg in result['msgs']:
+            if result.get("filename") == self.student_file:
+                for msg in result["msgs"]:
                     self.annotations.append(
                         {
                             "filename": result["filename"],
@@ -66,11 +65,11 @@ class PytaTest(Test):
         Return a json string containing all test result information.
         """
         if not os.path.exists(self.student_file):
-            return self.error(message=f'File does not exist: {self.student_file}')
+            return self.error(message=f"File does not exist: {self.student_file}")
         tmp_stderr = io.StringIO()
         try:
             sys.stderr = tmp_stderr
-            with open(os.devnull, 'w') as devnull:
+            with open(os.devnull, "w") as devnull:
                 sys.stdout = devnull
                 reporter = python_ta.check_all(self.student_file, config=self.tester.pyta_config)
             tmp_stdout = io.StringIO()
@@ -91,7 +90,7 @@ class PytaTest(Test):
             tmp_stderr.seek(0)
             tmp_stdout.seek(0)
             self.annotations = []
-            return self.error(message=f'{tmp_stderr.read()}\n\n{tmp_stdout.read()}')
+            return self.error(message=f"{tmp_stderr.read()}\n\n{tmp_stdout.read()}")
 
         self.add_annotations(data)
         num_messages = len(self.annotations)

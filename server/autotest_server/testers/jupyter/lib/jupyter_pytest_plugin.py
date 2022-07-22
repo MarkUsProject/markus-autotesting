@@ -1,7 +1,4 @@
 import pytest
-from notebook_helper import importer
-import re
-import traceback
 
 
 class JupyterPlugin:

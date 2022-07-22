@@ -1,0 +1,16 @@
+[flake8]
+max-line-length = 120
+ignore = E266, BLK100
+# flake8 does not parse the .gitignore file so we need to re-specify what to ignore
+exclude =
+    .git,
+    .idea,
+    __pycache__.
+    .DS_Store,
+    .hypothesis,
+    .pytest_cache,
+    *.egg-info,
+    .eggs,
+    venv,
+    venv2,
+    build

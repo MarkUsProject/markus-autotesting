@@ -1,5 +1,3 @@
-[![Acceptance tests](https://layerci.com/badge/github/MarkUsProject/markus-autotesting)](https://layerci.com/jobs/github/MarkUsProject/markus-autotesting)
-
 Autotesting
 ===========
 
