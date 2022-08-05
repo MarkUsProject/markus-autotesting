@@ -9,11 +9,11 @@ from ..specs import TestSpecs
 
 
 class JavaTest(Test):
-    def __init__(self, tester, result, feedback_open=None):
+    def __init__(self, tester, result):
         self._test_name = result["name"]
         self.status = result["status"]
         self.message = result["message"]
-        super().__init__(tester, feedback_open)
+        super().__init__(tester)
 
     @property
     def test_name(self):
@@ -141,8 +141,7 @@ class JavaTester(Tester):
                 raise TestError(results.stderr)
         except subprocess.CalledProcessError as e:
             raise TestError(e)
-        with self.open_feedback() as feedback_open:
-            for result in self._parse_junitxml():
-                test = self.test_class(self, result, feedback_open)
-                result_json = test.run()
-                print(result_json, flush=True)
+        for result in self._parse_junitxml():
+            test = self.test_class(self, result)
+            result_json = test.run()
+            print(result_json, flush=True)

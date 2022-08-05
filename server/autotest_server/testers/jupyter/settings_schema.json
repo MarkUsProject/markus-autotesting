@@ -78,23 +78,15 @@
             "type": "integer",
             "default": 30
           },
-          "feedback_file_name": {
-            "title": "Feedback file",
-            "type": "string"
+          "feedback_file_names": {
+            "title": "Feedback files",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           },
           "extra_info": {
             "$ref": "#/definitions/extra_group_data"
-          }
-        },
-        "dependencies": {
-          "feedback_file_name": {
-            "properties": {
-              "upload_feedback_file": {
-                "title": "Upload feedback file for grading",
-                "type": "boolean",
-                "default": false
-              }
-            }
           }
         }
       }

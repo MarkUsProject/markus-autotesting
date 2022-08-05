@@ -49,7 +49,7 @@ install_dep <- function(row) {
 
   if (!is.na(remote_type)) {
     install_func <- getFromNamespace(paste("install_", remote_type, sep = ""), "remotes")
-    install_func(name)
+    name <- install_func(name) # install_func returns the package name
   } else if (!is.na(version)) {
     install_version(name, version = paste(compare, version, sep =" "))
   } else {

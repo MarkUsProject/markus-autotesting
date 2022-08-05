@@ -51,27 +51,30 @@ def run_test_command(test_username: Optional[str] = None) -> str:
 
 
 def _create_test_group_result(
-    stdout: str,
-    stderr: str,
-    run_time: int,
-    extra_info: Dict,
-    feedback: Dict,
-    timeout: Optional[int] = None,
+    stdout: str, stderr: str, run_time: int, extra_info: Dict, feedback: List, timeout: Optional[int] = None
 ) -> ResultData:
     """
     Return the arguments passed to this function in a dictionary. If stderr is
     falsy, change it to None. Load the json string in stdout as a dictionary.
     """
-    test_results, malformed = loads_partial_json(stdout, dict)
-    return {
+    all_results, malformed = loads_partial_json(stdout, dict)
+    result = {
         "time": run_time,
         "timeout": timeout,
-        "tests": test_results,
+        "tests": [],
         "stderr": stderr or None,
         "malformed": stdout if malformed else None,
         "extra_info": extra_info or {},
-        **feedback,
+        "annotations": None,
+        "feedback": feedback,
     }
+    for res in all_results:
+        if "annotations" in res:
+            result["annotations"] = res["annotations"]
+        else:
+            result["tests"].append(res)
+
+    return result
 
 
 def _kill_user_processes(test_username: str) -> None:
@@ -93,7 +96,7 @@ def _create_test_script_command(tester_type: str) -> str:
         f'sys.path.append("{os.path.dirname(os.path.abspath(__file__))}")',
         import_line,
         "from testers.specs import TestSpecs",
-        f"Tester(specs=TestSpecs.from_json(sys.stdin.read())).run()",
+        "Tester(specs=TestSpecs.from_json(sys.stdin.read())).run()",
     ]
     python_str = "; ".join(python_lines)
     return f"\"${{PYTHON}}\" -c '{python_str}'"
@@ -132,38 +135,53 @@ def _get_env_vars(test_username: str) -> Dict[str, str]:
 
 
 def _get_feedback(test_data, tests_path, test_id):
-    feedback_file = test_data.get("feedback_file_name")
-    annotation_file = test_data.get("annotation_file")
-    result = {"feedback": None, "annotations": None}
-    if feedback_file:
+    feedback_files = test_data.get("feedback_file_names", [])
+    feedback = []
+    for feedback_file in feedback_files:
         feedback_path = os.path.join(tests_path, feedback_file)
         if os.path.isfile(feedback_path):
             with open(feedback_path, "rb") as f:
-                now = int(time.time())
-                key = f"autotest:feedback_file:{test_id}:{now}"
                 conn = redis_connection()
+                id_ = conn.incr("autotest:feedback_files_id")
+                key = f"autotest:feedback_file:{test_id}:{id_}"
                 conn.set(key, gzip.compress(f.read()))
                 conn.expire(key, 3600)  # TODO: make this configurable
-                result["feedback"] = {
-                    "filename": feedback_file,
-                    "mime_type": mimetypes.guess_type(feedback_path)[0],
-                    "compression": "gzip",
-                    "id": now,
-                }
-    if annotation_file and test_data.get("upload_annotations"):
-        annotation_path = os.path.join(tests_path, annotation_file)
-        if os.path.isfile(annotation_path):
-            with open(annotation_path, "rb") as f:
-                try:
-                    result["annotations"] = json.load(f)
-                except json.JSONDecodeError as e:
-                    f.seek(0)
-                    raise Exception(f"Invalid annotation json: {f.read()}") from e
-    return result
+                feedback.append(
+                    {
+                        "filename": feedback_file,
+                        "mime_type": mimetypes.guess_type(feedback_path)[0] or "text/plain",
+                        "compression": "gzip",
+                        "id": id_,
+                    }
+                )
+        else:
+            raise Exception(f"Cannot find feedback file at '{feedback_path}'.")
+    return feedback
+
+
+def _update_env_vars(base_env: Dict, test_env: Dict) -> Dict:
+    """
+    Update base_env with the key/value pairs in test_env.
+    If any keys in test_env also occur in base_env, raise an error.
+    Since, the content of test_env is defined by the client, this ensures that the client cannot overwrite environment
+    variables set by this autotester.
+    """
+    conflict = base_env.keys() & test_env.keys()
+    if conflict:
+        raise Exception(
+            f"The following environment variables cannot be overwritten for this test: {', '.join(conflict)}"
+        )
+    return {**base_env, **test_env}
 
 
 def _run_test_specs(
-    cmd: str, test_settings: dict, categories: List[str], tests_path: str, test_username: str, test_id: Union[int, str]
+    cmd: str,
+    test_settings: dict,
+    categories: List[str],
+    tests_path: str,
+    test_username: str,
+    test_id: Union[int, str],
+    test_env_vars: Dict[str, str],
 ) -> List[ResultData]:
     """
     Run each test script in test_scripts in the tests_path directory using the
@@ -185,7 +203,8 @@ def _run_test_specs(
                 timeout_expired = None
                 timeout = test_data.get("timeout")
                 try:
-                    env_vars = _get_env_vars(test_username)
+                    env_vars = {**os.environ, **_get_env_vars(test_username), **settings["_env"]}
+                    env_vars = _update_env_vars(env_vars, test_env_vars)
                     proc = subprocess.Popen(
                         args,
                         start_new_session=True,
@@ -300,16 +319,18 @@ def tester_user() -> Tuple[str, str]:
     return user_name, user_workspace
 
 
-def run_test(settings_id, test_id, files_url, categories, user):
+def run_test(settings_id, test_id, files_url, categories, user, test_env_vars):
     results = []
     error = None
     try:
         settings = json.loads(redis_connection().hget("autotest:settings", key=settings_id))
+        settings["_last_access"] = int(time.time())
+        redis_connection().hset("autotest:settings", key=settings_id, value=json.dumps(settings))
         test_username, tests_path = tester_user()
         try:
             _setup_files(settings_id, user, files_url, tests_path, test_username)
             cmd = run_test_command(test_username=test_username)
-            results = _run_test_specs(cmd, settings, categories, tests_path, test_username, test_id)
+            results = _run_test_specs(cmd, settings, categories, tests_path, test_username, test_id, test_env_vars)
         finally:
             _stop_tester_processes(test_username)
             _clear_working_directory(tests_path, test_username)
@@ -345,7 +366,7 @@ def update_test_settings(user, settings_id, test_settings, file_url):
         os.makedirs(files_dir, exist_ok=True)
         creds = json.loads(redis_connection().hget("autotest:user_credentials", key=user))
         r = requests.get(file_url, headers={"Authorization": f"{creds['auth_type']} {creds['credentials']}"})
-        extract_zip_stream(r.content, files_dir, ignore_root_dirs=1)
+        extract_zip_stream(r.content, files_dir, ignore_root_dirs=0)
 
         schema = json.loads(redis_connection().get("autotest:schema"))
         installed_testers = schema["definitions"]["installed_testers"]["enum"]
@@ -371,4 +392,5 @@ def update_test_settings(user, settings_id, test_settings, file_url):
         raise
     finally:
         test_settings["_user"] = user
+        test_settings["_last_access"] = int(time.time())
         redis_connection().hset("autotest:settings", key=settings_id, value=json.dumps(test_settings))

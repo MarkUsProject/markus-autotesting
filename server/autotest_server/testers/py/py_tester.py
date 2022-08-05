@@ -1,6 +1,6 @@
 import os
 import unittest
-from typing import TextIO, Tuple, Optional, Type, Dict, IO, List
+from typing import TextIO, Tuple, Optional, Type, Dict, List
 from types import TracebackType
 import pytest
 import sys
@@ -124,20 +124,18 @@ class PyTest(Test):
         tester: "PyTester",
         test_file: str,
         result: Dict,
-        feedback_open: Optional[IO] = None,
     ):
         """
         Initialize a Python test created by tester.
 
         The result was created after running some unittest or pytest tests.
-        Test feedback will be written to feedback_open.
         """
         self._test_name = result["name"]
         self._file_name = test_file
         self.description = result.get("description")
         self.status = result["status"]
         self.message = result["errors"]
-        super().__init__(tester, feedback_open)
+        super().__init__(tester)
 
     @property
     def test_name(self) -> str:
@@ -234,8 +232,7 @@ class PyTester(Tester):
         Runs all tests in this tester.
         """
         results = self.run_python_tests()
-        with self.open_feedback() as feedback_open:
-            for test_file, result in results.items():
-                for res in result:
-                    test = self.test_class(self, test_file, res, feedback_open)
-                    print(test.run(), flush=True)
+        for test_file, result in results.items():
+            for res in result:
+                test = self.test_class(self, test_file, res)
+                print(test.run(), flush=True)

@@ -2,15 +2,14 @@ import os
 import sys
 import io
 import json
-from typing import Optional, IO, Type, Dict, List
+from typing import Type, Dict, List
 
 import python_ta
 from ..tester import Tester, Test
 from ..specs import TestSpecs
 
 
-class PytaReporter(python_ta.reporters.json_reporter.JSONReporter,
-                   python_ta.reporters.plain_reporter.PlainReporter):
+class PytaReporter(python_ta.reporters.json_reporter.JSONReporter, python_ta.reporters.plain_reporter.PlainReporter):
     pass
 
 
@@ -23,15 +22,13 @@ class PytaTest(Test):
         tester: "PytaTester",
         student_file_path: str,
         max_points: int,
-        feedback_open: Optional[IO] = None,
     ) -> None:
         """
         Initialize a Python TA test that checks the student_file_path file,
-        removes 1 point per error from a possible max_points total, and
-        writes results to feedback_open.
+        removes 1 point per error from a possible max_points total.
         """
         self.student_file = student_file_path
-        super().__init__(tester, feedback_open)
+        super().__init__(tester)
         self.points_total = max_points
         self.annotations = []
 
@@ -45,8 +42,8 @@ class PytaTest(Test):
         Records annotations from the results extracted from reporter.
         """
         for result in data:
-            if result.get('filename') == self.student_file:
-                for msg in result['msgs']:
+            if result.get("filename") == self.student_file:
+                for msg in result["msgs"]:
                     self.annotations.append(
                         {
                             "filename": result["filename"],
@@ -67,35 +64,39 @@ class PytaTest(Test):
         """
         Return a json string containing all test result information.
         """
+        if not os.path.exists(self.student_file):
+            return self.error(message=f"File does not exist: {self.student_file}")
         tmp_stderr = io.StringIO()
         try:
             sys.stderr = tmp_stderr
-            with open(os.devnull, 'w') as devnull:
+            with open(os.devnull, "w") as devnull:
                 sys.stdout = devnull
                 reporter = python_ta.check_all(self.student_file, config=self.tester.pyta_config)
             tmp_stdout = io.StringIO()
             reporter.out = tmp_stdout
             reporter.display_messages(None)
-            if self.feedback_open:
-                reporter.out = self.feedback_open
-                reporter.print_messages()
+
+            report_stdout = io.StringIO()
+            reporter.out = report_stdout
+            reporter.print_messages()
         finally:
             sys.stderr = sys.__stderr__
             sys.stdout = sys.__stdout__
         tmp_stdout.seek(0)
+        report_stdout.seek(0)
         try:
             data = json.load(tmp_stdout)
         except json.JSONDecodeError:
             tmp_stderr.seek(0)
             tmp_stdout.seek(0)
             self.annotations = []
-            return self.error(message=f'{tmp_stderr.read()}\n\n{tmp_stdout.read()}')
+            return self.error(message=f"{tmp_stderr.read()}\n\n{tmp_stdout.read()}")
 
         self.add_annotations(data)
         num_messages = len(self.annotations)
         points_earned = max(0, self.points_total - num_messages)
 
-        message = self.ERROR_MSGS["reported"].format(num_messages) if num_messages > 0 else ""
+        message = report_stdout.read()
         return self.done(points_earned, message)
 
 
@@ -109,8 +110,7 @@ class PytaTester(Tester):
         This tester will create tests of type test_class.
         """
         super().__init__(specs, test_class)
-        self.feedback_file = self.specs.get("test_data", "feedback_file_name")
-        self.annotation_file = self.specs.get("test_data", "annotation_file")
+        self.upload_annotations = self.specs.get("test_data", "upload_annotations")
         self.pyta_config = self.update_pyta_config()
         self.annotations = []
 
@@ -136,21 +136,18 @@ class PytaTester(Tester):
 
     def after_tester_run(self) -> None:
         """
-        Write annotations extracted from the test results to the
-        annotation_file.
+        Write annotations extracted from the test results to stdout.
         """
-        if self.annotation_file and self.annotations:
-            with open(self.annotation_file, "w") as annotations_open:
-                json.dump(self.annotations, annotations_open)
+        if self.upload_annotations:
+            print(self.test_class.format_annotations(self.annotations))
 
     @Tester.run_decorator
     def run(self) -> None:
         """
         Runs all tests in this tester.
         """
-        with self.open_feedback(self.feedback_file) as feedback_open:
-            for test_data in self.specs.get("test_data", "student_files", default=[]):
-                student_file_path = test_data["file_path"]
-                max_points = test_data.get("max_points", 10)
-                test = self.test_class(self, student_file_path, max_points, feedback_open)
-                print(test.run())
+        for test_data in self.specs.get("test_data", "student_files", default=[]):
+            student_file_path = test_data["file_path"]
+            max_points = test_data.get("max_points", 10)
+            test = self.test_class(self, student_file_path, max_points)
+            print(test.run())

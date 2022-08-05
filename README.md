@@ -1,5 +1,3 @@
-[![Acceptance tests](https://layerci.com/badge/github/MarkUsProject/markus-autotesting)](https://layerci.com/jobs/github/MarkUsProject/markus-autotesting)
-
 Autotesting
 ===========
 
@@ -20,7 +18,7 @@ Both the autotester and the API are designed to be run on Ubuntu 20.04 (or suffi
 
 #### Installing up the autotester
 
-1. Make sure that your system has python3 installed (at least version 3.6, but we recommend the latest version if 
+1. Make sure that your system has python3 installed (at least version 3.7, but we recommend the latest version if 
    possible).
 2. Create or assign one user to run the autotester. For example, you may create a user named `autotest` for this purpose.
 3. Create or assign at least one user to run test code. For example, you may create 3 users named `test1`, `test2`, `test3`
@@ -68,7 +66,7 @@ Both the autotester and the API are designed to be run on Ubuntu 20.04 (or suffi
 6. [Configure the autotester](#autotester-configuration-options)
 7. Optionally install additional python versions.
    
-   The `py` (python3) and `pyta` testers can be run using any version of python between versions 3.6 and 3.10. When
+   The `py` (python3) and `pyta` testers can be run using any version of python between versions 3.7 and 3.10. When
    these testers are installed the autotester will search the PATH for available python executables. If you want users
    to be able to run tests with a specific python version, ensure that it is visible in the PATH of both the user running
    the autotester and all users who run tests.
@@ -102,7 +100,7 @@ Both the autotester and the API are designed to be run on Ubuntu 20.04 (or suffi
 
 #### Installing the API
 
-1. Make sure that your system has python3 installed (at least version 3.6, but we recommend the latest version if 
+1. Make sure that your system has python3 installed (at least version 3.7, but we recommend the latest version if 
    possible).
 2. Install the python requirements:
 
@@ -293,3 +291,21 @@ where:
         - if `0 < points_earned < points_total` then `status == "partial"`
         - `status == "error"` if some error occurred that meant the number of points for this test could not be determined
 - `time` is optional (can be null) and is the amount of time it took to run the test (in ms)
+
+## Managing files on disk
+
+Test settings files and virtual environments are created in the `workspace` directory. These files can build up over
+time and are not automatically cleaned up. In order to safely clean up these files, you can use the `clean` command 
+with the `start_stop.sh` script. By calling this script with the optional `--age` argument, settings files and virtual
+environments older than X days will be deleted safely. For example
+
+```shell
+autotest:/$ python3 markus-autotesting/server/start_stop.py clean --age 30
+```
+
+will delete settings that have not been accessed (updated or used to run a test) in the last 30 days.
+
+To see which settings *would be* deleted without actually deleting them, use the optional `--dry-run` flag as well.
+
+Users who try to run tests after the settings have been cleaned up in this manner will see an error message telling them
+that the test settings have expired and prompting them to upload more.
