@@ -1,22 +1,21 @@
 import json
 import subprocess
 import os
-from typing import Dict, Optional, IO, Type
+from typing import Dict, Type
 from ..tester import Tester, Test, TestError
 
 
 class RacketTest(Test):
-    def __init__(self, tester: "RacketTester", result: Dict, feedback_open: Optional[IO] = None) -> None:
+    def __init__(self, tester: "RacketTester", result: Dict) -> None:
         """
         Initialize a racket test created by tester.
 
-        The result was created after running the tests in test_file and test feedback
-        will be written to feedback_open.
+        The result was created after running the tests in test_file.
         """
         self._test_name = result["name"]
         self.status = result["status"]
         self.message = result["message"]
-        super().__init__(tester, feedback_open)
+        super().__init__(tester)
 
     @property
     def test_name(self) -> None:
@@ -78,14 +77,13 @@ class RacketTester(Tester):
             results = self.run_racket_test()
         except subprocess.CalledProcessError as e:
             raise TestError(e.stderr) from e
-        with self.open_feedback() as feedback_open:
-            for test_file, result in results.items():
-                if result.strip():
-                    try:
-                        test_results = json.loads(result)
-                    except json.JSONDecodeError as e:
-                        msg = RacketTester.ERROR_MSGS["bad_json"].format(result)
-                        raise TestError(msg) from e
-                    for t_result in test_results:
-                        test = self.test_class(self, t_result, feedback_open)
-                        print(test.run(), flush=True)
+        for test_file, result in results.items():
+            if result.strip():
+                try:
+                    test_results = json.loads(result)
+                except json.JSONDecodeError as e:
+                    msg = RacketTester.ERROR_MSGS["bad_json"].format(result)
+                    raise TestError(msg) from e
+                for t_result in test_results:
+                    test = self.test_class(self, t_result)
+                    print(test.run(), flush=True)

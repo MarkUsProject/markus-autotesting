@@ -2,7 +2,7 @@ import subprocess
 import os
 import tempfile
 import csv
-from typing import Dict, Optional, IO, Type, List, Iterator, Union
+from typing import Dict, Type, List, Iterator, Union
 
 from ..tester import Tester, Test, TestError
 from ..specs import TestSpecs
@@ -14,19 +14,17 @@ class HaskellTest(Test):
         tester: "HaskellTester",
         test_file: str,
         result: Dict,
-        feedback_open: Optional[IO] = None,
     ) -> None:
         """
         Initialize a Haskell test created by tester.
 
-        The result was created after running the tests in test_file and test feedback
-        will be written to feedback_open.
+        The result was created after running the tests in test_file.
         """
         self._test_name = result.get("name")
         self._file_name = test_file
         self.status = result["status"]
         self.message = result["description"]
-        super().__init__(tester, feedback_open)
+        super().__init__(tester)
 
     @property
     def test_name(self) -> str:
@@ -123,8 +121,7 @@ class HaskellTester(Tester):
             results = self.run_haskell_tests()
         except subprocess.CalledProcessError as e:
             raise TestError(e.stderr) from e
-        with self.open_feedback() as feedback_open:
-            for test_file, result in results.items():
-                for res in result:
-                    test = self.test_class(self, test_file, res, feedback_open)
-                    print(test.run(), flush=True)
+        for test_file, result in results.items():
+            for res in result:
+                test = self.test_class(self, test_file, res)
+                print(test.run(), flush=True)

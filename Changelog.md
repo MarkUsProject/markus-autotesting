@@ -1,6 +1,14 @@
 # CHANGELOG
 All notable changes to this project will be documented here.
 
+## [v2.2.0]
+- Support dependencies on specific package versions and non-CRAN sources for R tester (#323)
+- Testers no longer generate automated content for feedback files (#375)
+- Multiple feedback files can now be created per test run (#375)
+- PyTA plaintext reports are sent as part of the test result, not as a feedback file (#375)
+- Allow client to define environment variables to pass to individual test runs (#370)
+- Add ability to clean up test scripts that haven't been used for X days (#379)
+
 ## [v2.1.2]
 - Support dependencies on specific package versions and non-CRAN sources for R tester (#323) 
 

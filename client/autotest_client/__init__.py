@@ -20,7 +20,7 @@ dotenv.load_dotenv(dotenv_path=DOTENVFILE)
 
 ERROR_LOG = os.environ.get("ERROR_LOG")
 ACCESS_LOG = os.environ.get("ACCESS_LOG")
-SETTINGS_JOB_TIMEOUT = os.environ.get("SETTINGS_JOB_TIMEOUT", 60)
+SETTINGS_JOB_TIMEOUT = os.environ.get("SETTINGS_JOB_TIMEOUT", 600)
 REDIS_URL = os.environ["REDIS_URL"]
 
 app = Flask(__name__)
@@ -60,19 +60,21 @@ def _handle_error(e):
         code = e.code
     with _open_log(ERROR_LOG, fallback=sys.stderr) as f:
         try:
-            user = _authorize_user()
+            api_key = request.headers.get("Api-Key")
         except Exception:
-            user = "ERROR: user not found"
-        f.write(f"{datetime.now()}\n\tuser: {user}\n\t{traceback.format_exc()}\n")
+            api_key = "ERROR: user not found"
+        f.write(f"{datetime.now()}\n\tuser: {api_key}\n\t{traceback.format_exc()}\n")
         f.flush()
+    if not app.debug:
+        error = str(e).replace(api_key, "[client-api-key]")
     return jsonify(message=error), code
 
 
-def _check_rate_limit(user_name):
+def _check_rate_limit(api_key):
     conn = _redis_connection()
-    key = f"autotest:ratelimit:{user_name}:{datetime.now().minute}"
+    key = f"autotest:ratelimit:{api_key}:{datetime.now().minute}"
     n_requests = conn.get(key) or 0
-    user_limit = conn.get(f"autotest:ratelimit:{user_name}:limit") or 20  # TODO: make default limit configurable
+    user_limit = conn.get(f"autotest:ratelimit:{api_key}:limit") or 20  # TODO: make default limit configurable
     if int(n_requests) > int(user_limit):
         abort(make_response(jsonify(message="Too many requests"), 429))
     else:
@@ -87,7 +89,7 @@ def _authorize_user():
     user_name = (_redis_connection().hgetall("autotest:user_credentials") or {}).get(api_key)
     if user_name is None:
         abort(make_response(jsonify(message="Unauthorized"), 401))
-    _check_rate_limit(user_name)
+    _check_rate_limit(api_key)
     return api_key
 
 
@@ -228,24 +230,33 @@ def update_settings(settings_id, user):
 @app.route("/settings/<settings_id>/test", methods=["PUT"])
 @authorize
 def run_tests(settings_id, user):
-    file_urls = request.json["file_urls"]
+    test_data = request.json["test_data"]
     categories = request.json["categories"]
     high_priority = request.json.get("request_high_priority")
-    queue_name = "batch" if len(file_urls) > 1 else ("high" if high_priority else "low")
+    queue_name = "batch" if len(test_data) > 1 else ("high" if high_priority else "low")
     queue = rq.Queue(queue_name, connection=_rq_connection())
 
     timeout = 0
 
     for settings_ in settings(settings_id)["testers"]:
-        for test_data in settings_["test_data"]:
-            timeout += test_data["timeout"]
+        for data in settings_["test_data"]:
+            timeout += data["timeout"]
 
     ids = []
-    for url in file_urls:
+    for data in test_data:
+        url = data["file_url"]
+        test_env_vars = data.get("env_vars", {})
         id_ = _redis_connection().incr("autotest:tests_id")
         _redis_connection().hset("autotest:tests", key=id_, value=settings_id)
         ids.append(id_)
-        data = {"settings_id": settings_id, "test_id": id_, "files_url": url, "categories": categories, "user": user}
+        data = {
+            "settings_id": settings_id,
+            "test_id": id_,
+            "files_url": url,
+            "categories": categories,
+            "user": user,
+            "test_env_vars": test_env_vars,
+        }
         queue.enqueue_call(
             "autotest_server.run_test",
             kwargs=data,
@@ -285,9 +296,7 @@ def get_feedback_file(settings_id, tests_id, feedback_id, **_kw):
     if data is None:
         abort(make_response(jsonify(message="File doesn't exist"), 404))
     _redis_connection().delete(key)
-    return send_file(
-        io.BytesIO(data), mimetype="application/gzip", as_attachment=True, attachment_filename=str(feedback_id)
-    )
+    return send_file(io.BytesIO(data), mimetype="application/gzip", as_attachment=True, download_name=str(feedback_id))
 
 
 @app.route("/settings/<settings_id>/tests/status", methods=["GET"])
