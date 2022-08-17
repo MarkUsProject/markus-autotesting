@@ -123,13 +123,13 @@ if __name__ == "__main__":
     )
 
     for parser_ in (start_parser, restart_parser, stat_parser):
-        parser_.add_argument('--rq', default=_RQ, type=_exec_type, help=f"path to rq executable, default={_RQ}")
+        parser_.add_argument("--rq", default=_RQ, type=_exec_type, help=f"path to rq executable, default={_RQ}")
         if parser_ is not stat_parser:
             parser_.add_argument(
-                '--supervisord',
+                "--supervisord",
                 default=_SUPERVISORD,
                 type=_exec_type,
-                help=f"path to supervisord executable, default={_SUPERVISORD}"
+                help=f"path to supervisord executable, default={_SUPERVISORD}",
             )
 
     args, remainder = parser.parse_known_args()
