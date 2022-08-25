@@ -12,8 +12,8 @@ from autotest_server.config import config
 _THIS_DIR = os.path.dirname(os.path.realpath(__file__))
 _PID_FILE = os.path.join(_THIS_DIR, "supervisord.pid")
 _CONF_FILE = os.path.join(_THIS_DIR, "supervisord.conf")
-_SUPERVISORD = os.path.join(os.path.dirname(sys.executable), "supervisord")
-_RQ = os.path.join(os.path.dirname(sys.executable), "rq")
+_SUPERVISORD = shutil.which(os.path.join(os.path.dirname(sys.executable), "supervisord")) or shutil.which("supervisord")
+_RQ = shutil.which(os.path.join(os.path.dirname(sys.executable), "rq")) or shutil.which("rq")
 
 SECONDS_PER_DAY = 86400
 
@@ -48,13 +48,13 @@ def redis_connection() -> redis.Redis:
     return redis.Redis.from_url(config["redis_url"], decode_responses=True)
 
 
-def create_enqueuer_wrapper():
+def create_enqueuer_wrapper(rq):
     with open(_CONF_FILE, "w") as f:
         f.write(HEADER)
         for worker_data in config["workers"]:
             c = CONTENT.format(
                 worker_user=worker_data["user"],
-                rq=_RQ,
+                rq=rq,
                 worker_args=f'--url {config["redis_url"]}',
                 queues=" ".join(worker_data["queues"]),
                 numprocs=1,
@@ -63,9 +63,9 @@ def create_enqueuer_wrapper():
             f.write(c)
 
 
-def start(extra_args):
-    create_enqueuer_wrapper()
-    subprocess.run([_SUPERVISORD, "-c", _CONF_FILE, *extra_args], check=True, cwd=_THIS_DIR)
+def start(rq, supervisord, extra_args):
+    create_enqueuer_wrapper(rq)
+    subprocess.run([supervisord, "-c", _CONF_FILE, *extra_args], check=True, cwd=_THIS_DIR)
 
 
 def stop():
@@ -77,8 +77,8 @@ def stop():
         sys.stderr.write("supervisor is already stopped")
 
 
-def stat(extra_args):
-    subprocess.run([_RQ, "info", "--url", config["redis_url"], *extra_args], check=True)
+def stat(rq, extra_args):
+    subprocess.run([rq, "info", "--url", config["redis_url"], *extra_args], check=True)
 
 
 def clean(age, dry_run):
@@ -98,14 +98,21 @@ def clean(age, dry_run):
                     shutil.rmtree(dir_path)
 
 
+def _exec_type(path):
+    exec_path = shutil.which(path)
+    if exec_path:
+        return exec_path
+    raise argparse.ArgumentTypeError(f"no executable found at: '{path}'")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest="command")
 
-    subparsers.add_parser("start", help="start the autotester")
+    start_parser = subparsers.add_parser("start", help="start the autotester")
     subparsers.add_parser("stop", help="stop the autotester")
-    subparsers.add_parser("restart", help="restart the autotester")
-    subparsers.add_parser("stat", help="display current status of the autotester queues")
+    restart_parser = subparsers.add_parser("restart", help="restart the autotester")
+    stat_parser = subparsers.add_parser("stat", help="display current status of the autotester queues")
     clean_parser = subparsers.add_parser("clean", help="clean up old/unused test scripts")
 
     clean_parser.add_argument(
@@ -115,15 +122,25 @@ if __name__ == "__main__":
         "-d", "--dry-run", action="store_true", help="list files that will be deleted without actually removing them"
     )
 
+    for parser_ in (start_parser, restart_parser, stat_parser):
+        parser_.add_argument("--rq", default=_RQ, type=_exec_type, help=f"path to rq executable, default={_RQ}")
+        if parser_ is not stat_parser:
+            parser_.add_argument(
+                "--supervisord",
+                default=_SUPERVISORD,
+                type=_exec_type,
+                help=f"path to supervisord executable, default={_SUPERVISORD}",
+            )
+
     args, remainder = parser.parse_known_args()
     if args.command == "start":
-        start(remainder)
+        start(args.rq, args.supervisord, remainder)
     elif args.command == "stop":
         stop()
     elif args.command == "restart":
         stop()
-        start(remainder)
+        start(args.rq, args.supervisord, remainder)
     elif args.command == "stat":
-        stat(remainder)
+        stat(args.rq, remainder)
     elif args.command == "clean":
         clean(args.age, args.dry_run)
