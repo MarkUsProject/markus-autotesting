@@ -9,11 +9,11 @@ from ..specs import TestSpecs
 
 
 class JavaTest(Test):
-    def __init__(self, tester, result):
+    def __init__(self, tester, result, feedback_open=None):
         self._test_name = result["name"]
         self.status = result["status"]
         self.message = result["message"]
-        super().__init__(tester)
+        super().__init__(tester, feedback_open)
 
     @property
     def test_name(self):
@@ -31,11 +31,13 @@ class JavaTest(Test):
 
 class JavaTester(Tester):
 
-    JUNIT_TESTER_JAR = os.path.join(os.path.dirname(__file__), "lib", "junit-platform-console-standalone.jar")
+    JUNIT_TESTER_JAR = os.path.join(os.path.dirname(__file__), "lib", "junit-pla
+tform-console-standalone.jar")
     JUNIT_JUPITER_RESULT = "TEST-junit-jupiter.xml"
     JUNIT_VINTAGE_RESULT = "TEST-junit-vintage.xml"
 
-    def __init__(self, specs: TestSpecs, test_class: Type[JavaTest] = JavaTest) -> None:
+    def __init__(self, specs: TestSpecs, test_class: Type[JavaTest] = JavaTest) 
+-> None:
         """
         Initialize a Java tester using the specifications in specs.
 
@@ -50,11 +52,14 @@ class JavaTester(Tester):
     @staticmethod
     def _parse_file_paths(glob_string: str) -> List[str]:
         """
-        Return the real (absolute) paths of all files described by the glob <glob_string>.
-        Only files that exist in the current directory (or its subdirectories) are returned.
+        Return the real (absolute) paths of all files described by the glob <glo
+b_string>.
+        Only files that exist in the current directory (or its subdirectories) a
+re returned.
         """
         curr_path = os.path.realpath(".")
-        return [x for p in glob_string.split(":") for x in glob(os.path.realpath(p)) if curr_path in x]
+        return [x for p in glob_string.split(":") for x in glob(os.path.realpath
+(p)) if curr_path in x]
 
     def _get_sources(self) -> Set:
         """
@@ -62,30 +67,39 @@ class JavaTester(Tester):
         """
         sources = self.specs.get("test_data", "sources_path", default="")
         scripts = ":".join(self.specs["test_data", "script_files"] + [sources])
-        return {path for path in self._parse_file_paths(scripts) if os.path.splitext(path)[1] == ".java"}
+        return {path for path in self._parse_file_paths(scripts) if os.path.spli
+text(path)[1] == ".java"}
 
     def _parse_junitxml(self):
         """
-        Parse junit results and yield a hash containing result data for each testcase.
+        Parse junit results and yield a hash containing result data for each tes
+tcase.
         """
-        for xml_filename in [self.JUNIT_JUPITER_RESULT, self.JUNIT_VINTAGE_RESULT]:
-            tree = eTree.parse(os.path.join(self.reports_dir.name, xml_filename))
+        for xml_filename in [self.JUNIT_JUPITER_RESULT, self.JUNIT_VINTAGE_RESUL
+T]:
+            tree = eTree.parse(os.path.join(self.reports_dir.name, xml_filename)
+)
             root = tree.getroot()
             for testcase in root.iterfind("testcase"):
                 result = {}
                 classname = testcase.attrib["classname"]
                 testname = testcase.attrib["name"]
-                result["name"] = "{}.{}".format(classname, testname)
-                result["time"] = float(testcase.attrib.get("time", 0))
                 failure = testcase.find("failure")
+                error = testcase.find("error")
                 if failure is not None:
                     result["status"] = "failure"
                     failure_type = failure.attrib.get("type", "")
                     failure_message = failure.attrib.get("message", "")
                     result["message"] = f"{failure_type}: {failure_message}"
-                else:
+                if error is not None:
+                    result["status"] = "failure"
+                    error_type = error.attrib.get("type", "")
+                    error_message = error.attrib.get("message", "")
+                    result["message"] = f"{error_type}: {error_message}"
+                if error is None and failure is None:
                     result["status"] = "success"
                     result["message"] = ""
+
                 yield result
 
     def compile(self) -> subprocess.CompletedProcess:
@@ -115,10 +129,12 @@ class JavaTester(Tester):
             f"-cp={self.java_classpath}:{self.out_dir.name}",
             f"--reports-dir={self.reports_dir.name}",
         ]
-        classes = [f"-c={os.path.splitext(os.path.basename(f))[0]}" for f in self.specs["test_data", "script_files"]]
+        classes = [f"-c={os.path.splitext(os.path.basename(f))[0]}" for f in sel
+f.specs["test_data", "script_files"]]
         java_command.extend(classes)
         java = subprocess.run(
-            java_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, check=False
+            java_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, univer
+sal_newlines=True, check=False
         )
         return java
 
@@ -141,7 +157,8 @@ class JavaTester(Tester):
                 raise TestError(results.stderr)
         except subprocess.CalledProcessError as e:
             raise TestError(e)
-        for result in self._parse_junitxml():
-            test = self.test_class(self, result)
-            result_json = test.run()
-            print(result_json, flush=True)
+        with self.open_feedback() as feedback_open:
+            for result in self._parse_junitxml():
+                test = self.test_class(self, result, feedback_open)
+                result_json = test.run()
+                print(result_json, flush=True)
