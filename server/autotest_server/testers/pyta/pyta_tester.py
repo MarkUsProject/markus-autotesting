@@ -49,9 +49,9 @@ class PytaTest(Test):
                             "filename": result["filename"],
                             "content": msg["msg"],
                             "line_start": msg["line"],
-                            "line_end": msg["line_end"],
+                            "line_end": msg["end_line"],
                             "column_start": msg["column"],
-                            "column_end": msg["column_end"],
+                            "column_end": msg["end_column"],
                         }
                     )
 
