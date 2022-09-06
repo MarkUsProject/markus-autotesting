@@ -1,6 +1,10 @@
 # CHANGELOG
 All notable changes to this project will be documented here.
 
+## [v2.2.1]
+- Raise error if rq or supervisord executables can't be found when running start_stop.py (#390)
+- Bump python-ta version to 2.3.2 (#391)
+
 ## [v2.2.0]
 - Support dependencies on specific package versions and non-CRAN sources for R tester (#323)
 - Testers no longer generate automated content for feedback files (#375)
