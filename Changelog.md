@@ -2,6 +2,7 @@
 All notable changes to this project will be documented here.
 
 ## [unreleased]
+- Remove support for python3.6 and add support for python3.10 (#399)
 
 ## [v2.2.1]
 - Raise error if rq or supervisord executables can't be found when running start_stop.py (#390)
