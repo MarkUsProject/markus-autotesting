@@ -2,7 +2,7 @@ sink(file="/dev/null")
 library(testthat)
 library(rjson)
 args <- commandArgs(TRUE)
-test_results <- test_file(args[1], reporter = ListReporter)
+test_results <- testthat::test_file(args[1], reporter = testthat::ListReporter)
 for (i in 1:length(test_results)) {
   for (j in 1:length(test_results[[i]]$results)) {
     result <- test_results[[i]]$results[[j]]
@@ -17,6 +17,6 @@ for (i in 1:length(test_results)) {
     }
   }
 }
-json <- toJSON(test_results)
+json <- rjson::toJSON(test_results)
 sink()
 cat(json)
