@@ -7,6 +7,7 @@ import grp
 import json
 import subprocess
 import getpass
+import redis
 from autotest_server.config import config
 from autotest_server import run_test_command
 from autotest_server.testers import install as install_testers
