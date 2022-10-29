@@ -2,6 +2,7 @@
 All notable changes to this project will be documented here.
 
 ## [v2.2.2]
+- Fix a bug in the java tester where errors were not reported (#401)
 - Add explicit namespaces to R test runner script so that test code will not interfere with result reporting (#407)
 
 ## [v2.2.1]

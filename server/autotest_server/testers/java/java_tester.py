@@ -64,6 +64,25 @@ class JavaTester(Tester):
         scripts = ":".join(self.specs["test_data", "script_files"] + [sources])
         return {path for path in self._parse_file_paths(scripts) if os.path.splitext(path)[1] == ".java"}
 
+    def _parse_failure_error(self, failure, error):
+        """
+        Return a dictionary containing a status and message for either a failure, error, or both. If both
+        an error and failure are present, the message includes information for both.
+        """
+        result = {}
+        if failure and error:
+            failure_message = self._parse_failure_error(failure, None)["message"]
+            error_message = self._parse_failure_error(None, error)["message"]
+            result["status"] = "error"
+            result["message"] = "\n\n".join([error_message, failure_message])
+        elif failure:
+            result["status"] = "failure"
+            result["message"] = f'{failure.attrib.get("type", "")}: {failure.attrib.get("message", "")}'
+        elif error:
+            result["status"] = "error"
+            result["message"] = f'{error.attrib.get("type", "")}: {error.attrib.get("message", "")}'
+        return result
+
     def _parse_junitxml(self):
         """
         Parse junit results and yield a hash containing result data for each testcase.
@@ -78,11 +97,10 @@ class JavaTester(Tester):
                 result["name"] = "{}.{}".format(classname, testname)
                 result["time"] = float(testcase.attrib.get("time", 0))
                 failure = testcase.find("failure")
-                if failure is not None:
-                    result["status"] = "failure"
-                    failure_type = failure.attrib.get("type", "")
-                    failure_message = failure.attrib.get("message", "")
-                    result["message"] = f"{failure_type}: {failure_message}"
+                error = testcase.find("error")
+                fe_result = self._parse_failure_error(failure, error)
+                if fe_result:
+                    result.update(fe_result)
                 else:
                     result["status"] = "success"
                     result["message"] = ""
