@@ -13,6 +13,7 @@ import redis
 import importlib
 import psycopg2
 import mimetypes
+import rq
 from typing import Optional, Dict, Union, List, Tuple, Callable, Type
 from types import TracebackType
 
@@ -20,14 +21,13 @@ from .config import config
 from .utils import loads_partial_json, set_rlimits_before_test, extract_zip_stream, recursive_iglob, copy_tree
 
 DEFAULT_ENV_DIR = "defaultvenv"
-REDIS_URL = config["redis_url"]
 TEST_SCRIPT_DIR = os.path.join(config["workspace"], "scripts")
 
 ResultData = Dict[str, Union[str, int, type(None), Dict]]
 
 
 def redis_connection() -> redis.Redis:
-    return redis.Redis.from_url(REDIS_URL, decode_responses=True)
+    return rq.get_current_job().connection
 
 
 def run_test_command(test_username: Optional[str] = None) -> str:
