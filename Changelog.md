@@ -1,6 +1,10 @@
 # CHANGELOG
 All notable changes to this project will be documented here.
 
+## [v2.2.2]
+- Fix a bug in the java tester where errors were not reported (#401)
+- Add explicit namespaces to R test runner script so that test code will not interfere with result reporting (#407)
+
 ## [v2.2.1]
 - Raise error if rq or supervisord executables can't be found when running start_stop.py (#390)
 - Bump python-ta version to 2.3.2 (#391)

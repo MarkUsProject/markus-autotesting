@@ -43,9 +43,7 @@ killasgroup=true
 
 """
 
-
-def redis_connection() -> redis.Redis:
-    return redis.Redis.from_url(config["redis_url"], decode_responses=True)
+REDIS_CONNECTION = redis.Redis.from_url(config["redis_url"], decode_responses=True)
 
 
 def create_enqueuer_wrapper(rq):
@@ -82,7 +80,7 @@ def stat(rq, extra_args):
 
 
 def clean(age, dry_run):
-    for settings_id, settings in dict(redis_connection().hgetall("autotest:settings") or {}).items():
+    for settings_id, settings in dict(REDIS_CONNECTION.hgetall("autotest:settings") or {}).items():
         settings = json.loads(settings)
         last_access_timestamp = settings.get("_last_access")
         access = int(time.time() - (last_access_timestamp or 0))
@@ -93,7 +91,7 @@ def clean(age, dry_run):
                 print(f"{dir_path} -> last accessed {last_access or '< 1'} days ago")
             else:
                 settings["_error"] = "the settings for this test have expired, please re-upload the settings."
-                redis_connection().hset("autotest:settings", key=settings_id, value=json.dumps(settings))
+                REDIS_CONNECTION.hset("autotest:settings", key=settings_id, value=json.dumps(settings))
                 if os.path.isdir(dir_path):
                     shutil.rmtree(dir_path)
 

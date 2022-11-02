@@ -7,9 +7,12 @@ import grp
 import json
 import subprocess
 import getpass
+import redis
 from autotest_server.config import config
-from autotest_server import redis_connection, run_test_command
+from autotest_server import run_test_command
 from autotest_server.testers import install as install_testers
+
+REDIS_CONNECTION = redis.Redis.from_url(config["redis_url"])
 
 
 def _print(*args, **kwargs):
@@ -19,7 +22,7 @@ def _print(*args, **kwargs):
 def check_dependencies():
     _print("checking if redis url is valid:")
     try:
-        redis_connection().keys()
+        REDIS_CONNECTION.ping()
     except Exception as e:
         raise Exception(f'Cannot connect to redis database with url: {config["redis_url"]}') from e
     for w in config["workers"]:
@@ -66,7 +69,7 @@ def install_all_testers():
         skeleton = json.load(f)
         skeleton["definitions"]["installed_testers"]["enum"] = list(settings.keys())
         skeleton["definitions"]["tester_schemas"]["oneOf"] = list(settings.values())
-        redis_connection().set("autotest:schema", json.dumps(skeleton))
+        REDIS_CONNECTION.set("autotest:schema", json.dumps(skeleton))
 
 
 def install():
