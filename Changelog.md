@@ -1,6 +1,10 @@
 # CHANGELOG
 All notable changes to this project will be documented here.
 
+## [v2.2.3]
+- Remove support for python3.6 and add support for python3.10 (#399)
+- Remove requirement to skip top level directory in zip archive when downloading test files (#412)
+
 ## [v2.2.2]
 - Fix a bug in the java tester where errors were not reported (#401)
 - Add explicit namespaces to R test runner script so that test code will not interfere with result reporting (#407)
