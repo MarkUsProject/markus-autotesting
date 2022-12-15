@@ -278,7 +278,7 @@ def _setup_files(settings_id: int, user: str, files_url: str, tests_path: str, t
     """
     creds = json.loads(redis_connection().hget("autotest:user_credentials", key=user))
     r = requests.get(files_url, headers={"Authorization": f"{creds['auth_type']} {creds['credentials']}"})
-    extract_zip_stream(r.content, tests_path, ignore_root_dirs=1)
+    extract_zip_stream(r.content, tests_path)
     for fd, file_or_dir in recursive_iglob(tests_path):
         if fd == "d":
             os.chmod(file_or_dir, 0o770)
@@ -366,7 +366,7 @@ def update_test_settings(user, settings_id, test_settings, file_url):
         os.makedirs(files_dir, exist_ok=True)
         creds = json.loads(redis_connection().hget("autotest:user_credentials", key=user))
         r = requests.get(file_url, headers={"Authorization": f"{creds['auth_type']} {creds['credentials']}"})
-        extract_zip_stream(r.content, files_dir, ignore_root_dirs=0)
+        extract_zip_stream(r.content, files_dir)
 
         schema = json.loads(redis_connection().get("autotest:schema"))
         installed_testers = schema["definitions"]["installed_testers"]["enum"]

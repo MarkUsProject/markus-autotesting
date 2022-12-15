@@ -72,17 +72,14 @@ def set_rlimits_before_test() -> None:
         resource.setrlimit(limit, (soft, hard))
 
 
-def extract_zip_stream(zip_byte_stream: bytes, destination: str, ignore_root_dirs: int = 1) -> None:
+def extract_zip_stream(zip_byte_stream: bytes, destination: str) -> None:
     """
     Extract files in a zip archive's content <zip_byte_stream> to <destination>, a path to a local directory.
-
-    If ignore_root_dir is a positive integer, the files in the zip archive will be extracted and written as if
-    the top n root directories of the zip archive were not in their path (where n == ignore_root_dirs).
     """
     with zipfile.ZipFile(BytesIO(zip_byte_stream)) as zf:
         for fname in zf.namelist():
             *dpaths, bname = fname.split(os.sep)
-            dest = os.path.join(destination, *dpaths[ignore_root_dirs:])
+            dest = os.path.join(destination, dpaths)
             filename = os.path.join(dest, bname)
             if filename.endswith("/"):
                 os.makedirs(filename, exist_ok=True)
