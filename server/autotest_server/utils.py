@@ -79,7 +79,7 @@ def extract_zip_stream(zip_byte_stream: bytes, destination: str) -> None:
     with zipfile.ZipFile(BytesIO(zip_byte_stream)) as zf:
         for fname in zf.namelist():
             *dpaths, bname = fname.split(os.sep)
-            dest = os.path.join(destination, dpaths)
+            dest = os.path.join(destination, *dpaths)
             filename = os.path.join(dest, bname)
             if filename.endswith("/"):
                 os.makedirs(filename, exist_ok=True)
