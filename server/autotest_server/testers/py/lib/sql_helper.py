@@ -144,7 +144,6 @@ def execute_psql_file(
 
 
 class PSQLTest:
-
     connection: ClassVar[Optional[ConnectionType]] = None
 
     SCHEMA_COPY_STR = """
