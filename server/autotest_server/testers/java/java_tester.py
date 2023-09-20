@@ -69,15 +69,15 @@ class JavaTester(Tester):
         an error and failure are present, the message includes information for both.
         """
         result = {}
-        if failure and error:
+        if failure is not None and error is not None:
             failure_message = self._parse_failure_error(failure, None)["message"]
             error_message = self._parse_failure_error(None, error)["message"]
             result["status"] = "error"
             result["message"] = "\n\n".join([error_message, failure_message])
-        elif failure:
+        elif failure is not None:
             result["status"] = "failure"
             result["message"] = f'{failure.attrib.get("type", "")}: {failure.attrib.get("message", "")}'
-        elif error:
+        elif error is not None:
             result["status"] = "error"
             result["message"] = f'{error.attrib.get("type", "")}: {error.attrib.get("message", "")}'
         return result
