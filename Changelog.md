@@ -1,6 +1,10 @@
 # CHANGELOG
 All notable changes to this project will be documented here.
 
+## [v2.3.2]
+- Fix a bug in the Java tester, where failed/error tests were being detected as passing. (#451)
+- updated python-ta to 2.6.1 (#452)
+
 ## [v2.3.1]
 - Fix a bug that prevented test file from being copied from a zip file to another location on disk (#426)
 
