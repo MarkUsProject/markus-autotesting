@@ -1,6 +1,9 @@
 # CHANGELOG
 All notable changes to this project will be documented here.
 
+## [v2.3.3]
+- Updated python-ta to 2.6.2 (#454)
+
 ## [v2.3.2]
 - Fix a bug in the Java tester, where failed/error tests were being detected as passing. (#451)
 - updated python-ta to 2.6.1 (#452)
