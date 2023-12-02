@@ -236,8 +236,8 @@ def _run_test_specs(
                     extra_info = test_data.get("extra_info", {})
                     feedback, feedback_errors = _get_feedback(test_data, tests_path, test_id)
                     if feedback_errors:
-                      msg = 'Cannot find feedback file(s): ' + ', '.join(feedback_errors)
-                      err = err + '\n\n' + msg if err else msg
+                        msg = "Cannot find feedback file(s): " + ", ".join(feedback_errors)
+                        err = err + "\n\n" + msg if err else msg
                     results.append(_create_test_group_result(out, err, duration, extra_info, feedback, timeout_expired))
     return results
 
