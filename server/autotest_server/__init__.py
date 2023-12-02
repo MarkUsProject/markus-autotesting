@@ -1,3 +1,4 @@
+from __future__ import annotations
 import os
 import sys
 import shutil
@@ -134,9 +135,9 @@ def _get_env_vars(test_username: str) -> Dict[str, str]:
     return env_vars
 
 
-def _get_feedback(test_data, tests_path, test_id):
+def _get_feedback(test_data, tests_path, test_id) -> tuple[dict, str]:
     feedback_files = test_data.get("feedback_file_names", [])
-    feedback = []
+    feedback, feedback_errors = [], []
     for feedback_file in feedback_files:
         feedback_path = os.path.join(tests_path, feedback_file)
         if os.path.isfile(feedback_path):
@@ -155,8 +156,8 @@ def _get_feedback(test_data, tests_path, test_id):
                     }
                 )
         else:
-            raise Exception(f"Cannot find feedback file at '{feedback_path}'.")
-    return feedback
+            feedback_errors.append(feedback_file)
+    return feedback, feedback_errors
 
 
 def _update_env_vars(base_env: Dict, test_env: Dict) -> Dict:
@@ -233,7 +234,10 @@ def _run_test_specs(
                 finally:
                     duration = int(round(time.time() - start, 3) * 1000)
                     extra_info = test_data.get("extra_info", {})
-                    feedback = _get_feedback(test_data, tests_path, test_id)
+                    feedback, feedback_errors = _get_feedback(test_data, tests_path, test_id)
+                    if feedback_errors:
+                      msg = 'Cannot find feedback file(s): ' + ', '.join(feedback_errors)
+                      err = err + '\n\n' + msg if err else msg
                     results.append(_create_test_group_result(out, err, duration, extra_info, feedback, timeout_expired))
     return results
 
