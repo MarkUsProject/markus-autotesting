@@ -2,6 +2,7 @@ flask==2.2.2
 python-dotenv==0.21.0
 rq==1.11.1
 redis==5.0.1
-jsonschema==4.16.0
+jsonschema==4.17.3;python_version<"3.8"
+jsonschema==4.20.0;python_version>="3.8"
 Werkzeug==2.2.3;python_version<"3.8"
 Werkzeug==2.3.7;python_version>="3.8"
