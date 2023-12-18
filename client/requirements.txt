@@ -1,4 +1,4 @@
-flask==2.2.2
+flask==2.2.5
 python-dotenv==0.21.0
 rq==1.11.1
 redis==5.0.1
