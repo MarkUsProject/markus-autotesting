@@ -5,4 +5,4 @@ redis==5.0.1
 jsonschema==4.17.3;python_version<"3.8"
 jsonschema==4.20.0;python_version>="3.8"
 Werkzeug==2.2.3;python_version<"3.8"
-Werkzeug==2.3.7;python_version>="3.8"
+Werkzeug==2.3.8;python_version>="3.8"
