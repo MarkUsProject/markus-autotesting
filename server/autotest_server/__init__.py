@@ -204,7 +204,8 @@ def _run_test_specs(
                 timeout_expired = None
                 timeout = test_data.get("timeout")
                 try:
-                    env_vars = {**os.environ, **_get_env_vars(test_username), **settings["_env"]}
+                    env = settings.get("_env", {})
+                    env_vars = {**os.environ, **_get_env_vars(test_username), **env}
                     env_vars = _update_env_vars(env_vars, test_env_vars)
                     proc = subprocess.Popen(
                         args,
@@ -216,7 +217,7 @@ def _run_test_specs(
                         stdin=subprocess.PIPE,
                         preexec_fn=set_rlimits_before_test,
                         universal_newlines=True,
-                        env={**os.environ, **env_vars, **settings["_env"]},
+                        env={**os.environ, **env_vars, **env},
                     )
                     try:
                         settings_json = json.dumps({**settings, "test_data": test_data})
@@ -359,6 +360,11 @@ def ignore_missing_dir_error(
 
 
 def update_test_settings(user, settings_id, test_settings, file_url):
+    test_settings["_user"] = user
+    test_settings["_last_access"] = int(time.time())
+    test_settings["_env_status"] = "setup"
+    redis_connection().hset("autotest:settings", key=settings_id, value=json.dumps(test_settings))
+
     try:
         settings_dir = os.path.join(TEST_SCRIPT_DIR, str(settings_id))
 
@@ -391,8 +397,10 @@ def update_test_settings(user, settings_id, test_settings, file_url):
             test_settings["testers"][i] = tester_settings
         test_settings["_files"] = files_dir
         test_settings.pop("_error", None)
+        test_settings["_env_status"] = "ready"
     except Exception as e:
         test_settings["_error"] = str(e)
+        test_settings["_env_status"] = "error"
         raise
     finally:
         test_settings["_user"] = user
