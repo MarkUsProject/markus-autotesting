@@ -4,6 +4,7 @@ All notable changes to this project will be documented here.
 ## [unreleased]
 
 - Fix bug that prevented test results from being returned when a feedback file could not be found (#458)
+- Add support for Python 3.11 and 3.12 (#467)
 
 ## [v2.3.1]
 - Fix a bug that prevented test file from being copied from a zip file to another location on disk (#426)
