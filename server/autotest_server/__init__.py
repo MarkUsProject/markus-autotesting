@@ -229,6 +229,12 @@ def _run_test_specs(
                         else:
                             _kill_user_processes(test_username)
                         out, err = proc.communicate()
+                        if err == "Killed\n":  # Default message from shell
+                            test_group_name = test_data.get("extra_info", {}).get("name", "").strip()
+                            if test_group_name:
+                                err = f"Tests for {test_group_name} did not complete within time limit ({timeout}s)\n"
+                            else:
+                                err = f"Tests did not complete within time limit ({timeout}s)\n"
                         timeout_expired = timeout
                 except Exception as e:
                     err += "\n\n{}".format(e)

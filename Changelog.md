@@ -7,6 +7,7 @@ All notable changes to this project will be documented here.
 - Add support for Python 3.11 and 3.12 (#467)
 - Track test environment setup status and report errors when running tests if environment setup is in progress or raised an error (#468)
 - Update Haskell tester to use [Stack](https://docs.haskellstack.org/en/stable/) to install dependencies (#469)
+- Improve default error message when a test group times out (#470)
 
 ## [v2.3.1]
 - Fix a bug that prevented test file from being copied from a zip file to another location on disk (#426)
