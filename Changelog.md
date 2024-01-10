@@ -1,6 +1,13 @@
 # CHANGELOG
 All notable changes to this project will be documented here.
 
+## [v2.4.0]
+- Fix bug that prevented test results from being returned when a feedback file could not be found (#458)
+- Add support for Python 3.11 and 3.12 (#467)
+- Track test environment setup status and report errors when running tests if environment setup is in progress or raised an error (#468)
+- Update Haskell tester to use [Stack](https://docs.haskellstack.org/en/stable/) to install dependencies (#469)
+- Improve default error message when a test group times out (#470)
+
 ## [v2.3.3]
 - Updated python-ta to 2.6.2 (#454)
 

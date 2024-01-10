@@ -66,7 +66,7 @@ Both the autotester and the API are designed to be run on Ubuntu 20.04 (or suffi
 6. [Configure the autotester](#autotester-configuration-options)
 7. Optionally install additional python versions.
    
-   The `py` (python3) and `pyta` testers can be run using any version of python between versions 3.7 and 3.10. When
+   The `py` (python3) and `pyta` testers can be run using any version of python between versions 3.7 and 3.12. When
    these testers are installed the autotester will search the PATH for available python executables. If you want users
    to be able to run tests with a specific python version, ensure that it is visible in the PATH of both the user running
    the autotester and all users who run tests.

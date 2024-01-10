@@ -14,7 +14,6 @@ class PytaReporter(python_ta.reporters.json_reporter.JSONReporter, python_ta.rep
 
 
 class PytaTest(Test):
-
     ERROR_MSGS = {"reported": "{} error(s)"}
 
     def __init__(

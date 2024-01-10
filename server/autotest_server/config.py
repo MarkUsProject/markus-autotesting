@@ -14,7 +14,6 @@ ConfigValues = TypeVar("ConfigValues", List, Dict, str, int, float, type(None))
 
 
 class _Config:
-
     _replacement_pattern: ClassVar[Pattern] = re.compile(r".*?\${(\w+)}.*?")
     _not_found_key: ClassVar[str] = ""
 

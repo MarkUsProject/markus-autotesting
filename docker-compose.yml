@@ -77,5 +77,5 @@ volumes:
 
 networks:
   markus_dev:
-    external:
-      name: markus_dev
+    name: markus_dev
+    external: true

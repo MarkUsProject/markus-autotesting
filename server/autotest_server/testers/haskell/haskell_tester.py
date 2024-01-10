@@ -7,6 +7,8 @@ from typing import Dict, Type, List, Iterator, Union
 from ..tester import Tester, Test, TestError
 from ..specs import TestSpecs
 
+STACK_OPTIONS = ["--resolver=lts-14.27", "--system-ghc", "--allow-different-user"]
+
 
 class HaskellTest(Test):
     def __init__(
@@ -104,11 +106,23 @@ class HaskellTester(Tester):
         haskell_lib = os.path.join(os.path.dirname(os.path.realpath(__file__)), "lib")
         for test_file in self.specs["test_data", "script_files"]:
             with tempfile.NamedTemporaryFile(dir=this_dir) as f:
-                cmd = ["tasty-discover", ".", "_", f.name] + self._test_run_flags(test_file)
+                cmd = [
+                    "stack",
+                    "exec",
+                    *STACK_OPTIONS,
+                    "--",
+                    "tasty-discover",
+                    ".",
+                    "_",
+                    f.name,
+                    *self._test_run_flags(test_file),
+                ]
                 subprocess.run(cmd, stdout=subprocess.DEVNULL, universal_newlines=True, check=True)
                 with tempfile.NamedTemporaryFile(mode="w+", dir=this_dir) as sf:
-                    cmd = ["runghc", "--", f"-i={haskell_lib}", f.name, f"--stats={sf.name}"]
-                    subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, universal_newlines=True)
+                    cmd = ["stack", "runghc", *STACK_OPTIONS, "--", f"-i={haskell_lib}", f.name, f"--stats={sf.name}"]
+                    subprocess.run(
+                        cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, universal_newlines=True, check=True
+                    )
                     results[test_file] = self._parse_test_results(csv.reader(sf))
         return results
 

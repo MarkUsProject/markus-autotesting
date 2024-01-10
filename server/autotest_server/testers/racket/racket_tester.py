@@ -36,7 +36,6 @@ class RacketTest(Test):
 
 
 class RacketTester(Tester):
-
     ERROR_MSGS = {"bad_json": "Unable to parse test results: {}"}
 
     def __init__(self, specs, test_class: Type[RacketTest] = RacketTest) -> None:

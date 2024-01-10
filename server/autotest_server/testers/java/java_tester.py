@@ -30,7 +30,6 @@ class JavaTest(Test):
 
 
 class JavaTester(Tester):
-
     JUNIT_TESTER_JAR = os.path.join(os.path.dirname(__file__), "lib", "junit-platform-console-standalone.jar")
     JUNIT_JUPITER_RESULT = "TEST-junit-jupiter.xml"
     JUNIT_VINTAGE_RESULT = "TEST-junit-vintage.xml"
