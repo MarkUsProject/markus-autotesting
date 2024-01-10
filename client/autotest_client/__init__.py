@@ -213,6 +213,17 @@ def update_settings(settings_id, user):
 @app.route("/settings/<settings_id>/test", methods=["PUT"])
 @authorize
 def run_tests(settings_id, user):
+    test_settings = json.loads(REDIS_CONNECTION.hget("autotest:settings", key=settings_id))
+    env_status = test_settings.get("_env_status")
+    if env_status == "setup":
+        raise Exception("Setting up test environment. Please try again later.")
+    elif env_status == "error":
+        msg = "Settings Error"
+        settings_error = test_settings.get("_error", "")
+        if settings_error:
+            msg += f": {settings_error}"
+        raise Exception(msg)
+
     test_data = request.json["test_data"]
     categories = request.json["categories"]
     high_priority = request.json.get("request_high_priority")
@@ -221,7 +232,7 @@ def run_tests(settings_id, user):
 
     timeout = 0
 
-    for settings_ in settings(settings_id)["testers"]:
+    for settings_ in test_settings["testers"]:
         for data in settings_["test_data"]:
             timeout += data["timeout"]
 

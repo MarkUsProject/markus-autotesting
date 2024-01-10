@@ -1,3 +1,4 @@
+from __future__ import annotations
 import os
 import sys
 import shutil
@@ -134,9 +135,9 @@ def _get_env_vars(test_username: str) -> Dict[str, str]:
     return env_vars
 
 
-def _get_feedback(test_data, tests_path, test_id):
+def _get_feedback(test_data, tests_path, test_id) -> tuple[dict, str]:
     feedback_files = test_data.get("feedback_file_names", [])
-    feedback = []
+    feedback, feedback_errors = [], []
     for feedback_file in feedback_files:
         feedback_path = os.path.join(tests_path, feedback_file)
         if os.path.isfile(feedback_path):
@@ -155,8 +156,8 @@ def _get_feedback(test_data, tests_path, test_id):
                     }
                 )
         else:
-            raise Exception(f"Cannot find feedback file at '{feedback_path}'.")
-    return feedback
+            feedback_errors.append(feedback_file)
+    return feedback, feedback_errors
 
 
 def _update_env_vars(base_env: Dict, test_env: Dict) -> Dict:
@@ -203,7 +204,8 @@ def _run_test_specs(
                 timeout_expired = None
                 timeout = test_data.get("timeout")
                 try:
-                    env_vars = {**os.environ, **_get_env_vars(test_username), **settings["_env"]}
+                    env = settings.get("_env", {})
+                    env_vars = {**os.environ, **_get_env_vars(test_username), **env}
                     env_vars = _update_env_vars(env_vars, test_env_vars)
                     proc = subprocess.Popen(
                         args,
@@ -215,7 +217,7 @@ def _run_test_specs(
                         stdin=subprocess.PIPE,
                         preexec_fn=set_rlimits_before_test,
                         universal_newlines=True,
-                        env={**os.environ, **env_vars, **settings["_env"]},
+                        env={**os.environ, **env_vars, **env},
                     )
                     try:
                         settings_json = json.dumps({**settings, "test_data": test_data})
@@ -227,13 +229,22 @@ def _run_test_specs(
                         else:
                             _kill_user_processes(test_username)
                         out, err = proc.communicate()
+                        if err == "Killed\n":  # Default message from shell
+                            test_group_name = test_data.get("extra_info", {}).get("name", "").strip()
+                            if test_group_name:
+                                err = f"Tests for {test_group_name} did not complete within time limit ({timeout}s)\n"
+                            else:
+                                err = f"Tests did not complete within time limit ({timeout}s)\n"
                         timeout_expired = timeout
                 except Exception as e:
                     err += "\n\n{}".format(e)
                 finally:
                     duration = int(round(time.time() - start, 3) * 1000)
                     extra_info = test_data.get("extra_info", {})
-                    feedback = _get_feedback(test_data, tests_path, test_id)
+                    feedback, feedback_errors = _get_feedback(test_data, tests_path, test_id)
+                    if feedback_errors:
+                        msg = "Cannot find feedback file(s): " + ", ".join(feedback_errors)
+                        err = err + "\n\n" + msg if err else msg
                     results.append(_create_test_group_result(out, err, duration, extra_info, feedback, timeout_expired))
     return results
 
@@ -355,6 +366,11 @@ def ignore_missing_dir_error(
 
 
 def update_test_settings(user, settings_id, test_settings, file_url):
+    test_settings["_user"] = user
+    test_settings["_last_access"] = int(time.time())
+    test_settings["_env_status"] = "setup"
+    redis_connection().hset("autotest:settings", key=settings_id, value=json.dumps(test_settings))
+
     try:
         settings_dir = os.path.join(TEST_SCRIPT_DIR, str(settings_id))
 
@@ -387,8 +403,10 @@ def update_test_settings(user, settings_id, test_settings, file_url):
             test_settings["testers"][i] = tester_settings
         test_settings["_files"] = files_dir
         test_settings.pop("_error", None)
+        test_settings["_env_status"] = "ready"
     except Exception as e:
         test_settings["_error"] = str(e)
+        test_settings["_env_status"] = "error"
         raise
     finally:
         test_settings["_user"] = user
