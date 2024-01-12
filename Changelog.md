@@ -8,6 +8,13 @@ All notable changes to this project will be documented here.
 - Update Haskell tester to use [Stack](https://docs.haskellstack.org/en/stable/) to install dependencies (#469)
 - Improve default error message when a test group times out (#470)
 
+## [v2.3.3]
+- Updated python-ta to 2.6.2 (#454)
+
+## [v2.3.2]
+- Fix a bug in the Java tester, where failed/error tests were being detected as passing. (#451)
+- updated python-ta to 2.6.1 (#452)
+
 ## [v2.3.1]
 - Fix a bug that prevented test file from being copied from a zip file to another location on disk (#426)
 
