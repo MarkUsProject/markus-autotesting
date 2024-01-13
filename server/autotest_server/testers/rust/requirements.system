@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+# The main repository for APT seems to be fairly old (1.65).
+# Building cargo-nextest from source requires Rust 1.70, so I'm using rustup instead of a package manager.
+
+# We need a few things for our rust target.
+#  - curl for downloading rustup. Alternatively we can use wget.
+#  - rustup for installing rust and installing cargo-nextest.
+#  - cargo-nextest for machine readable test output.
+
+# Install Curl
+if ! dpkg -l curl &> /dev/null; then
+  apt-get -y update
+
+  DEBIAN_FRONTEND=noninteractive apt-get install -y -o 'Dpkg::Options::=--force-confdef' -o 'Dpkg::Options::=--force-confold' curl
+fi
+
+# Install Rust
+if ! command -v cargo &> /dev/null; then
+  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+
+  # Add cargo to the path.
+  . "$HOME/.cargo/env"
+fi
+
+# Install Nextest
+# For justification as to why we're using nextest, take a look at rust_tester.py.
+if ! command -v cargo-nextest &> /dev/null; then
+  cargo install cargo-nextest --locked
+fi
