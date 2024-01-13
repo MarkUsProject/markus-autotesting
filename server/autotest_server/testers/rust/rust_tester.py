@@ -13,7 +13,7 @@ TEST_IDENTIFIER_REGEX = re.compile("^((?P<exec>.*)\\$)?(?P<test>.*)$")
 def parse_test_identifier(identifier: str) -> tuple[str, str]:
     result = TEST_IDENTIFIER_REGEX.match(identifier)
 
-    return result.group('exec'), result.group('test')
+    return result.group("exec"), result.group("test")
 
 
 class RustTest(Test):
@@ -37,7 +37,7 @@ class RustTest(Test):
 
 
 def parse_adjacent_json(text: str) -> list[dict]:
-    skip = {'\n', '\r'}
+    skip = {"\n", "\r"}
 
     i = 0
     decoder = json.JSONDecoder()
@@ -78,13 +78,7 @@ class RustTester(Tester):
 
             output = item["stdout"] if event == "failed" else ""
 
-            tests.append(self.test_class(
-                self,
-                executable,
-                test,
-                event == "ok",
-                output
-            ))
+            tests.append(self.test_class(self, executable, test, event == "ok", output))
 
         return tests
 
@@ -93,7 +87,7 @@ class RustTester(Tester):
         # Hint to /bin/sh that it should look in $HOME/.cargo/bin.
         # Despite .profile pointing to this directory, /bin/dash does not want to acknowledge it.
         # There is conflicting information online as to whether-or-not .profile is respected by dash.
-        rust_home_path = os.path.join(Path.home(), '.cargo', 'bin')
+        rust_home_path = os.path.join(Path.home(), ".cargo", "bin")
 
         env = os.environ.copy()
 
@@ -102,14 +96,7 @@ class RustTester(Tester):
         return env
 
     def compile_rust_tests(self, directory: str) -> subprocess.CompletedProcess:
-        command = [
-            "cargo",
-            "nextest",
-            "run",
-            "--no-run",
-            "--color",
-            "never"
-        ]
+        command = ["cargo", "nextest", "run", "--no-run", "--color", "never"]
 
         env = self.rust_env()
 
@@ -126,16 +113,7 @@ class RustTester(Tester):
     #    nextest should also interact very similarly to `cargo test`. It should be very simple to swap to cargo-test.
     #    It's also reliable and only requires Rust 1.36 or earlier for running.
     def run_rust_tests(self, directory: str) -> subprocess.CompletedProcess:
-        command = [
-            "cargo",
-            "nextest",
-            "run",
-            "--no-fail-fast",
-            "--message-format",
-            "libtest-json",
-            "--color",
-            "never"
-        ]
+        command = ["cargo", "nextest", "run", "--no-fail-fast", "--message-format", "libtest-json", "--color", "never"]
 
         # Machine-readable output is experimental with Nextest.
         env = self.rust_env()
