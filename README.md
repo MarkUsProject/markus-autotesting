@@ -138,6 +138,8 @@ The autotester currently supports testers for the following languages and testin
     - [RackUnit](https://docs.racket-lang.org/rackunit/)
 - `R`
     - [TestThat](https://testthat.r-lib.org/)
+- `rust'
+    - [Cargo Test](https://doc.rust-lang.org/book/ch11-01-writing-tests.html)
 - `custom`
     - see more information [here](#the-custom-tester)
 
@@ -160,6 +162,9 @@ Installing each tester will also install the following additional packages (syst
     - racket
 - `R`
     - R
+- `Rust`
+    - Rust and Cargo (rustup)
+    - Cargo Nextest
 - `custom`
     - none
 
