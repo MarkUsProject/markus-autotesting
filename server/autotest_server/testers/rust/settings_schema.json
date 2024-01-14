@@ -14,18 +14,17 @@
       "items": {
         "type": "object",
         "required": [
-          "script_files",
           "timeout"
         ],
         "properties": {
-          "script_files": {
-            "title": "Test files",
+          "test_modules": {
+            "title": "Test Module Name",
+            "description": "Rust module names that contain tests to be run. An empty list will run all tests.",
             "type": "array",
-            "minItems": 1,
             "items": {
-              "$ref": "#/definitions/files_list"
-            },
-            "uniqueItems": true
+              "type": "string",
+              "minLength": 1
+            }
           },
           "category": {
             "title": "Category",

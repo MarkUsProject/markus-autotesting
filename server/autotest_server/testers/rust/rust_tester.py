@@ -1,6 +1,6 @@
 import os
 import subprocess
-from typing import Type
+from typing import Type, Optional
 import json
 from ..tester import Tester, Test, TestError
 from ..specs import TestSpecs
@@ -59,7 +59,7 @@ class RustTester(Tester):
     def __init__(self, specs: TestSpecs, test_class: Type[RustTest] = RustTest) -> None:
         super().__init__(specs, test_class)
 
-    def parse_test_events(self, items: list[dict]):
+    def parse_test_events(self, items: list[dict]) -> list[RustTest]:
         tests = []
 
         for item in items:
@@ -112,14 +112,34 @@ class RustTester(Tester):
     #    While machine-readable output is experimental, it's based on yhr libtest standard that cargo test would use.
     #    nextest should also interact very similarly to `cargo test`. It should be very simple to swap to cargo-test.
     #    It's also reliable and only requires Rust 1.36 or earlier for running.
-    def run_rust_tests(self, directory: str) -> subprocess.CompletedProcess:
-        command = ["cargo", "nextest", "run", "--no-fail-fast", "--message-format", "libtest-json", "--color", "never"]
+    def run_rust_tests(self, directory: str, module: Optional[str]) -> subprocess.CompletedProcess:
+        command = [
+            "cargo",
+            "nextest",
+            "run",
+            "--no-fail-fast",
+            "--message-format",
+            "libtest-json",
+            "--color",
+            "never"
+        ]
+
+        if module is not None:
+            command.extend(["--lib", module])
 
         # Machine-readable output is experimental with Nextest.
         env = self.rust_env()
         env["NEXTEST_EXPERIMENTAL_LIBTEST_JSON"] = "1"
 
         return subprocess.run(command, cwd=directory, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    def run_and_parse_rust_tests(self, directory: str, module: Optional[str]) -> list[RustTest]:
+        test_results = self.run_rust_tests(directory, module)
+
+        json_string = test_results.stdout.decode("utf-8")
+        test_events = parse_adjacent_json(json_string)
+
+        return self.parse_test_events(test_events)
 
     def run(self) -> None:
         # Awkwardly, cargo doesn't have a great way of running files.
@@ -133,12 +153,16 @@ class RustTester(Tester):
         except subprocess.CalledProcessError as e:
             raise TestError(e)
 
-        test_results = self.run_rust_tests(".")
+        modules = self.specs["test_data", "test_modules"]
+        modules = [module for module in modules if module != '']
 
-        json_string = test_results.stdout.decode("utf-8")
-        test_events = parse_adjacent_json(json_string)
+        tests = []
 
-        tests = self.parse_test_events(test_events)
+        if len(modules) <= 0:
+            tests = self.run_and_parse_rust_tests(".", None)
+        else:
+            for module in modules:
+                tests.extend(self.run_and_parse_rust_tests(".", module))
 
         for test in tests:
             print(test.run(), flush=True)
