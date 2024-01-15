@@ -113,16 +113,7 @@ class RustTester(Tester):
     #    nextest should also interact very similarly to `cargo test`. It should be very simple to swap to cargo-test.
     #    It's also reliable and only requires Rust 1.36 or earlier for running.
     def run_rust_tests(self, directory: str, module: Optional[str]) -> subprocess.CompletedProcess:
-        command = [
-            "cargo",
-            "nextest",
-            "run",
-            "--no-fail-fast",
-            "--message-format",
-            "libtest-json",
-            "--color",
-            "never"
-        ]
+        command = ["cargo", "nextest", "run", "--no-fail-fast", "--message-format", "libtest-json", "--color", "never"]
 
         if module is not None:
             command.extend(["--lib", module])
@@ -159,7 +150,7 @@ class RustTester(Tester):
         if module is not None:
             module = module.strip()
 
-        if module == '':
+        if module == "":
             module = None
 
         tests = self.run_and_parse_rust_tests(".", module)
