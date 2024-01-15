@@ -141,6 +141,7 @@ class RustTester(Tester):
 
         return self.parse_test_events(test_events)
 
+    @Tester.run_decorator
     def run(self) -> None:
         # Awkwardly, cargo doesn't have a great way of running files.
         # Instead, it can run all the tests in a module (which is named after a file barring .rs and the path).
@@ -153,16 +154,15 @@ class RustTester(Tester):
         except subprocess.CalledProcessError as e:
             raise TestError(e)
 
-        modules = self.specs["test_data", "test_modules"]
-        modules = [module for module in modules if module != '']
+        module = self.specs.get("test_data", "test_module")
 
-        tests = []
+        if module is not None:
+            module = module.strip()
 
-        if len(modules) <= 0:
-            tests = self.run_and_parse_rust_tests(".", None)
-        else:
-            for module in modules:
-                tests.extend(self.run_and_parse_rust_tests(".", module))
+        if module == '':
+            module = None
+
+        tests = self.run_and_parse_rust_tests(".", module)
 
         for test in tests:
             print(test.run(), flush=True)

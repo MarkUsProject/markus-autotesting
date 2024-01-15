@@ -17,14 +17,10 @@
           "timeout"
         ],
         "properties": {
-          "test_modules": {
-            "title": "Test Module Name",
-            "description": "Rust module names that contain tests to be run. An empty list will run all tests.",
-            "type": "array",
-            "items": {
-              "type": "string",
-              "minLength": 1
-            }
+          "test_module": {
+            "title": "Test module name",
+            "type": "string",
+            "minLength": 0
           },
           "category": {
             "title": "Category",
