@@ -115,8 +115,9 @@ class RustTester(Tester):
     def run_rust_tests(self, directory: str, module: Optional[str]) -> subprocess.CompletedProcess:
         command = ["cargo", "nextest", "run", "--no-fail-fast", "--message-format", "libtest-json", "--color", "never"]
 
-        if module is not None:
-            command.extend(["--lib", module])
+        # Prevent CLI options from being propagated.
+        if module is not None or '-' in module:
+            command.append(module)
 
         # Machine-readable output is experimental with Nextest.
         env = self.rust_env()
