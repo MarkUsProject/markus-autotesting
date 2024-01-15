@@ -116,7 +116,7 @@ class RustTester(Tester):
         command = ["cargo", "nextest", "run", "--no-fail-fast", "--message-format", "libtest-json", "--color", "never"]
 
         # Prevent CLI options from being propagated.
-        if module is not None and '-' in module:
+        if module is not None and "-" in module:
             command.append(module)
 
         # Machine-readable output is experimental with Nextest.
