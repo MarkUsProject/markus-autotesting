@@ -254,9 +254,9 @@ def _clear_working_directory(tests_path: str, test_username: str) -> None:
     Run commands that clear the tests_path working directory
     """
     if test_username != getpass.getuser():
-        chmod_cmd = f"sudo -u {test_username} -- bash -c 'chmod -Rf ugo+rwX {tests_path}'"
+        chmod_cmd = f"sudo -u {test_username} -- bash -c 'chmod -Rf -t ugo+rwX {tests_path}'"
     else:
-        chmod_cmd = f"chmod -Rf ugo+rwX {tests_path}"
+        chmod_cmd = f"chmod -Rf -t ugo+rwX {tests_path}"
 
     subprocess.run(chmod_cmd, shell=True)
 

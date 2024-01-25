@@ -1,6 +1,9 @@
 # CHANGELOG
 All notable changes to this project will be documented here.
 
+## [unreleased]
+- Fix bug that prevented copies of instructor directories from being deleted (#483)
+
 ## [v2.4.0]
 - Fix bug that prevented test results from being returned when a feedback file could not be found (#458)
 - Add support for Python 3.11 and 3.12 (#467)
