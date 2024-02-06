@@ -147,6 +147,7 @@ Installing each tester will also install the following additional packages (syst
 - `haskell`
     - ghc 
     - cabal-install 
+    - haskell-stack
     - tasty-stats (cabal package)
     - tasty-discover (cabal package)
     - tasty-quickcheck (cabal package)
