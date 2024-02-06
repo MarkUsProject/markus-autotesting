@@ -260,6 +260,10 @@ ERROR_LOG= # file to write error log informatoin to (default is stderr)
 SETTINGS_JOB_TIMEOUT= # the maximum runtime (in seconds) of a job that updates settings before it is interrupted (default is 60) 
 ```
 
+## Stack configuration
+The Haskell autotester uses [stack](https://docs.haskellstack.org/en/stable/) to install and manage Haskell packages. By default, stack will install to `${HOME}/.stack`, where `${HOME}` is the home directory of the user running the autotester.
+The installation location can be configured by setting a `$STACK_ROOT`, such as the root of the workspace directory.
+
 ## MarkUs configuration options
 
 After installing the autotester and the API, the next step is to [register the MarkUs instance with the autotester](https://github.com/MarkUsProject/Markus/wiki/Installation#autotester-installation-steps).
