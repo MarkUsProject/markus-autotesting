@@ -2,6 +2,8 @@
 All notable changes to this project will be documented here.
 
 ## [unreleased]
+
+## [v2.4.1]
 - Fix bug that prevented copies of instructor directories from being deleted (#483)
 - Add STACK_ROOT to containers as well as notes in readme (#484)
 
