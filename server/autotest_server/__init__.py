@@ -218,7 +218,7 @@ def _run_test_specs(
                         preexec_fn=set_rlimits_before_test,
                         universal_newlines=True,
                         env={**os.environ, **env_vars, **env},
-                        executable='/bin/bash'
+                        executable="/bin/bash",
                     )
                     try:
                         settings_json = json.dumps({**settings, "test_data": test_data})
