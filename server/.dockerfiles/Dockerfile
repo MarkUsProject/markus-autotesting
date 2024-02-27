@@ -8,9 +8,9 @@ ARG LOGIN_USER
 ARG WORKSPACE
 
 RUN apt-get update -y && \
-    apt-get -y install software-properties-common && \
-    add-apt-repository -y ppa:deadsnakes/ppa && \
-    apt-get -y install python3.7 \
+    DEBIAN_FRONTEND=noninteractive apt-get -y install software-properties-common && \
+    DEBIAN_FRONTEND=noninteractive add-apt-repository -y ppa:deadsnakes/ppa && \
+    DEBIAN_FRONTEND=noninteractive apt-get -y install python3.7 \
                        python3.7-venv \
                        python3.8 \
                        python3.8-venv \
