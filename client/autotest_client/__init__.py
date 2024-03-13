@@ -204,8 +204,9 @@ def settings(settings_id, **_kw):
 @authorize
 def create_settings(user):
     settings_id = REDIS_CONNECTION.incr("autotest:settings_id")
-    REDIS_CONNECTION.hset("autotest:settings", key=settings_id,
-                          value=json.dumps({"_user": user, "_env_status": "setup"}))
+    REDIS_CONNECTION.hset(
+        "autotest:settings", key=settings_id, value=json.dumps({"_user": user, "_env_status": "setup"})
+    )
     _update_settings(settings_id, user)
     return {"settings_id": settings_id}
 
