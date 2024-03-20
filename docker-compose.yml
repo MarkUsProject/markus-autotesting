@@ -6,7 +6,7 @@ services:
       context: ./server
       dockerfile: ./.dockerfiles/Dockerfile
       args:
-        UBUNTU_VERSION: '20.04'
+        UBUNTU_VERSION: '22.04'
         LOGIN_USER: 'docker'
         WORKSPACE: '/home/docker/.autotesting'
     image: markus-autotest-server-dev:1.1.0
@@ -28,7 +28,7 @@ services:
       context: ./client
       dockerfile: ./.dockerfiles/Dockerfile
       args:
-        UBUNTU_VERSION: '20.04'
+        UBUNTU_VERSION: '22.04'
     image: markus-autotest-client-dev:1.1.0
     container_name: 'autotest-client'
     volumes:

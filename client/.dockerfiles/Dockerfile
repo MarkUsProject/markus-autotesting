@@ -3,9 +3,9 @@ ARG UBUNTU_VERSION
 FROM ubuntu:$UBUNTU_VERSION
 
 RUN apt-get update -y && \
-    apt-get -y install software-properties-common && \
-    add-apt-repository -y ppa:deadsnakes/ppa && \
-    apt-get install -y python3.11 python3.11-venv
+    DEBIAN_FRONTEND=noninteractive apt-get -y install software-properties-common && \
+    DEBIAN_FRONTEND=noninteractive add-apt-repository -y ppa:deadsnakes/ppa && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y python3.11 python3.11-venv
 
 COPY ./requirements.txt /requirements.txt
 
