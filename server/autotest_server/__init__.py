@@ -218,6 +218,7 @@ def _run_test_specs(
                         preexec_fn=set_rlimits_before_test,
                         universal_newlines=True,
                         env={**os.environ, **env_vars, **env},
+                        executable="/bin/bash",
                     )
                     try:
                         settings_json = json.dumps({**settings, "test_data": test_data})
@@ -254,10 +255,13 @@ def _clear_working_directory(tests_path: str, test_username: str) -> None:
     Run commands that clear the tests_path working directory
     """
     if test_username != getpass.getuser():
-        chmod_cmd = f"sudo -u {test_username} -- bash -c 'chmod -Rf -t ugo+rwX {tests_path}'"
+        sticky_cmd = f"sudo -u {test_username} -- bash -c 'chmod -Rf -t {tests_path}'"
+        chmod_cmd = f"sudo -u {test_username} -- bash -c 'chmod -Rf ugo+rwX {tests_path}'"
     else:
-        chmod_cmd = f"chmod -Rf -t ugo+rwX {tests_path}"
+        sticky_cmd = f"chmod -Rf -t {tests_path}"
+        chmod_cmd = f"chmod -Rf ugo+rwX {tests_path}"
 
+    subprocess.run(sticky_cmd, shell=True)
     subprocess.run(chmod_cmd, shell=True)
 
     # be careful not to remove the tests_path dir itself since we have to
