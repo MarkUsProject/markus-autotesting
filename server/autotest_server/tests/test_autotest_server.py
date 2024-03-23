@@ -1,3 +1,5 @@
+from pwd import getpwnam
+
 import pytest
 import fakeredis
 import rq
@@ -27,10 +29,21 @@ def fake_redis_db(monkeypatch, fake_job):
 def test_redis_connection(fake_redis_conn):
     assert autotest_server.redis_connection() == fake_redis_conn
 
-def is_sticky(path):
-    return os.stat(path).st_mode & 0o1000 == 0o1000
-def test_donny():
-    #create folder, stickyFolder, in same dir. You can do chmod +t stickyFolder or the opposite with -t
-    var1 = is_sticky('stickyFolder')
-    print(f'Is this a sticky bit folder? : {var1}')
+def test_sticky():
+    workers = autotest_server.config["workers"]
+    autotest_worker = workers[0]["user"]
+    autotest_worker_working_dir = f'/home/docker/.autotesting/workers/{autotest_worker}'
+    path = f'{autotest_worker_working_dir}/test_sticky'
+
+    if not os.path.exists(path):
+        os.system(f"sudo -u {autotest_worker} mkdir {path}")
+        os.system(f"sudo -u {autotest_worker} chmod 000 {path}")
+        os.system(f"sudo -u {autotest_worker} chmod +t {path}")
+
+    autotest_server._clear_working_directory(autotest_worker_working_dir, autotest_worker)
+
+    assert not os.path.exists(path) == True
+
+
+
 
