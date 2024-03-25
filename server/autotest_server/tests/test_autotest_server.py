@@ -1,3 +1,4 @@
+import subprocess
 from pwd import getpwnam
 
 import pytest
@@ -36,9 +37,12 @@ def test_sticky():
     path = f'{autotest_worker_working_dir}/test_sticky'
 
     if not os.path.exists(path):
-        os.system(f"sudo -u {autotest_worker} mkdir {path}")
-        os.system(f"sudo -u {autotest_worker} chmod 000 {path}")
-        os.system(f"sudo -u {autotest_worker} chmod +t {path}")
+        mkdir_cmd = f"sudo -u {autotest_worker} mkdir {path}"
+        chmod_cmd = f"sudo -u {autotest_worker} chmod 000 {path}"
+        chmod_sticky_cmd = f"sudo -u {autotest_worker} chmod +t {path}"
+        subprocess.run(mkdir_cmd, shell=True)
+        subprocess.run(chmod_cmd, shell=True)
+        subprocess.run(chmod_sticky_cmd, shell=True)
 
     autotest_server._clear_working_directory(autotest_worker_working_dir, autotest_worker)
 
