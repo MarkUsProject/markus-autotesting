@@ -1,5 +1,4 @@
 import subprocess
-from pwd import getpwnam
 
 import pytest
 import fakeredis
@@ -48,4 +47,4 @@ def test_sticky():
 
     autotest_server._clear_working_directory(autotest_worker_working_dir, autotest_worker)
 
-    assert os.path.exists(path) == False
+    assert os.path.exists(path) is False
