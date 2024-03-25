@@ -7,6 +7,7 @@ import rq
 import autotest_server
 import os
 
+
 @pytest.fixture
 def fake_redis_conn():
     yield fakeredis.FakeStrictRedis()
@@ -30,11 +31,12 @@ def fake_redis_db(monkeypatch, fake_job):
 def test_redis_connection(fake_redis_conn):
     assert autotest_server.redis_connection() == fake_redis_conn
 
+
 def test_sticky():
     workers = autotest_server.config["workers"]
     autotest_worker = workers[0]["user"]
-    autotest_worker_working_dir = f'/home/docker/.autotesting/workers/{autotest_worker}'
-    path = f'{autotest_worker_working_dir}/test_sticky'
+    autotest_worker_working_dir = f"/home/docker/.autotesting/workers/{autotest_worker}"
+    path = f"{autotest_worker_working_dir}/test_sticky"
 
     if not os.path.exists(path):
         mkdir_cmd = f"sudo -u {autotest_worker} mkdir {path}"
@@ -47,7 +49,3 @@ def test_sticky():
     autotest_server._clear_working_directory(autotest_worker_working_dir, autotest_worker)
 
     assert os.path.exists(path) == False
-
-
-
-
