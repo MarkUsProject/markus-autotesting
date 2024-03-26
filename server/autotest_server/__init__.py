@@ -370,11 +370,6 @@ def ignore_missing_dir_error(
 
 
 def update_test_settings(user, settings_id, test_settings, file_url):
-    test_settings["_user"] = user
-    test_settings["_last_access"] = int(time.time())
-    test_settings["_env_status"] = "setup"
-    redis_connection().hset("autotest:settings", key=settings_id, value=json.dumps(test_settings))
-
     try:
         settings_dir = os.path.join(TEST_SCRIPT_DIR, str(settings_id))
 

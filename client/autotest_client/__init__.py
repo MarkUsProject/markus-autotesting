@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify, abort, make_response, send_file
 from werkzeug.exceptions import HTTPException
 import os
 import sys
+import time
 import rq
 import json
 import io
@@ -108,6 +109,11 @@ def _update_settings(settings_id, user):
     if error:
         abort(make_response(jsonify(message=error), 422))
 
+    test_settings["_user"] = user
+    test_settings["_last_access"] = int(time.time())
+    test_settings["_env_status"] = "setup"
+    REDIS_CONNECTION.hset("autotest:settings", key=settings_id, value=json.dumps(test_settings))
+
     queue = rq.Queue("settings", connection=REDIS_CONNECTION)
     data = {"user": user, "settings_id": settings_id, "test_settings": test_settings, "file_url": file_url}
     queue.enqueue_call(
@@ -198,7 +204,9 @@ def settings(settings_id, **_kw):
 @authorize
 def create_settings(user):
     settings_id = REDIS_CONNECTION.incr("autotest:settings_id")
-    REDIS_CONNECTION.hset("autotest:settings", key=settings_id, value=json.dumps({"_user": user}))
+    REDIS_CONNECTION.hset(
+        "autotest:settings", key=settings_id, value=json.dumps({"_user": user, "_env_status": "setup"})
+    )
     _update_settings(settings_id, user)
     return {"settings_id": settings_id}
 
