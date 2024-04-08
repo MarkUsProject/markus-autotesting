@@ -2,7 +2,6 @@ ARG UBUNTU_VERSION
 
 FROM ubuntu:$UBUNTU_VERSION as base
 
-ENV DEBIAN_FRONTEND=noninteractive 
 
 ARG LOGIN_USER
 ARG WORKSPACE
@@ -35,6 +34,8 @@ RUN useradd -ms /bin/bash $LOGIN_USER && \
         echo "$LOGIN_USER ALL=($worker) NOPASSWD:ALL" | EDITOR="tee -a" visudo && \
         usermod -aG $worker $LOGIN_USER; \
     done
+
+RUN chmod a+x /home/${LOGIN_USER}
 
 COPY . /app
 
