@@ -2,15 +2,14 @@ ARG UBUNTU_VERSION
 
 FROM ubuntu:$UBUNTU_VERSION as base
 
-ENV DEBIAN_FRONTEND=noninteractive 
 
 ARG LOGIN_USER
 ARG WORKSPACE
 
 RUN apt-get update -y && \
-    apt-get -y install software-properties-common && \
-    add-apt-repository -y ppa:deadsnakes/ppa && \
-    apt-get -y install python3.7 \
+    DEBIAN_FRONTEND=noninteractive apt-get -y install software-properties-common && \
+    DEBIAN_FRONTEND=noninteractive add-apt-repository -y ppa:deadsnakes/ppa && \
+    DEBIAN_FRONTEND=noninteractive apt-get -y install python3.7 \
                        python3.7-venv \
                        python3.8 \
                        python3.8-venv \
@@ -35,6 +34,8 @@ RUN useradd -ms /bin/bash $LOGIN_USER && \
         echo "$LOGIN_USER ALL=($worker) NOPASSWD:ALL" | EDITOR="tee -a" visudo && \
         usermod -aG $worker $LOGIN_USER; \
     done
+
+RUN chmod a+x /home/${LOGIN_USER}
 
 COPY . /app
 
