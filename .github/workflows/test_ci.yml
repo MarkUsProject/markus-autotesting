@@ -5,7 +5,7 @@ on:
 jobs:
   test:
     if: github.event.pull_request.draft == false
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         python-version:
@@ -22,6 +22,10 @@ jobs:
     env:
       AUTOTESTER_CONFIG: server/autotest_server/tests/fixtures/test_config.yml
     steps:
+      - name: Set stack_root
+            id: step_one
+            run: |
+              echo "STACK_ROOT=/home/docker/.autotesting/.stack" >> "$GITHUB_ENV"
       - uses: actions/checkout@v2
       - name: Setup python
         uses: actions/setup-python@v2
