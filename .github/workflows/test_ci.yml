@@ -36,7 +36,5 @@ jobs:
             ${{ runner.os }}-pip-
       - name: Install python packages
         run: python -m pip install pytest fakeredis -r ${{ matrix.test-dir }}/requirements.txt
-      - name: Set stack_root
-        run: echo "STACK_ROOT=/home/docker/.autotesting/.stack" >> "$GITHUB_ENV"
       - name: run tests
         run: pytest ${{ matrix.test-dir }}
