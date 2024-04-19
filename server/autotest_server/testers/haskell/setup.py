@@ -19,7 +19,10 @@ def install():
     resolver = "lts-16.17"
     cmd = ["stack", "build", "--resolver", resolver, "--system-ghc", *HASKELL_TEST_DEPS]
     subprocess.run(cmd, check=True)
-    subprocess.run(os.path.join(os.path.dirname(os.path.realpath(__file__)), "stack_permissions.sh"), check=True, shell=True)
+    subprocess.run(
+        os.path.join(os.path.dirname(os.path.realpath(__file__)), "stack_permissions.sh"), check=True, shell=True
+    )
+
 
 def settings():
     with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "settings_schema.json")) as f:
