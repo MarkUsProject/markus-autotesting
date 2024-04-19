@@ -48,3 +48,9 @@ def test_sticky():
     autotest_server._clear_working_directory(autotest_worker_working_dir, autotest_worker)
 
     assert os.path.exists(path) is False
+
+def test_stack_permissions():
+    stack_root = os.environ['STACK_ROOT']
+    path = f"{stack_root}/stack.sqlite3.pantry-write-lock"
+    permissions = oct(os.stat(path).st_mode)[-3:]
+    assert permissions[1] == '6'
