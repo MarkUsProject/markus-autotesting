@@ -343,6 +343,7 @@ def run_test(settings_id, test_id, files_url, categories, user, test_env_vars):
         redis_connection().hset("autotest:settings", key=settings_id, value=json.dumps(settings))
         test_username, tests_path = tester_user()
         try:
+            _clear_working_directory(tests_path, test_username)
             _setup_files(settings_id, user, files_url, tests_path, test_username)
             cmd = run_test_command(test_username=test_username)
             results = _run_test_specs(cmd, settings, categories, tests_path, test_username, test_id, test_env_vars)

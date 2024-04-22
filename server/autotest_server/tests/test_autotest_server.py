@@ -48,3 +48,20 @@ def test_sticky():
     autotest_server._clear_working_directory(autotest_worker_working_dir, autotest_worker)
 
     assert os.path.exists(path) is False
+
+
+def test_pre_remove():
+    workers = autotest_server.config["workers"]
+    autotest_worker = workers[0]["user"]
+    autotest_worker_working_dir = f"/home/docker/.autotesting/workers/{autotest_worker}"
+    path = f"{autotest_worker_working_dir}/__pycache__"
+
+    if not os.path.exists(path):
+        mkdir_cmd = f"sudo -u {autotest_worker} mkdir {path}"
+        chmod_cmd = f"sudo -u {autotest_worker} chmod 000 {path}"
+        subprocess.run(mkdir_cmd, shell=True)
+        subprocess.run(chmod_cmd, shell=True)
+
+    autotest_server._clear_working_directory(autotest_worker_working_dir, autotest_worker)
+
+    assert os.path.exists(path) is False
