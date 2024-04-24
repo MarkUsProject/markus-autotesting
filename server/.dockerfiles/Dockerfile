@@ -25,7 +25,16 @@ RUN apt-get update -y && \
                        postgresql-client \
                        libpq-dev \
                        sudo \
-                       git
+                       git \
+                       libfontconfig1-dev \
+                       libcurl4-openssl-dev \
+                       libfreetype6-dev \
+                       libpng-dev \
+                       libtiff5-dev \
+                       libjpeg-dev \
+                       libharfbuzz-dev \
+                       libfribidi-dev \
+                       r-base
 
 RUN useradd -ms /bin/bash $LOGIN_USER && \
     usermod -aG sudo $LOGIN_USER && \
@@ -44,6 +53,8 @@ RUN python3.11 -m venv /markus_venv && \
     /markus_venv/bin/pip install -r /app/requirements.txt && \
     find /app/autotest_server/testers -name requirements.system -exec {} \; && \
     rm -rf /app/*
+
+RUN echo "TZ=$( cat /etc/timezone )" >> /etc/R/Renviron.site
 
 RUN mkdir -p ${WORKSPACE} && chown ${LOGIN_USER} ${WORKSPACE}
 

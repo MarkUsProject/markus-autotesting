@@ -12,7 +12,7 @@ library(remotes)
 main <- function() {
   # Tester dependencies
   # rjson v0.2.20 is required to support R v3.x
-  deps <- "testthat, rjson (== 0.2.20)"
+  deps <- "testthat, rjson (== 0.2.20), stringi, tidyverse"
 
   # Additional dependencies for test environment from command-line args
   args <- commandArgs(TRUE)
@@ -53,7 +53,12 @@ install_dep <- function(row) {
   } else if (!is.na(version)) {
     install_version(name, version = paste(compare, version, sep =" "))
   } else {
-    install.packages(name)
+    if (name == 'stringi') {
+      install.packages(name, configure.args="--disable-pkg-config")
+    }
+    else {
+      install.packages(name)
+    }
   }
 
   if (!(name %in% installed.packages())) {
