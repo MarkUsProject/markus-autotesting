@@ -1,6 +1,7 @@
 workspace: !ENV ${WORKSPACE}
 redis_url: !ENV ${REDIS_URL}
 supervisor_url: !ENV ${SUPERVISOR_URL}
+stack_resolver: !ENV ${STACK_RESOLVER}
 workers:
   - user: !ENV ${USER}
     queues:

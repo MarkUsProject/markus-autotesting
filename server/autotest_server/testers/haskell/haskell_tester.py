@@ -6,8 +6,9 @@ from typing import Dict, Type, List, Iterator, Union
 
 from ..tester import Tester, Test, TestError
 from ..specs import TestSpecs
+from config import config
 
-STACK_OPTIONS = ["--resolver=lts-16.17", "--system-ghc", "--allow-different-user"]
+STACK_OPTIONS = [f"--resolver={config['stack_resolver']}", "--system-ghc", "--allow-different-user"]
 
 
 class HaskellTest(Test):
