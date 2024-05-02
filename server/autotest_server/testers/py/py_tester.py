@@ -89,7 +89,7 @@ class PytestPlugin:
         """
         outcome = yield
         rep = outcome.get_result()
-        if rep.failed or item.nodeid not in self.results:
+        if rep.failed or (item.nodeid not in self.results and not rep.skipped and rep.when != "teardown"):
             self.results[item.nodeid] = {
                 "status": "failure" if rep.failed else "success",
                 "name": item.nodeid,

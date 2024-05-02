@@ -3,6 +3,7 @@ All notable changes to this project will be documented here.
 
 ## [unreleased]
 - Add tidyverse as a default R tester package (#512)
+- Omit skipped test cases in Python tester (#522)
 
 ## [v2.4.2]
 - Ensure _env_status is updated to "setup" earlier when a request to update test settings is made (#499)
