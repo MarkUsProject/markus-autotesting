@@ -378,6 +378,7 @@ logger = logging.getLogger(__name__)
 def update_test_settings(user, settings_id, test_settings, file_url):
     try:
         settings_dir = os.path.join(TEST_SCRIPT_DIR, str(settings_id))
+
         os.makedirs(settings_dir, exist_ok=True)
         os.chmod(TEST_SCRIPT_DIR, 0o755)
 
