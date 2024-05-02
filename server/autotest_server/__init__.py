@@ -1,4 +1,6 @@
 from __future__ import annotations
+
+import logging
 import os
 import sys
 import shutil
@@ -368,12 +370,11 @@ def ignore_missing_dir_error(
     if err_type == FileNotFoundError:
         return
     raise err_inst
-
+logger = logging.getLogger(__name__)
 
 def update_test_settings(user, settings_id, test_settings, file_url):
     try:
         settings_dir = os.path.join(TEST_SCRIPT_DIR, str(settings_id))
-
         os.makedirs(settings_dir, exist_ok=True)
         os.chmod(TEST_SCRIPT_DIR, 0o755)
 
@@ -396,6 +397,8 @@ def update_test_settings(user, settings_id, test_settings, file_url):
             default_env = os.path.join(TEST_SCRIPT_DIR, DEFAULT_ENV_DIR)
             if not os.path.isdir(default_env):
                 subprocess.run([sys.executable, "-m", "venv", default_env], check=True)
+                requirements_path = os.path.join(os.path.dirname(__file__), '../requirements.txt')
+                subprocess.run([f"{default_env}/bin/pip", 'install', '-r', requirements_path], check=True)
             try:
                 tester_settings["_env"] = tester_install.create_environment(tester_settings, env_dir, default_env)
             except Exception as e:
