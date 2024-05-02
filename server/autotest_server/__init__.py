@@ -1,6 +1,4 @@
 from __future__ import annotations
-
-import logging
 import os
 import sys
 import shutil
@@ -370,9 +368,6 @@ def ignore_missing_dir_error(
     if err_type == FileNotFoundError:
         return
     raise err_inst
-
-
-logger = logging.getLogger(__name__)
 
 
 def update_test_settings(user, settings_id, test_settings, file_url):
