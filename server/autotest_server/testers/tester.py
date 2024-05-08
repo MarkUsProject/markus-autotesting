@@ -2,7 +2,7 @@ import json
 from abc import ABC, abstractmethod
 from functools import wraps
 from typing import Optional, Callable, Any, Type, Dict, List
-from testers.specs import TestSpecs
+from .specs import TestSpecs
 import traceback
 
 
