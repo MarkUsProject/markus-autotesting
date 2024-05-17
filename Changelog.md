@@ -2,7 +2,21 @@
 All notable changes to this project will be documented here.
 
 ## [unreleased]
+
+### 🚨 Breaking changes
+
+### ✨ New features and improvements
+
+- haskell tester: make stack resolver a test and environment setting (#515)
+
+### 🐛 Bug fixes
+
+### 🔧 Internal changes
+
 - Add tidyverse as a default R tester package (#512)
+
+## [v2.4.3]
+- Omit skipped test cases in Python tester (#522)
 
 ## [v2.4.3]
 - Omit skipped test cases in Python tester (#522)
