@@ -28,7 +28,7 @@ def install():
 def settings():
     with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "settings_schema.json")) as f:
         settings_ = json.load(f)
-    resolvers = ["lts-16.17"]
+    resolvers = [config["stack_resolver"]]
     resolver_versions = settings_["properties"]["env_data"]["properties"]["resolver_version"]
     resolver_versions["enum"] = resolvers
     resolver_versions["default"] = resolvers[-1]
