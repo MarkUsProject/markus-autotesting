@@ -396,8 +396,6 @@ def update_test_settings(user, settings_id, test_settings, file_url):
             default_env = os.path.join(TEST_SCRIPT_DIR, DEFAULT_ENV_DIR)
             if not os.path.isdir(default_env):
                 subprocess.run([sys.executable, "-m", "venv", default_env], check=True)
-                requirements_path = os.path.join(os.path.dirname(__file__), "../requirements.txt")
-                subprocess.run([f"{default_env}/bin/pip", "install", "-r", requirements_path], check=True)
             try:
                 tester_settings["_env"] = tester_install.create_environment(tester_settings, env_dir, default_env)
             except Exception as e:

@@ -20,7 +20,7 @@
         "resolver_version": {
           "title": "Resolver version",
           "type": "string",
-          "enum": []
+          "default": null
         }
       }
     },
