@@ -257,9 +257,13 @@ def _clear_working_directory(tests_path: str, test_username: str) -> None:
     if test_username != getpass.getuser():
         sticky_cmd = f"sudo -u {test_username} -- bash -c 'chmod -Rf -t {tests_path}'"
         chmod_cmd = f"sudo -u {test_username} -- bash -c 'chmod -Rf ugo+rwX {tests_path}'"
+        clean_tmp_cmd = (
+            f"sudo -u {test_username} -- bash -c 'find /tmp -maxdepth 1 -user {test_username} -exec rm " f"-rf {{}} +' "
+        )
     else:
         sticky_cmd = f"chmod -Rf -t {tests_path}"
         chmod_cmd = f"chmod -Rf ugo+rwX {tests_path}"
+        clean_tmp_cmd = f"find /tmp -maxdepth 1 -user {test_username} -exec rm -rf {{}} +"
 
     subprocess.run(sticky_cmd, shell=True)
     subprocess.run(chmod_cmd, shell=True)
@@ -268,6 +272,7 @@ def _clear_working_directory(tests_path: str, test_username: str) -> None:
     # set the group ownership with sudo (and that is only done in ../install.sh)
     clean_cmd = f"rm -rf {tests_path}/.[!.]* {tests_path}/*"
     subprocess.run(clean_cmd, shell=True)
+    subprocess.run(clean_tmp_cmd, shell=True)
 
 
 def _stop_tester_processes(test_username: str) -> None:
