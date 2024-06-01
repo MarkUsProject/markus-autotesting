@@ -1,11 +1,28 @@
 {
   "type": "object",
+  "required": [
+    "env_data"
+  ],
   "properties": {
     "tester_type": {
       "type": "string",
       "enum": [
         "haskell"
       ]
+    },
+    "env_data": {
+      "title": "Haskell environment",
+      "type": "object",
+      "required": [
+        "resolver_version"
+      ],
+      "properties": {
+        "resolver_version": {
+          "title": "Resolver version",
+          "type": "string",
+          "default": null
+        }
+      }
     },
     "test_data": {
       "title": "Test Groups",

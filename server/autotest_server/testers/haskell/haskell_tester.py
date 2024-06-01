@@ -7,8 +7,6 @@ from typing import Dict, Type, List, Iterator, Union
 from ..tester import Tester, Test, TestError
 from ..specs import TestSpecs
 
-STACK_OPTIONS = ["--resolver=lts-16.17", "--system-ghc", "--allow-different-user"]
-
 
 class HaskellTest(Test):
     def __init__(
@@ -101,6 +99,8 @@ class HaskellTester(Tester):
         Tests are run by first discovering all tests from a specific module (using tasty-discover)
         and then running all the discovered tests and parsing the results from a csv file.
         """
+        resolver = self.specs["env_data", "resolver_version"]
+        STACK_OPTIONS = [f"--resolver={resolver}", "--system-ghc", "--allow-different-user"]
         results = {}
         this_dir = os.getcwd()
         haskell_lib = os.path.join(os.path.dirname(os.path.realpath(__file__)), "lib")
