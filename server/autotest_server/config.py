@@ -152,10 +152,8 @@ config = _Config()
 
 app = Flask(__name__)
 
-@app.route('/api/next_token_generation', methods=['GET'])
+
+@app.route("/api/next_token_generation", methods=["GET"])
 def next_token_generation():
     next_time = get_next_token_generation_time()
-    return jsonify({
-        'next_generation_time': next_time.strftime('%Y-%m-%d %H:%M:%S')
-    })
-
+    return jsonify({"next_generation_time": next_time.strftime("%Y-%m-%d %H:%M:%S")})

@@ -127,6 +127,7 @@ def copy_tree(src: str, dst: str, exclude: Tuple = tuple()) -> List[Tuple[str, s
         copied.append((fd, target))
     return copied
 
+
 def get_next_token_generation_time():
     now = datetime.now()
     next_generation_time = now + timedelta(hours=1)
