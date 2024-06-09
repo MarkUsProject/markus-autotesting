@@ -9,6 +9,10 @@ from collections.abc import Mapping
 import jsonschema
 import yaml
 
+from flask import Flask, jsonify
+from utils import get_next_token_generation_time
+
+
 DEFAULT_ROOT = os.path.dirname(__file__)
 ConfigValues = TypeVar("ConfigValues", List, Dict, str, int, float, type(None))
 
@@ -145,3 +149,13 @@ class _Config:
 
 
 config = _Config()
+
+app = Flask(__name__)
+
+@app.route('/api/next_token_generation', methods=['GET'])
+def next_token_generation():
+    next_time = get_next_token_generation_time()
+    return jsonify({
+        'next_generation_time': next_time.strftime('%Y-%m-%d %H:%M:%S')
+    })
+

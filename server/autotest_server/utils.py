@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 import json
 import resource
 import os
@@ -125,3 +126,8 @@ def copy_tree(src: str, dst: str, exclude: Tuple = tuple()) -> List[Tuple[str, s
             shutil.copy2(file_or_dir, target)
         copied.append((fd, target))
     return copied
+
+def get_next_token_generation_time():
+    now = datetime.now()
+    next_generation_time = now + timedelta(hours=1)
+    return next_generation_time
