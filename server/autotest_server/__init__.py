@@ -252,7 +252,8 @@ def _run_test_specs(
 
 def _clear_working_directory(tests_path: str, test_username: str) -> None:
     """
-    Run commands that clear the tests_path working directory
+    Run commands that clear the tests_path working directory, as well
+    as clearing any files or directories owned by test_username in the /tmp directory
     """
     if test_username != getpass.getuser():
         sticky_cmd = f"sudo -u {test_username} -- bash -c 'chmod -Rf -t {tests_path}'"
