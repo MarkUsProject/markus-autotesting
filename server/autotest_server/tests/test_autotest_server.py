@@ -65,3 +65,41 @@ def test_pre_remove():
     autotest_server._clear_working_directory(autotest_worker_working_dir, autotest_worker)
 
     assert os.path.exists(path) is False
+
+
+def test_tmp_remove_file():
+    workers = autotest_server.config["workers"]
+    autotest_worker = workers[0]["user"]
+    autotest_worker_working_dir = f"/home/docker/.autotesting/workers/{autotest_worker}"
+    path = "/tmp/test.txt"
+    touch_cmd = f"sudo -u {autotest_worker} touch {path}"
+    subprocess.run(touch_cmd, shell=True)
+    autotest_server._clear_working_directory(autotest_worker_working_dir, autotest_worker)
+    assert os.path.exists(path) is False
+
+
+def test_tmp_remove_dir():
+    workers = autotest_server.config["workers"]
+    autotest_worker = workers[0]["user"]
+    autotest_worker_working_dir = f"/home/docker/.autotesting/workers/{autotest_worker}"
+    path = "/tmp/folder"
+    mkdir_cmd = f"sudo -u {autotest_worker} mkdir {path}"
+    subprocess.run(mkdir_cmd, shell=True)
+    touch_cmd = f"sudo -u {autotest_worker} touch {path}/test.txt"
+    subprocess.run(touch_cmd, shell=True)
+    autotest_server._clear_working_directory(autotest_worker_working_dir, autotest_worker)
+    assert os.path.exists(path) is False
+
+
+def test_tmp_remove_other_user():
+    workers = autotest_server.config["workers"]
+    autotest_worker_creator = workers[0]["user"]
+    autotest_worker_remover = workers[1]["user"]
+    autotest_worker_working_dir = f"/home/docker/.autotesting/workers/{autotest_worker_remover}"
+    path = "/tmp/folder"
+    mkdir_cmd = f"sudo -u {autotest_worker_creator} mkdir {path}"
+    subprocess.run(mkdir_cmd, shell=True)
+    touch_cmd = f"sudo -u {autotest_worker_creator} touch {path}/test.txt"
+    subprocess.run(touch_cmd, shell=True)
+    autotest_server._clear_working_directory(autotest_worker_working_dir, autotest_worker_remover)
+    assert os.path.exists(path) is True
