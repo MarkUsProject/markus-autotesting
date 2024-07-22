@@ -39,7 +39,7 @@ install_dep <- function(row) {
     remote_type <- NA_character_
   }
   if (!('stringi' %in% rownames(installed.packages))) {
-  install.packages(name, configure.args="--disable-pkg-config")
+    install.packages(name, configure.args="--disable-pkg-config")
   }
 
   # Check if package is already installed
@@ -59,7 +59,7 @@ install_dep <- function(row) {
     install.packages(name)
   }
 
-  if (!(name %in% installed.packages())) {
+  if (!(name %in% rownames(installed.packages()))) {
     stop("ERROR: Could not install package ", name)
   }
 }
