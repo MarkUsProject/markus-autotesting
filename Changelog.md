@@ -2,6 +2,7 @@
 All notable changes to this project will be documented here.
 
 ## [unreleased]
+- Ensure R packages are correctly installed (#535)
 
 ## [v2.4.4]
 - Add tidyverse as a default R tester package (#512)
