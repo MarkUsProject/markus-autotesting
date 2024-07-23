@@ -2,6 +2,8 @@
 All notable changes to this project will be documented here.
 
 ## [unreleased]
+
+## [v2.4.4]
 - Add tidyverse as a default R tester package (#512)
 - For the Haskell tester, make stack resolver a test setting (#526)
 - Clean up tmp directory after test runs (#528)
