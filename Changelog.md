@@ -3,12 +3,13 @@ All notable changes to this project will be documented here.
 
 ## [unreleased]
 - Ensure R packages are correctly installed (#535)
+- Make PyTA version a setting (#536)
+- Add `libxml2-dev` to server `Dockerfile`, required by R `tidyverse` library (#539)
 
 ## [v2.4.4]
 - Add tidyverse as a default R tester package (#512)
 - For the Haskell tester, make stack resolver a test setting (#526)
 - Clean up tmp directory after test runs (#528)
-- Make PyTA version a setting (#536)
 
 ## [v2.4.3]
 - Omit skipped test cases in Python tester (#522)
