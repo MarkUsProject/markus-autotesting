@@ -6,6 +6,7 @@ All notable changes to this project will be documented here.
 - Make PyTA version a setting (#536)
 - Add `libxml2-dev` to server `Dockerfile`, required by R `tidyverse` library (#539)
 - Display stderr contents if R packages fail to install (#539)
+- Do not display `testthat` failure messages when test case passes (#539)
 
 ## [v2.4.4]
 - Add tidyverse as a default R tester package (#512)
