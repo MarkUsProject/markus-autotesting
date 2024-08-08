@@ -36,5 +36,9 @@ jobs:
             ${{ runner.os }}-pip-
       - name: Install python packages
         run: python -m pip install pytest fakeredis typing-extensions -r ${{ matrix.test-dir }}/requirements.txt
+      - name: Create users
+        run: |
+          sudo adduser --disabled-login --no-create-home fake_user
+          sudo adduser --disabled-login --no-create-home fake_user_2
       - name: run tests
         run: pytest ${{ matrix.test-dir }}

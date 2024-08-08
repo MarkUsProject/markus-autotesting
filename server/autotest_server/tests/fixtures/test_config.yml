@@ -3,7 +3,9 @@ redis_url: fake_url
 supervisor_url: fake_url
 workers:
   - user: fake_user
-    queues:
+    queues: &queues
       - high
       - low
       - batch
+  - user: fake_user_2
+    queues: *queues
