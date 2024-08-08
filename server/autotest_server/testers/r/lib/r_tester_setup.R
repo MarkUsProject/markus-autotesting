@@ -38,10 +38,13 @@ install_dep <- function(row) {
   } else {
     remote_type <- NA_character_
   }
+  if (!('stringi' %in% rownames(installed.packages))) {
+    install.packages(name, configure.args="--disable-pkg-config")
+  }
 
   # Check if package is already installed
   # TODO: make this work for remote packages (with '/' in the name)
-  if (name %in% installed.packages() &&
+  if (name %in% rownames(installed.packages()) &&
       (is.na(version) || version_satisfies_criterion(name, compare, version))) {
       print(paste("Skipping '", name, "': package already installed", sep=""))
       return()
@@ -53,15 +56,10 @@ install_dep <- function(row) {
   } else if (!is.na(version)) {
     install_version(name, version = paste(compare, version, sep =" "))
   } else {
-    if (name == 'stringi') {
-      install.packages(name, configure.args="--disable-pkg-config")
-    }
-    else {
-      install.packages(name)
-    }
+    install.packages(name)
   }
 
-  if (!(name %in% installed.packages())) {
+  if (!(name %in% rownames(installed.packages()))) {
     stop("ERROR: Could not install package ", name)
   }
 }

@@ -34,6 +34,7 @@ RUN apt-get update -y && \
                        libjpeg-dev \
                        libharfbuzz-dev \
                        libfribidi-dev \
+                       libxml2-dev \
                        r-base
 
 RUN useradd -ms /bin/bash $LOGIN_USER && \

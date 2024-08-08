@@ -25,6 +25,11 @@
         "pip_requirements": {
           "title": "Package requirements",
           "type": "string"
+        },
+        "pyta_version": {
+          "title": "PyTA version",
+          "type": "string",
+          "default": null
         }
       }
     },
