@@ -34,7 +34,10 @@ class RTest(Test):
         successes = 0
         error = False
         for result in self.result:
-            messages.append(result["message"])
+            # Only add message if not a success, as testthat reports failure messages only
+            if result["type"] != "expectation_success":
+                messages.append(result["message"])
+
             if result["type"] == "expectation_success":
                 self.points_total += 1
                 successes += 1

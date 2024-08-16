@@ -405,7 +405,10 @@ def update_test_settings(user, settings_id, test_settings, file_url):
             try:
                 tester_settings["_env"] = tester_install.create_environment(tester_settings, env_dir, default_env)
             except Exception as e:
-                raise Exception(f"create tester environment failed:\n{e}") from e
+                error_message = f"create tester environment failed:\n{e}"
+                if e.stderr:
+                    error_message += f"\nDetails (captured stderr):\n{e.stderr}"
+                raise Exception(error_message) from e
             test_settings["testers"][i] = tester_settings
         test_settings["_files"] = files_dir
         test_settings.pop("_error", None)
