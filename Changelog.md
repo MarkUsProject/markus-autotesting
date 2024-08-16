@@ -1,7 +1,7 @@
 # CHANGELOG
 All notable changes to this project will be documented here.
 
-## [unreleased]
+## [v2.5.0]
 - Ensure R packages are correctly installed (#535)
 - Make PyTA version a setting (#536)
 - Add `libxml2-dev` to server `Dockerfile`, required by R `tidyverse` library (#539)
