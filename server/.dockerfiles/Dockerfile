@@ -1,6 +1,6 @@
-ARG UBUNTU_VERSION
+ARG UBUNTU_VERSION=22.04
 
-FROM ubuntu:$UBUNTU_VERSION as base
+FROM ubuntu:$UBUNTU_VERSION AS base
 
 
 ARG LOGIN_USER
@@ -9,9 +9,7 @@ ARG WORKSPACE
 RUN apt-get update -y && \
     DEBIAN_FRONTEND=noninteractive apt-get -y install software-properties-common && \
     DEBIAN_FRONTEND=noninteractive add-apt-repository -y ppa:deadsnakes/ppa && \
-    DEBIAN_FRONTEND=noninteractive apt-get -y install python3.7 \
-                       python3.7-venv \
-                       python3.8 \
+    DEBIAN_FRONTEND=noninteractive apt-get -y install python3.8 \
                        python3.8-venv \
                        python3.9 \
                        python3.9-venv \
