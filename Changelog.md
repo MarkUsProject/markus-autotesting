@@ -1,6 +1,9 @@
 # CHANGELOG
 All notable changes to this project will be documented here.
 
+## [unreleased]
+- Ensure all Haskell test cases still run within same file when there are failed test cases (#543)
+
 ## [v2.5.0]
 - Ensure R packages are correctly installed (#535)
 - Make PyTA version a setting (#536)
