@@ -120,9 +120,15 @@ class HaskellTester(Tester):
                 subprocess.run(cmd, stdout=subprocess.DEVNULL, universal_newlines=True, check=True)
                 with tempfile.NamedTemporaryFile(mode="w+", dir=this_dir) as sf:
                     cmd = ["stack", "runghc", *STACK_OPTIONS, "--", f"-i={haskell_lib}", f.name, f"--stats={sf.name}"]
-                    subprocess.run(
-                        cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, universal_newlines=True, check=True
-                    )
+                    try:
+                        subprocess.run(
+                            cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, universal_newlines=True, check=True
+                        )
+                    except subprocess.CalledProcessError as e:
+                        if e.returncode == 1:
+                            pass
+                        else:
+                            raise Exception(e)
                     results[test_file] = self._parse_test_results(csv.reader(sf))
         return results
 
