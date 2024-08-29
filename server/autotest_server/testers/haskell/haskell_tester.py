@@ -129,7 +129,13 @@ class HaskellTester(Tester):
                             pass
                         else:
                             raise Exception(e)
-                    results[test_file] = self._parse_test_results(csv.reader(sf))
+                    r = self._parse_test_results(csv.reader(sf))
+                    if r:
+                        results[test_file] = r
+                    else:
+                        subprocess.run(
+                            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, check=True
+                        )
         return results
 
     @Tester.run_decorator
