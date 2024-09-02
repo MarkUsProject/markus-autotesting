@@ -1,7 +1,8 @@
 rq==1.16.2
 click==8.1.7
 redis==5.0.8
-pyyaml==6.0.2
+pyyaml==6.0.1;python_version<"3.8"
+pyyaml==6.0.2;python_version>="3.8"
 jsonschema==4.17.3;python_version<"3.8"
 jsonschema==4.23.0;python_version>="3.8"
 requests==2.31.0;python_version<"3.8"
