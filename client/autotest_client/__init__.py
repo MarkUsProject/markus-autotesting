@@ -240,9 +240,11 @@ def run_tests(settings_id, user):
 
     timeout = 0
 
+    test_group_ids = set()
     for settings_ in test_settings["testers"]:
         for data in settings_["test_data"]:
             timeout += data["timeout"]
+            test_group_ids.add(data["extra_info"]["test_group_id"])
 
     ids = []
     for data in test_data:
@@ -268,7 +270,7 @@ def run_tests(settings_id, user):
             result_ttl=3600,
         )  # TODO: make this configurable
 
-    return {"test_ids": ids}
+    return {"test_ids": ids, "test_group_ids": list(test_group_ids)}
 
 
 @app.route("/settings/<settings_id>/test/<tests_id>", methods=["GET"])
