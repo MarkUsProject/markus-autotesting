@@ -1,6 +1,9 @@
 # CHANGELOG
 All notable changes to this project will be documented here.
 
+## [unreleased]
+- Add index api for monitoring if Gunicorn is down (#555)
+
 ## [v2.5.1]
 - Ensure all Haskell test cases still run within same file when there are failed test cases (#543)
 
