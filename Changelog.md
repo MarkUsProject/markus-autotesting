@@ -1,6 +1,9 @@
 # CHANGELOG
 All notable changes to this project will be documented here.
 
+## [unreleased]
+- Haskell Tests - allow displaying of compilation errors (#554)
+
 ## [v2.5.1]
 - Ensure all Haskell test cases still run within same file when there are failed test cases (#543)
 
