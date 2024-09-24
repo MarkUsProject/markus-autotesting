@@ -319,3 +319,8 @@ def cancel_tests(settings_id, **_kw):
     for id_, job in zip(test_ids, _get_jobs(test_ids, settings_id)):
         result[id_] = job if job is None else job.cancel()
     return jsonify(success=True)
+
+
+@app.route("/status", methods=["GET"])
+def status():
+    return jsonify(success=True)

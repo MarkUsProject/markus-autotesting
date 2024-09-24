@@ -38,3 +38,16 @@ class TestRegister:
 
     def test_credentials_set(self, response, fake_redis_conn, credentials):
         assert json.loads(fake_redis_conn.hget("autotest:user_credentials", response.json["api_key"])) == credentials
+
+
+class TestStatus:
+
+    @pytest.fixture
+    def response(self, client):
+        return client.get("/status")
+
+    def test_status_code(self, response):
+        assert response.status_code == 200
+
+    def test_success(self, response):
+        assert response.json["success"] is True
