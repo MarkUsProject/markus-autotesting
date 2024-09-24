@@ -2,6 +2,7 @@
 All notable changes to this project will be documented here.
 
 ## [unreleased]
+- Haskell Tests - allow displaying of compilation errors (#554)
 - Add status api for monitoring if Gunicorn is down (#555)
 
 ## [v2.5.1]
