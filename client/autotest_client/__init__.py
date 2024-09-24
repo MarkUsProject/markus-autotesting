@@ -321,6 +321,6 @@ def cancel_tests(settings_id, **_kw):
     return jsonify(success=True)
 
 
-@app.route("/index", methods=["GET"])
-def index():
+@app.route("/status", methods=["GET"])
+def status():
     return jsonify(success=True)
