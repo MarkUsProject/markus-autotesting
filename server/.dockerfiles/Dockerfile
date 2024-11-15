@@ -9,16 +9,12 @@ ARG WORKSPACE
 RUN apt-get update -y && \
     DEBIAN_FRONTEND=noninteractive apt-get -y install software-properties-common && \
     DEBIAN_FRONTEND=noninteractive add-apt-repository -y ppa:deadsnakes/ppa && \
-    DEBIAN_FRONTEND=noninteractive apt-get -y install python3.8 \
-                       python3.8-venv \
-                       python3.9 \
-                       python3.9-venv \
-                       python3.10 \
-                       python3.10-venv \
-                       python3.11 \
+    DEBIAN_FRONTEND=noninteractive apt-get -y install python3.11 \
                        python3.11-venv \
                        python3.12 \
                        python3.12-venv \
+                       python3.13 \
+                       python3.13-venv \
                        redis-server \
                        postgresql-client \
                        libpq-dev \
