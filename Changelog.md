@@ -3,6 +3,7 @@ All notable changes to this project will be documented here.
 
 ## [unreleased]
 - Update python versions in docker file (#568)
+- Update Github Actions config to use Python 3.11-3.13 and update action versions (#569)
 
 ## [v2.5.2]
 - Haskell Tests - allow displaying of compilation errors (#554)
