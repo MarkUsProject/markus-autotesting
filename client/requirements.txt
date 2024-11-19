@@ -3,7 +3,7 @@ flask==3.0.3;python_version>="3.8"
 python-dotenv==0.21.1;python_version<"3.8"
 python-dotenv==1.0.1;python_version>="3.8"
 rq==1.16.2
-redis==5.0.8
+redis==5.2.0
 jsonschema==4.17.3;python_version<"3.8"
 jsonschema==4.23.0;python_version>="3.8"
 Werkzeug==2.2.3;python_version<"3.8"
