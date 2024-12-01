@@ -1,5 +1,5 @@
 flask==2.2.5;python_version<"3.8"
-flask==3.0.3;python_version>="3.8"
+flask==3.1.0;python_version>="3.8"
 python-dotenv==0.21.1;python_version<"3.8"
 python-dotenv==1.0.1;python_version>="3.8"
 rq==2.0.0
