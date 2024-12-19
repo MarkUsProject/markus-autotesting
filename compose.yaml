@@ -1,5 +1,3 @@
-version: '3.7'
-
 services:
   server:
     build:
@@ -9,7 +7,7 @@ services:
         UBUNTU_VERSION: '22.04'
         LOGIN_USER: 'docker'
         WORKSPACE: '/home/docker/.autotesting'
-    image: markus-autotest-server-dev:1.1.0
+    image: markus-autotest-server-dev:1.2.0
     volumes:
       - ./server:/app:cached
       - workspace:/home/docker/.autotesting:rw
@@ -29,7 +27,7 @@ services:
       dockerfile: ./.dockerfiles/Dockerfile
       args:
         UBUNTU_VERSION: '22.04'
-    image: markus-autotest-client-dev:1.1.0
+    image: markus-autotest-client-dev:1.2.0
     container_name: 'autotest-client'
     volumes:
       - ./client:/app:cached
@@ -46,7 +44,7 @@ services:
       - markus_dev
 
   postgres:
-    image: postgres:10
+    image: postgres:14
     volumes:
       - postgres_autotest:/var/lib/postgresql/data
     environment:
@@ -56,7 +54,7 @@ services:
       - '45432:5432'
 
   redis:
-    image: redis:3.2-alpine
+    image: redis:7
     volumes:
       - redis_autotest:/data
     ports:

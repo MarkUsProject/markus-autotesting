@@ -1,6 +1,10 @@
 # CHANGELOG
 All notable changes to this project will be documented here.
 
+## [v2.6.0]
+- Update python versions in docker file (#568)
+- Update Github Actions config to use Python 3.11-3.13 and update action versions (#569)
+
 ## [v2.5.2]
 - Haskell Tests - allow displaying of compilation errors (#554)
 - Add status api for monitoring if Gunicorn is down (#555)
