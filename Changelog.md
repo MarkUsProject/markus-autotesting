@@ -4,6 +4,7 @@ All notable changes to this project will be documented here.
 ## [unreleased]
 - Update python, pyta and jupyter testers to allow a requirements file (#580)
 - Update R tester to allow a renv.lock file (#581)
+- Improve display of Python package installation errors when creating environment (#585)
 
 ## [v2.6.0]
 - Update python versions in docker file (#568)
