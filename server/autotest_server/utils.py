@@ -5,7 +5,7 @@ import zipfile
 import shutil
 from io import BytesIO
 from typing import Type, Optional, Tuple, List, Generator
-from .config import config
+from .config import _Config
 
 
 def loads_partial_json(json_string: str, expected_type: Optional[Type] = None) -> Tuple[List, bool]:
@@ -43,15 +43,25 @@ def _rlimit_str2int(rlimit_string):
     return getattr(resource, f"RLIMIT_{rlimit_string.upper()}")
 
 
-def set_rlimits_before_test() -> None:
+def get_resource_settings(config: _Config) -> list[tuple[int, tuple[int, int]]]:
     """
-    Sets resource limits specified in the config.
+    Returns a list of resources and their associated rlimits.
     """
     rlimit_settings = config.get("rlimit_settings", {})
+    settings_list = []
 
     for resource_str, rlimit in rlimit_settings.items():
-        # Raises an exception if the rlimit is invalid or the underlying system call fails.
-        resource.setrlimit(_rlimit_str2int(resource_str), rlimit)
+        settings_list.append((_rlimit_str2int(resource_str), rlimit))
+
+    return settings_list
+
+
+def get_setrlimit_lines(resource_settings: list[tuple[int, tuple[int, int]]]) -> list[str]:
+    """
+    Given a list of resources and their associated rlimits, returns a list of lines, which are valid python code
+    used to set the resource limits.
+    """
+    return [f"resource.setrlimit({_resource}, {rlimit})" for _resource, rlimit in resource_settings]
 
 
 def extract_zip_stream(zip_byte_stream: bytes, destination: str) -> None:
