@@ -7,4 +7,3 @@ autotest_server/testers/java/lib/
 __pycache__
 .DS_Store
 .hypothesis/
-supervisor_child_log/

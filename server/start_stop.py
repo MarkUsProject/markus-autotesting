@@ -63,8 +63,12 @@ def create_enqueuer_wrapper(rq):
                 queues=" ".join(worker_data["queues"]),
                 numprocs=1,
                 directory=os.path.dirname(os.path.realpath(__file__)),
-                stdout_logfile=os.path.join(_THIS_DIR, f'supervisor_child_log/{worker_data["user"]}_stdout.log'),
-                stderr_logfile=os.path.join(_THIS_DIR, f'supervisor_child_log/{worker_data["user"]}_stderr.log'),
+                stdout_logfile=os.path.join(
+                    _THIS_DIR, f'{config["supervisor_child_log"]}/{worker_data["user"]}_stdout.log'
+                ),
+                stderr_logfile=os.path.join(
+                    _THIS_DIR, f'{config["supervisor_child_log"]}/{worker_data["user"]}_stderr.log'
+                ),
             )
             f.write(c)
 

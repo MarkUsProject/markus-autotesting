@@ -1,6 +1,7 @@
 workspace: !ENV ${WORKSPACE}
 redis_url: !ENV ${REDIS_URL}
 supervisor_url: !ENV ${SUPERVISOR_URL}
+supervisor_child_log: !ENV ${SUPERVISOR_CHILD_LOG}
 workers:
   - user: !ENV ${USER}
     queues:
