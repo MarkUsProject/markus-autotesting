@@ -47,13 +47,9 @@ def get_resource_settings(config: _Config) -> list[tuple[int, tuple[int, int]]]:
     """
     Returns a list of resources and their associated rlimits.
     """
-    rlimit_settings = config.get("rlimit_settings", {})
-    settings_list = []
-
-    for resource_str, rlimit in rlimit_settings.items():
-        settings_list.append((_rlimit_str2int(resource_str), rlimit))
-
-    return settings_list
+    return [
+        (_rlimit_str2int(resource_str), rlimit) for resource_str, rlimit in config.get("rlimit_settings", {}).items()
+    ]
 
 
 def get_setrlimit_lines(resource_settings: list[tuple[int, tuple[int, int]]]) -> list[str]:
