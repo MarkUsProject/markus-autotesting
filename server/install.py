@@ -62,9 +62,9 @@ def create_workspace():
     os.makedirs(config["workspace"], exist_ok=True)
 
 
-def create_supervisor_child_log():
-    _print(f'creating supervisor log folder for its children at {config["supervisor_child_log"]}')
-    os.makedirs(config["supervisor_child_log"], exist_ok=True)
+def create_worker_log_dir():
+    _print(f'creating worker log directory at {config["worker_log_dir"]}')
+    os.makedirs(config["worker_log_dir"], exist_ok=True)
 
 
 def install_all_testers():
@@ -81,7 +81,7 @@ def install():
     check_dependencies()
     check_users_exist()
     create_workspace()
-    create_supervisor_child_log()
+    create_worker_log_dir()
     install_all_testers()
 
 
