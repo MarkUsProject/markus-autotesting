@@ -43,18 +43,51 @@ def _rlimit_str2int(rlimit_string):
     return getattr(resource, f"RLIMIT_{rlimit_string.upper()}")
 
 
+def validate_rlimit(config_soft: int, config_hard: int, curr_soft: int, curr_hard: int) -> tuple[int, int]:
+    """Validates and adjusts resource limits based on configured and current values.
+
+    Returns a tuple containing the validated (soft, hard) limit values. This implementation treats the current soft
+    limit as an upper bound on the config soft limit and will clamp it.
+    """
+    # account for the fact that resource.RLIM_INFINITY == -1
+    soft, hard = min(curr_soft, config_soft), min(curr_hard, config_hard)
+    if soft < 0:
+        soft = max(curr_soft, config_soft)
+    if hard < 0:
+        hard = max(curr_hard, config_hard)
+    # make sure the soft limit doesn't exceed the hard limit, but keep in mind that -1 is resource.RLIM_INFINITY
+    if hard != -1:
+        soft = min(hard, soft)
+
+    return soft, hard
+
+
 def get_resource_settings(config: _Config) -> list[tuple[int, tuple[int, int]]]:
+    """Returns rlimit settings specified in config file.
+
+    This function ensures that for specific limits (defined in RLIMIT_ADJUSTMENTS),
+    there are at least n=RLIMIT_ADJUSTMENTS[limit] resources available for cleanup
+    processes that are not available for test processes. This ensures that cleanup
+    processes will always be able to run.
     """
-    Returns a list of resources and their associated rlimits.
-    """
-    return [
-        (_rlimit_str2int(resource_str), rlimit) for resource_str, rlimit in config.get("rlimit_settings", {}).items()
-    ]
+    resource_settings = []
+
+    for limit_str in config.get("rlimit_settings", {}):
+        limit = _rlimit_str2int(limit_str)
+
+        rlimit = validate_rlimit(
+            *config.get("rlimit_settings", {}).get(limit_str, resource.getrlimit(limit)),
+            *resource.getrlimit(limit),
+        )
+
+        resource_settings.append((limit, rlimit))
+
+    return resource_settings
 
 
 def get_setrlimit_lines(resource_settings: list[tuple[int, tuple[int, int]]]) -> list[str]:
-    """
-    Given a list of resources and their associated rlimits, returns a list of lines, which are valid python code
+    """Given a list of resources and their associated rlimits,
+    returns a list of lines, which are valid python code
     used to set the resource limits.
     """
     return [f"resource.setrlimit({_resource}, {rlimit})" for _resource, rlimit in resource_settings]
