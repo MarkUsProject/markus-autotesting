@@ -105,7 +105,9 @@ def _create_test_script_command(tester_type: str) -> str:
     run tests.
     """
     resource_settings = get_resource_settings(config)
-    import_line = f"from testers.{tester_type}.{tester_type}_tester import {tester_type.capitalize()}Tester as Tester"
+    import_line = (
+        f"from testers.{tester_type}.{tester_type}_tester" f" import {tester_type.capitalize()}Tester as Tester"
+    )
     python_lines = [
         "import sys, json, resource",
         f'sys.path.append("{os.path.dirname(os.path.abspath(__file__))}")',
