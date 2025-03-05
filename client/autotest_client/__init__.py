@@ -224,7 +224,7 @@ def run_tests(settings_id, user):
     test_settings = json.loads(REDIS_CONNECTION.hget("autotest:settings", key=settings_id))
     env_status = test_settings.get("_env_status")
     if env_status == "setup":
-        raise Exception("Setting up test environment. Please try again later.")
+        abort(make_response(jsonify(message="Setting up test environment. Please try again later."), 503))
     elif env_status == "error":
         msg = "Settings Error"
         settings_error = test_settings.get("_error", "")
