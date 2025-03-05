@@ -4,6 +4,7 @@ from functools import wraps
 from typing import Optional, Callable, Any, Type, Dict, List
 from .specs import TestSpecs
 import traceback
+import resource
 
 
 class TestError(Exception):
@@ -230,9 +231,15 @@ class Tester(ABC):
         self,
         specs: TestSpecs,
         test_class: Optional[Type[Test]] = Test,
+        resource_settings: list[tuple[int, tuple[int, int]]] | None = None,
     ) -> None:
         self.specs = specs
         self.test_class = test_class
+
+        if resource_settings is None:
+            self.resource_settings = []
+        else:
+            self.resource_settings = resource_settings
 
     @staticmethod
     def error_all(message: str, points_total: int = 0, expected: bool = False) -> str:
@@ -257,12 +264,19 @@ class Tester(ABC):
         Callback invoked before running this tester.
         Use this for tester initialization steps that can fail, rather than using __init__.
         """
+        self.set_resource_limits(self.resource_settings)
 
     def after_tester_run(self) -> None:
         """
         Callback invoked after running this tester, including in case of exceptions.
         Use this for tester cleanup steps that should always be executed, regardless of errors.
         """
+
+    @staticmethod
+    def set_resource_limits(resource_settings: list[tuple[int, tuple[int, int]]]) -> None:
+        """Sets system resource limits using the `resource` package."""
+        for resource_name, rlimit in resource_settings:
+            resource.setrlimit(resource_name, rlimit)
 
     @staticmethod
     def run_decorator(run_func: Callable) -> Callable:
