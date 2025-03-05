@@ -63,34 +63,20 @@ def validate_rlimit(config_soft: int, config_hard: int, curr_soft: int, curr_har
 
 
 def get_resource_settings(config: _Config) -> list[tuple[int, tuple[int, int]]]:
-    """Returns rlimit settings specified in config file.
-
-    This function ensures that for specific limits (defined in RLIMIT_ADJUSTMENTS),
-    there are at least n=RLIMIT_ADJUSTMENTS[limit] resources available for cleanup
-    processes that are not available for test processes. This ensures that cleanup
-    processes will always be able to run.
-    """
+    """Returns rlimit settings specified in config file."""
     resource_settings = []
 
-    for limit_str in config.get("rlimit_settings", {}):
+    for limit_str, rlimit in config.get("rlimit_settings", {}).items():
         limit = _rlimit_str2int(limit_str)
 
         rlimit = validate_rlimit(
-            *config.get("rlimit_settings", {}).get(limit_str, resource.getrlimit(limit)),
+            *rlimit,
             *resource.getrlimit(limit),
         )
 
         resource_settings.append((limit, rlimit))
 
     return resource_settings
-
-
-def get_setrlimit_lines(resource_settings: list[tuple[int, tuple[int, int]]]) -> list[str]:
-    """Given a list of resources and their associated rlimits,
-    returns a list of lines, which are valid python code
-    used to set the resource limits.
-    """
-    return [f"resource.setrlimit({_resource}, {rlimit})" for _resource, rlimit in resource_settings]
 
 
 def extract_zip_stream(zip_byte_stream: bytes, destination: str) -> None:

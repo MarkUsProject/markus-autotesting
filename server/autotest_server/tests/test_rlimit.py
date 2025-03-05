@@ -3,7 +3,7 @@ from unittest.mock import patch, MagicMock
 import resource
 
 from ..config import _Config
-from ..utils import validate_rlimit, get_resource_settings, get_setrlimit_lines
+from ..utils import validate_rlimit, get_resource_settings
 
 
 class TestValidateRlimit(unittest.TestCase):
@@ -79,43 +79,3 @@ class TestGetResourceSettings(unittest.TestCase):
         expected = [(resource.RLIMIT_NOFILE, (512, 1024)), (resource.RLIMIT_NPROC, (60, 60))]
 
         self.assertEqual(get_resource_settings(config), expected)
-
-
-class TestGetSetrlimitLines(unittest.TestCase):
-    def test_empty_list(self):
-        # Test with an empty input list
-        self.assertEqual(get_setrlimit_lines([]), [])
-
-    def test_single_resource(self):
-        # Test with a single resource
-        resource_settings = [(resource.RLIMIT_NOFILE, (1024, 2048))]
-        expected = [f"resource.setrlimit({resource.RLIMIT_NOFILE}, (1024, 2048))"]
-
-        self.assertEqual(get_setrlimit_lines(resource_settings), expected)
-
-    def test_multiple_resources(self):
-        # Test with multiple resources
-        resource_settings = [
-            (resource.RLIMIT_NOFILE, (1024, 2048)),
-            (resource.RLIMIT_CPU, (30, 60)),
-            (resource.RLIMIT_NPROC, (1024 * 1024 * 100, 1024 * 1024 * 200)),
-        ]
-
-        expected = [
-            f"resource.setrlimit({resource.RLIMIT_NOFILE}, (1024, 2048))",
-            f"resource.setrlimit({resource.RLIMIT_CPU}, (30, 60))",
-            f"resource.setrlimit({resource.RLIMIT_NPROC}, ({1024 * 1024 * 100}, {1024 * 1024 * 200}))",
-        ]
-
-        self.assertEqual(get_setrlimit_lines(resource_settings), expected)
-
-    def test_with_infinity_values(self):
-        # Test with -1 (RLIM_INFINITY) values
-        resource_settings = [(resource.RLIMIT_NOFILE, (1024, -1)), (resource.RLIMIT_CPU, (-1, -1))]
-
-        expected = [
-            f"resource.setrlimit({resource.RLIMIT_NOFILE}, (1024, -1))",
-            f"resource.setrlimit({resource.RLIMIT_CPU}, (-1, -1))",
-        ]
-
-        self.assertEqual(get_setrlimit_lines(resource_settings), expected)

@@ -22,7 +22,6 @@ from .config import config
 from .utils import (
     loads_partial_json,
     get_resource_settings,
-    get_setrlimit_lines,
     extract_zip_stream,
     recursive_iglob,
     copy_tree,
@@ -104,17 +103,15 @@ def _create_test_script_command(tester_type: str) -> str:
     Return string representing a command line command to
     run tests.
     """
-    resource_settings = get_resource_settings(config)
     import_line = (
         f"from testers.{tester_type}.{tester_type}_tester" f" import {tester_type.capitalize()}Tester as Tester"
     )
     python_lines = [
-        "import sys, json, resource",
+        "import sys, json",
         f'sys.path.append("{os.path.dirname(os.path.abspath(__file__))}")',
         import_line,
         "from testers.specs import TestSpecs",
-        *get_setrlimit_lines(resource_settings),
-        "Tester(specs=TestSpecs.from_json(sys.stdin.read())).run()",
+        f"Tester(resource_settings={get_resource_settings(config)}, specs=TestSpecs.from_json(sys.stdin.read())).run()",
     ]
     python_str = "; ".join(python_lines)
     return f"\"${{PYTHON}}\" -c '{python_str}'"
