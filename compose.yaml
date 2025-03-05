@@ -17,6 +17,7 @@ services:
       - SUPERVISOR_URL=127.0.0.1:9001
       - AUTOTESTER_CONFIG=/app/.dockerfiles/docker-config.yml
       - STACK_ROOT=/home/docker/.autotesting/.stack
+      - WORKER_LOG_DIR=/home/docker/.autotesting/worker_log_dir
     depends_on:
       - postgres
       - redis

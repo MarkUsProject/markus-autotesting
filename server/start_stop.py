@@ -40,6 +40,12 @@ autostart=true
 autorestart=true
 stopasgroup=true
 killasgroup=true
+stdout_logfile={stdout_logfile}
+stdout_logfile_maxbytes=1MB
+stdout_logfile_backups=10
+stderr_logfile={stderr_logfile}
+stderr_logfile_maxbytes=1MB
+stderr_logfile_backups=10
 
 """
 
@@ -57,6 +63,8 @@ def create_enqueuer_wrapper(rq):
                 queues=" ".join(worker_data["queues"]),
                 numprocs=1,
                 directory=os.path.dirname(os.path.realpath(__file__)),
+                stdout_logfile=os.path.join(_THIS_DIR, f'{config["worker_log_dir"]}/{worker_data["user"]}_stdout.log'),
+                stderr_logfile=os.path.join(_THIS_DIR, f'{config["worker_log_dir"]}/{worker_data["user"]}_stderr.log'),
             )
             f.write(c)
 
