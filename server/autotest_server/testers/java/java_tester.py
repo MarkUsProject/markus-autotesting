@@ -34,13 +34,18 @@ class JavaTester(Tester):
     JUNIT_JUPITER_RESULT = "TEST-junit-jupiter.xml"
     JUNIT_VINTAGE_RESULT = "TEST-junit-vintage.xml"
 
-    def __init__(self, specs: TestSpecs, test_class: Type[JavaTest] = JavaTest) -> None:
+    def __init__(
+        self,
+        specs: TestSpecs,
+        test_class: Type[JavaTest] = JavaTest,
+        resource_settings: list[tuple[int, tuple[int, int]]] | None = None,
+    ) -> None:
         """
         Initialize a Java tester using the specifications in specs.
 
         This tester will create tests of type test_class.
         """
-        super().__init__(specs, test_class)
+        super().__init__(specs, test_class, resource_settings=resource_settings)
         classpath = self.specs.get("test_data", "classpath", default=".") or "."
         self.java_classpath = ":".join(self._parse_file_paths(classpath))
         self.out_dir = tempfile.TemporaryDirectory(dir=os.getcwd())
