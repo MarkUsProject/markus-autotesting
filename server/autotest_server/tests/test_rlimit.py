@@ -8,16 +8,16 @@ from ..utils import validate_rlimit, get_resource_settings
 
 class TestValidateRlimit(unittest.TestCase):
     def test_normal_limits(self):
-        # Test with normal positive values
+        """Test validate_rlimit with normal positive values."""
         self.assertEqual(validate_rlimit(100, 200, 150, 250), (100, 200))
         self.assertEqual(validate_rlimit(200, 300, 100, 250), (100, 250))
 
     def test_soft_limit_exceeding_hard_limit(self):
-        # Test where soft limit would exceed hard limit
+        """Test validate_rlimit where soft limit would exceed hard limit."""
         self.assertEqual(validate_rlimit(500, 400, 300, 350), (300, 350))
 
     def test_infinity_values(self):
-        # Test with -1 (resource.RLIM_INFINITY) values
+        """Test validate_rlimit with -1 (resource.RLIM_INFINITY) values."""
         self.assertEqual(validate_rlimit(-1, 200, 100, 150), (100, 150))
         self.assertEqual(validate_rlimit(100, -1, 150, 200), (100, 200))
         self.assertEqual(validate_rlimit(-1, -1, 100, 200), (100, 200))
@@ -26,11 +26,11 @@ class TestValidateRlimit(unittest.TestCase):
         self.assertEqual(validate_rlimit(100, 200, -1, -1), (100, 200))
 
     def test_both_negative(self):
-        # Test where both config and current are negative
+        """Test validate_rlimit where both config and current are negative."""
         self.assertEqual(validate_rlimit(-1, -1, -1, -1), (-1, -1))
 
     def test_mixed_negative_cases(self):
-        # Various mixed cases with negative values
+        """Test validate_rlimit with various mixed cases with negative values."""
         self.assertEqual(validate_rlimit(-1, 200, -1, 300), (-1, 200))
         self.assertEqual(validate_rlimit(100, -1, -1, -1), (100, -1))
 
@@ -38,7 +38,7 @@ class TestValidateRlimit(unittest.TestCase):
 class TestGetResourceSettings(unittest.TestCase):
     @patch("resource.getrlimit")
     def test_empty_config(self, _):
-        # Test with an empty config
+        """Test get_resource_settings with an empty config."""
         config = _Config()
         config.get = MagicMock(return_value={})
 
@@ -46,7 +46,7 @@ class TestGetResourceSettings(unittest.TestCase):
 
     @patch("resource.getrlimit")
     def test_with_config_values(self, mock_getrlimit):
-        # Test with config containing values
+        """Test get_resource_settings with config containing values."""
         config = _Config()
         rlimit_settings = {"nofile": (1024, 2048), "nproc": (30, 60)}
 
@@ -65,7 +65,7 @@ class TestGetResourceSettings(unittest.TestCase):
 
     @patch("resource.getrlimit")
     def test_with_infinity_values(self, mock_getrlimit):
-        # Test with some infinity (-1) values in the mix
+        """Test get_resource_settings with some infinity (-1) values in the mix."""
         config = _Config()
         rlimit_settings = {"nofile": (1024, -1), "nproc": (-1, 60)}
 
