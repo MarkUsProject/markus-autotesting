@@ -19,7 +19,13 @@ from typing import Optional, Dict, Union, List, Tuple, Callable, Type
 from types import TracebackType
 
 from .config import config
-from .utils import loads_partial_json, set_rlimits_before_test, extract_zip_stream, recursive_iglob, copy_tree
+from .utils import (
+    loads_partial_json,
+    get_resource_settings,
+    extract_zip_stream,
+    recursive_iglob,
+    copy_tree,
+)
 
 DEFAULT_ENV_DIR = "defaultvenv"
 TEST_SCRIPT_DIR = os.path.join(config["workspace"], "scripts")
@@ -103,7 +109,7 @@ def _create_test_script_command(tester_type: str) -> str:
         f'sys.path.append("{os.path.dirname(os.path.abspath(__file__))}")',
         import_line,
         "from testers.specs import TestSpecs",
-        "Tester(specs=TestSpecs.from_json(sys.stdin.read())).run()",
+        f"Tester(resource_settings={get_resource_settings(config)}, specs=TestSpecs.from_json(sys.stdin.read())).run()",
     ]
     python_str = "; ".join(python_lines)
     return f"\"${{PYTHON}}\" -c '{python_str}'"
@@ -221,7 +227,6 @@ def _run_test_specs(
                         stdout=subprocess.PIPE,
                         stderr=subprocess.PIPE,
                         stdin=subprocess.PIPE,
-                        preexec_fn=set_rlimits_before_test,
                         universal_newlines=True,
                         env={**os.environ, **env_vars, **env},
                         executable="/bin/bash",

@@ -162,13 +162,14 @@ class PyTester(Tester):
         self,
         specs: TestSpecs,
         test_class: Type[PyTest] = PyTest,
+        resource_settings: list[tuple[int, tuple[int, int]]] | None = None,
     ):
         """
         Initialize a python tester using the specifications in specs.
 
         This tester will create tests of type test_class.
         """
-        super().__init__(specs, test_class)
+        super().__init__(specs, test_class, resource_settings=resource_settings)
 
     @staticmethod
     def _load_unittest_tests(test_file: str) -> unittest.TestSuite:
