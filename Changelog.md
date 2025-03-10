@@ -5,6 +5,7 @@ All notable changes to this project will be documented here.
 - Update python, pyta and jupyter testers to allow a requirements file (#580)
 - Update R tester to allow a renv.lock file (#581)
 - Improve display of Python package installation errors when creating environment (#585)
+- Update "setting up test environment" message with http response of status code 503 (#589)
 - Change rlimit resource settings to apply each worker individually (#587) 
 
 ## [v2.6.0]
