@@ -7,6 +7,9 @@ All notable changes to this project will be documented here.
 - Improve display of Python package installation errors when creating environment (#585)
 - Update "setting up test environment" message with http response of status code 503 (#589)
 - Change rlimit resource settings to apply each worker individually (#587) 
+- Drop support for Python 3.8 (#590)
+- Use Python 3.13 in development (#590)
+- Update Docker configuration to install dependencies in a separate service (#590)
 - Improve error reporting with handled assertion errors (#591)
 - Add custom pytest markers to Python tester to record MarkUs metadata (#592)
 
