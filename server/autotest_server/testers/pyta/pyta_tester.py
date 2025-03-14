@@ -102,13 +102,18 @@ class PytaTest(Test):
 class PytaTester(Tester):
     test_class: Type[PytaTest]
 
-    def __init__(self, specs: TestSpecs, test_class: Type[PytaTest] = PytaTest):
+    def __init__(
+        self,
+        specs: TestSpecs,
+        test_class: Type[PytaTest] = PytaTest,
+        resource_settings: list[tuple[int, tuple[int, int]]] | None = None,
+    ):
         """
         Initialize a Python TA tester using the specifications in specs.
 
         This tester will create tests of type test_class.
         """
-        super().__init__(specs, test_class)
+        super().__init__(specs, test_class, resource_settings=resource_settings)
         self.upload_annotations = self.specs.get("test_data", "upload_annotations")
         self.pyta_config = self.update_pyta_config()
         self.annotations = []

@@ -5,9 +5,7 @@ import zipfile
 import shutil
 from io import BytesIO
 from typing import Type, Optional, Tuple, List, Generator
-from .config import config
-
-RLIMIT_ADJUSTMENTS = {"nproc": 10}
+from .config import _Config
 
 
 def loads_partial_json(json_string: str, expected_type: Optional[Type] = None) -> Tuple[List, bool]:
@@ -45,31 +43,40 @@ def _rlimit_str2int(rlimit_string):
     return getattr(resource, f"RLIMIT_{rlimit_string.upper()}")
 
 
-def set_rlimits_before_test() -> None:
+def validate_rlimit(config_soft: int, config_hard: int, curr_soft: int, curr_hard: int) -> tuple[int, int]:
+    """Validates and adjusts resource limits based on configured and current values.
+
+    Returns a tuple containing the validated (soft, hard) limit values. This implementation treats the current soft
+    limit as an upper bound on the config soft limit and will clamp it.
     """
-    Sets rlimit settings specified in config file
-    This function ensures that for specific limits (defined in RLIMIT_ADJUSTMENTS),
-    there are at least n=RLIMIT_ADJUSTMENTS[limit] resources available for cleanup
-    processes that are not available for test processes.  This ensures that cleanup
-    processes will always be able to run.
-    """
-    for limit_str in config.get("rlimit_settings", {}).keys() | RLIMIT_ADJUSTMENTS.keys():
-        limit = _rlimit_str2int(limit_str)
-        config_soft, config_hard = config.get("rlimit_settings", {}).get(limit_str, resource.getrlimit(limit))
-        curr_soft, curr_hard = resource.getrlimit(limit)
-        # account for the fact that resource.RLIM_INFINITY == -1
-        soft, hard = min(curr_soft, config_soft), min(curr_hard, config_hard)
-        if soft < 0:
-            soft = max(curr_soft, config_soft)
-        if hard < 0:
-            hard = max(curr_hard, config_hard)
-        # reduce the hard limit so that cleanup scripts will have at least adj more resources to use.
-        adj = RLIMIT_ADJUSTMENTS.get(limit_str, 0)
-        if hard >= adj:
-            hard -= adj
-        # make sure the soft limit doesn't exceed the hard limit
+    # account for the fact that resource.RLIM_INFINITY == -1
+    soft, hard = min(curr_soft, config_soft), min(curr_hard, config_hard)
+    if soft < 0:
+        soft = max(curr_soft, config_soft)
+    if hard < 0:
+        hard = max(curr_hard, config_hard)
+    # make sure the soft limit doesn't exceed the hard limit, but keep in mind that -1 is resource.RLIM_INFINITY
+    if hard != -1:
         soft = min(hard, soft)
-        resource.setrlimit(limit, (soft, hard))
+
+    return soft, hard
+
+
+def get_resource_settings(config: _Config) -> list[tuple[int, tuple[int, int]]]:
+    """Returns rlimit settings specified in config file."""
+    resource_settings = []
+
+    for limit_str, rlimit in config.get("rlimit_settings", {}).items():
+        limit = _rlimit_str2int(limit_str)
+
+        rlimit = validate_rlimit(
+            *rlimit,
+            *resource.getrlimit(limit),
+        )
+
+        resource_settings.append((limit, rlimit))
+
+    return resource_settings
 
 
 def extract_zip_stream(zip_byte_stream: bytes, destination: str) -> None:
