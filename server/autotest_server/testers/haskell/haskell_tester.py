@@ -53,13 +53,14 @@ class HaskellTester(Tester):
         self,
         specs: TestSpecs,
         test_class: Type[HaskellTest] = HaskellTest,
+        resource_settings: list[tuple[int, tuple[int, int]]] | None = None,
     ) -> None:
         """
         Initialize a Haskell tester using the specifications in specs.
 
         This tester will create tests of type test_class.
         """
-        super().__init__(specs, test_class)
+        super().__init__(specs, test_class, resource_settings=resource_settings)
 
     def _test_run_flags(self, test_file: str) -> List[str]:
         """
