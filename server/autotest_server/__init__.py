@@ -15,6 +15,7 @@ import importlib
 import psycopg2
 import mimetypes
 import rq
+import traceback
 from typing import Optional, Dict, Union, List, Tuple, Callable, Type
 from types import TracebackType
 
@@ -312,7 +313,9 @@ def _setup_files(settings_id: int, user: str, files_url: str, tests_path: str, t
         else:
             os.chmod(file_or_dir, 0o770)
         shutil.chown(file_or_dir, group=test_username)
-    test_script_dir = json.loads(redis_connection().hget("autotest:settings", settings_id))["_files"]
+    settings = json.loads(redis_connection().hget("autotest:settings", settings_id))
+    assert "_files" in settings, "Required key `_files` not found in settings"
+    test_script_dir = settings["_files"]
     script_files = copy_tree(test_script_dir, tests_path)
     for fd, file_or_dir in script_files:
         if fd == "d":
@@ -362,8 +365,12 @@ def run_test(settings_id, test_id, files_url, categories, user, test_env_vars):
         finally:
             _stop_tester_processes(test_username)
             _clear_working_directory(tests_path, test_username)
-    except Exception as e:
-        error = str(e)
+    except AssertionError as e:
+        traceback.print_exc()
+        error = f"Failed to run tests: {e}"
+    except Exception:
+        traceback.print_exc()
+        error = traceback.format_exc()
     finally:
         key = f"autotest:test_result:{test_id}"
         redis_connection().set(key, json.dumps({"test_groups": results, "error": error}))
