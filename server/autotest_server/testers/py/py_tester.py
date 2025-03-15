@@ -80,17 +80,17 @@ class PytestPlugin:
 
     def pytest_configure(self, config):
         """Register custom markers for use with MarkUs."""
-        config.addinivalue_line(
-            "markers", "markus_tag(name): indicate that the submission should be given a tag"
-        )
+        config.addinivalue_line("markers", "markus_tag(name): indicate that the submission should be given a tag")
         config.addinivalue_line(
             "markers", "markus_annotation(**ann_data): indicate that the submission should be given an annotation"
         )
         config.addinivalue_line(
-            "markers", "markus_overall_comments(comment): indicate that the submission should be given an overall comment"
+            "markers",
+            "markus_overall_comments(comment): indicate that the submission should be given an overall comment",
         )
         config.addinivalue_line(
-            "markers", "markus_message(text): indicate text that is displayed as part of the test output (even on success)"
+            "markers",
+            "markus_message(text): indicate text that is displayed as part of the test output (even on success)",
         )
 
     @pytest.hookimpl(hookwrapper=True, tryfirst=True)

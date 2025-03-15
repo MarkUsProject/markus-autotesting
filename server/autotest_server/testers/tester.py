@@ -102,7 +102,7 @@ class Test(ABC):
         return json.dumps({"annotations": annotation_data})
 
     @staticmethod
-    def format_overall_comment(overall_comment_data: str | Iterable[str], separator: str = '\n\n') -> str:
+    def format_overall_comment(overall_comment_data: str | Iterable[str], separator: str = "\n\n") -> str:
         """
         Formats overall comment data.
         :param overall_comment_data: the contents of the overall comment
