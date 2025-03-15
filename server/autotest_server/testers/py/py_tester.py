@@ -74,6 +74,24 @@ class PytestPlugin:
         Initialize a pytest plugin for collecting results
         """
         self.results = {}
+        self.tags = set()
+        self.annotations = []
+        self.overall_comments = []
+
+    def pytest_configure(self, config):
+        """Register custom markers for use with MarkUs."""
+        config.addinivalue_line(
+            "markers", "markus_tag(name): indicate that the submission should be given a tag"
+        )
+        config.addinivalue_line(
+            "markers", "markus_annotation(**ann_data): indicate that the submission should be given an annotation"
+        )
+        config.addinivalue_line(
+            "markers", "markus_overall_comments(comment): indicate that the submission should be given an overall comment"
+        )
+        config.addinivalue_line(
+            "markers", "markus_message(text): indicate text that is displayed as part of the test output (even on success)"
+        )
 
     @pytest.hookimpl(hookwrapper=True, tryfirst=True)
     def pytest_runtest_makereport(self, item, call):
@@ -96,6 +114,27 @@ class PytestPlugin:
                 "errors": str(rep.longrepr) if rep.failed else "",
                 "description": item.obj.__doc__,
             }
+
+        if not rep.skipped and rep.when == "teardown":
+            for marker in item.iter_markers():
+                if marker.name == "markus_tag":
+                    if len(marker.args) > 0:
+                        self.tags.add(marker.args[0].strip())
+                    elif "name" in marker.kwargs:
+                        self.tags.add(marker.kwargs["name"].strip())
+                elif marker.name == "markus_annotation":
+                    self.annotations.append(marker.kwargs)
+                elif marker.name == "markus_overall_comments":
+                    if len(marker.args) > 0:
+                        self.overall_comments.append(marker.args[0])
+                    elif "comment" in marker.kwargs:
+                        self.overall_comments.append(marker.kwargs["comment"])
+                elif marker.name == "markus_message" and marker.args != [] and item.nodeid in self.results:
+                    if self.results[item.nodeid].get("errors"):
+                        self.results[item.nodeid]["errors"] += f"\n\n{marker.args[0]}"
+                    else:
+                        self.results[item.nodeid]["errors"] = marker.args[0]
+
         return rep
 
     def pytest_collectreport(self, report):
@@ -170,6 +209,9 @@ class PyTester(Tester):
         This tester will create tests of type test_class.
         """
         super().__init__(specs, test_class, resource_settings=resource_settings)
+        self.annotations = []
+        self.overall_comments = []
+        self.tags = set()
 
     @staticmethod
     def _load_unittest_tests(test_file: str) -> unittest.TestSuite:
@@ -210,6 +252,9 @@ class PyTester(Tester):
                 plugin = PytestPlugin()
                 pytest.main([test_file, f"--tb={verbosity}"], plugins=[plugin])
                 results.extend(plugin.results.values())
+                self.annotations = plugin.annotations
+                self.overall_comments = plugin.overall_comments
+                self.tags = plugin.tags
             finally:
                 sys.stdout = sys.__stdout__
         return results
@@ -237,3 +282,12 @@ class PyTester(Tester):
             for res in result:
                 test = self.test_class(self, test_file, res)
                 print(test.run(), flush=True)
+
+    def after_tester_run(self) -> None:
+        """Print all MarkUs metadata from the tests."""
+        if self.annotations:
+            print(self.test_class.format_annotations(self.annotations))
+        if self.tags:
+            print(self.test_class.format_tags(self.tags))
+        if self.overall_comments:
+            print(self.test_class.format_overall_comment(self.overall_comments, separator="\n\n"))

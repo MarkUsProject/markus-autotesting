@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import json
 from abc import ABC, abstractmethod
 from functools import wraps
-from typing import Optional, Callable, Any, Type, Dict, List
+from typing import Optional, Callable, Any, Type, Dict, Iterable, List
 from .specs import TestSpecs
 import traceback
 import resource
@@ -98,6 +100,36 @@ class Test(ABC):
         :return a json string representation of the annotation data.
         """
         return json.dumps({"annotations": annotation_data})
+
+    @staticmethod
+    def format_overall_comment(overall_comment_data: str | Iterable[str], separator: str = '\n\n') -> str:
+        """
+        Formats overall comment data.
+        :param overall_comment_data: the contents of the overall comment
+        :param separator: if overall_comment_data is a collection, use separator to join the elements
+        :return a json string representation of the tag data.
+        """
+        if isinstance(overall_comment_data, str):
+            content = overall_comment_data
+        else:
+            content = separator.join(overall_comment_data)
+        return json.dumps({"overall_comment": content})
+
+    @staticmethod
+    def format_tags(tag_data: Iterable[str | dict[str, str]]) -> str:
+        """
+        Formats tag data.
+        :param tag_data: an iterable of tag data. Each element is either a tag name (str) or a dictionary with
+            keys "name" and "description".
+        :return a json string representation of the tag data.
+        """
+        tag_list = []
+        for tag in tag_data:
+            if isinstance(tag, str):
+                tag_list.append({"name": tag})
+            else:
+                tag_list.append(tag)
+        return json.dumps({"tags": tag_list})
 
     def passed_with_bonus(self, points_bonus: int, message: str = "") -> str:
         """
