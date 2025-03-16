@@ -361,6 +361,11 @@ def run_test(settings_id, test_id, files_url, categories, user, test_env_vars):
         settings = json.loads(redis_connection().hget("autotest:settings", key=settings_id))
         settings["_last_access"] = int(time.time())
         redis_connection().hset("autotest:settings", key=settings_id, value=json.dumps(settings))
+
+        # If test settings contain errors, we do not want to run the tests.
+        assert not settings.get("_error"), f"Error in test settings: {settings['_error']}"
+        assert settings.get("_env_status") != "error", "Error in test settings"
+
         test_username, tests_path = tester_user()
         try:
             _clear_working_directory(tests_path, test_username)
@@ -402,6 +407,7 @@ def update_test_settings(user, settings_id, test_settings, file_url):
         os.chmod(TEST_SCRIPT_DIR, 0o755)
 
         files_dir = os.path.join(settings_dir, "files")
+        test_settings["_files"] = files_dir
         shutil.rmtree(files_dir, onerror=ignore_missing_dir_error)
         os.makedirs(files_dir, exist_ok=True)
         creds = json.loads(redis_connection().hget("autotest:user_credentials", key=user))
@@ -428,7 +434,6 @@ def update_test_settings(user, settings_id, test_settings, file_url):
                     error_message += f"\nDetails (captured stderr):\n{e.stderr}"
                 raise Exception(error_message) from e
             test_settings["testers"][i] = tester_settings
-        test_settings["_files"] = files_dir
         test_settings.pop("_error", None)
         test_settings["_env_status"] = "ready"
     except Exception as e:
