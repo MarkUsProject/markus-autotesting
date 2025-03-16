@@ -1,5 +1,5 @@
 services:
-  server:
+  server: &server
     build:
       context: ./server
       dockerfile: ./.dockerfiles/Dockerfile
@@ -7,9 +7,10 @@ services:
         UBUNTU_VERSION: '22.04'
         LOGIN_USER: 'docker'
         WORKSPACE: '/home/docker/.autotesting'
-    image: markus-autotest-server-dev:1.2.0
+    image: markus-autotest-server-dev:1.3.0
     volumes:
       - ./server:/app:cached
+      - venv_server:/home/docker/markus_venv
       - workspace:/home/docker/.autotesting:rw
     environment:
       - REDIS_URL=redis://redis:6379/
@@ -22,16 +23,17 @@ services:
       - postgres
       - redis
 
-  client:
+  client: &client
     build:
       context: ./client
       dockerfile: ./.dockerfiles/Dockerfile
       args:
         UBUNTU_VERSION: '22.04'
-    image: markus-autotest-client-dev:1.2.0
+    image: markus-autotest-client-dev:1.3.0
     container_name: 'autotest-client'
     volumes:
       - ./client:/app:cached
+      - venv_client:/markus_venv
     environment:
       - REDIS_URL=redis://redis:6379/
       - FLASK_HOST=0.0.0.0
@@ -43,6 +45,20 @@ services:
     networks:
       - default
       - markus_dev
+
+  server-deps-updater:
+    <<: *server
+    entrypoint: "/app/.dockerfiles/entrypoint-dev-deps-updater.sh"
+    profiles: ["manual"]  # Prevent service from starting automatically
+    depends_on: []
+
+  client-deps-updater:
+    <<: *client
+    entrypoint: ".dockerfiles/entrypoint-dev-deps-updater.sh"
+    profiles: ["manual"]  # Prevent service from starting automatically
+    ports: []
+    depends_on: []
+    networks: []
 
   postgres:
     image: postgres:14
@@ -73,6 +89,8 @@ services:
 volumes:
   postgres_autotest:
   redis_autotest:
+  venv_client:
+  venv_server:
   workspace:
 
 networks:
