@@ -115,27 +115,35 @@ class PytestPlugin:
                 "description": item.obj.__doc__,
             }
 
+        # Only check markers at the end of the test case
         if not rep.skipped and rep.when == "teardown":
-            for marker in item.iter_markers():
-                if marker.name == "markus_tag":
-                    if len(marker.args) > 0:
-                        self.tags.add(marker.args[0].strip())
-                    elif "name" in marker.kwargs:
-                        self.tags.add(marker.kwargs["name"].strip())
-                elif marker.name == "markus_annotation":
-                    self.annotations.append(marker.kwargs)
-                elif marker.name == "markus_overall_comments":
-                    if len(marker.args) > 0:
-                        self.overall_comments.append(marker.args[0])
-                    elif "comment" in marker.kwargs:
-                        self.overall_comments.append(marker.kwargs["comment"])
-                elif marker.name == "markus_message" and marker.args != [] and item.nodeid in self.results:
-                    if self.results[item.nodeid].get("errors"):
-                        self.results[item.nodeid]["errors"] += f"\n\n{marker.args[0]}"
-                    else:
-                        self.results[item.nodeid]["errors"] = marker.args[0]
+            self._process_markers(item)
 
         return rep
+
+    def _process_markers(self, item):
+        """Process all markers for the given item.
+
+        This looks for custom markers used to represent test metadata for MarkUs.
+        """
+        for marker in item.iter_markers():
+            if marker.name == "markus_tag":
+                if len(marker.args) > 0:
+                    self.tags.add(marker.args[0].strip())
+                elif "name" in marker.kwargs:
+                    self.tags.add(marker.kwargs["name"].strip())
+            elif marker.name == "markus_annotation":
+                self.annotations.append(marker.kwargs)
+            elif marker.name == "markus_overall_comments":
+                if len(marker.args) > 0:
+                    self.overall_comments.append(marker.args[0])
+                elif "comment" in marker.kwargs:
+                    self.overall_comments.append(marker.kwargs["comment"])
+            elif marker.name == "markus_message" and marker.args != [] and item.nodeid in self.results:
+                if self.results[item.nodeid].get("errors"):
+                    self.results[item.nodeid]["errors"] += f"\n\n{marker.args[0]}"
+                else:
+                    self.results[item.nodeid]["errors"] = marker.args[0]
 
     def pytest_collectreport(self, report):
         """
