@@ -11,6 +11,9 @@ import base64
 import traceback
 import dotenv
 import redis
+from redis.retry import Retry
+from redis.exceptions import TimeoutError, ConnectionError
+from redis.backoff import FullJitterBackoff
 from datetime import datetime
 from contextlib import contextmanager
 
@@ -24,7 +27,12 @@ ACCESS_LOG = os.environ.get("ACCESS_LOG")
 SETTINGS_JOB_TIMEOUT = os.environ.get("SETTINGS_JOB_TIMEOUT", 600)
 REDIS_URL = os.environ["REDIS_URL"]
 
-REDIS_CONNECTION = redis.Redis.from_url(REDIS_URL)
+REDIS_CONNECTION = redis.Redis.from_url(
+    REDIS_URL,
+    retry=Retry(FullJitterBackoff(cap=10, base=1), 25),
+    retry_on_error=[ConnectionError, TimeoutError],
+    health_check_interval=1,
+)
 
 app = Flask(__name__)
 

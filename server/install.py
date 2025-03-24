@@ -11,8 +11,16 @@ import redis
 from autotest_server.config import config
 from autotest_server import run_test_command
 from autotest_server.testers import install as install_testers
+from redis.retry import Retry
+from redis.exceptions import TimeoutError, ConnectionError
+from redis.backoff import FullJitterBackoff
 
-REDIS_CONNECTION = redis.Redis.from_url(config["redis_url"])
+REDIS_CONNECTION = redis.Redis.from_url(
+    config["redis_url"],
+    retry=Retry(FullJitterBackoff(cap=10, base=1), 25),
+    retry_on_error=[ConnectionError, TimeoutError],
+    health_check_interval=1,
+)
 
 
 def _print(*args, **kwargs):

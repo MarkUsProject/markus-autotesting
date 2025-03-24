@@ -8,6 +8,9 @@ import sys
 import signal
 import subprocess
 from autotest_server.config import config
+from redis.retry import Retry
+from redis.exceptions import TimeoutError, ConnectionError
+from redis.backoff import FullJitterBackoff
 
 _THIS_DIR = os.path.dirname(os.path.realpath(__file__))
 _PID_FILE = os.path.join(_THIS_DIR, "supervisord.pid")
@@ -49,7 +52,13 @@ stderr_logfile_backups=10
 
 """
 
-REDIS_CONNECTION = redis.Redis.from_url(config["redis_url"], decode_responses=True)
+REDIS_CONNECTION = redis.Redis.from_url(
+    config["redis_url"],
+    decode_responses=True,
+    retry=Retry(FullJitterBackoff(cap=10, base=1), 25),
+    retry_on_error=[ConnectionError, TimeoutError],
+    health_check_interval=1,
+)
 
 
 def create_enqueuer_wrapper(rq):
