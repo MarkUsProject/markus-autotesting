@@ -10,6 +10,7 @@ All notable changes to this project will be documented here.
 - Improve error reporting with handled assertion errors (#591)
 - Add custom pytest markers to Python tester to record MarkUs metadata (#592)
 - Stop the autotester from running tests if there are errors in test settings (#593) 
+- Implement Redis backoff strategy (#594)
 
 ## [v2.6.0]
 - Update python versions in docker file (#568)
