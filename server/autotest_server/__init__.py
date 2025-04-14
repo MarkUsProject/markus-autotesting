@@ -20,6 +20,7 @@ from typing import Optional, Dict, Union, List, Tuple, Callable, Type
 from types import TracebackType
 import msgspec
 
+from .models import TestSettingsModel
 from .config import config
 from .utils import (
     loads_partial_json,
@@ -33,25 +34,6 @@ DEFAULT_ENV_DIR = "defaultvenv"
 TEST_SCRIPT_DIR = os.path.join(config["workspace"], "scripts")
 
 ResultData = Dict[str, Union[str, int, type(None), Dict]]
-
-
-class TestSettingsModel(msgspec.Struct):
-    """This is a data object that represents the settings of a test environment."""
-
-    testers: list[TesterModel]
-    _user: str
-    _last_access: int
-    _files: str
-    _env_status: str
-
-
-class TesterModel:
-    """This is a data object that represents the settings for a specific tester."""
-
-    env_data: dict[str, str]
-    test_data: list[dict]
-    tester_type: str
-    _env: dict[str, str]
 
 
 def redis_connection() -> redis.Redis:
@@ -224,12 +206,12 @@ def _run_test_specs(
     results = []
 
     for settings in test_settings.testers:
-        tester_type = settings["tester_type"]
+        tester_type = settings.tester_type
 
         cmd_str = _create_test_script_command(tester_type)
         args = cmd.format(cmd_str)
 
-        for test_data in settings["test_data"]:
+        for test_data in settings.test_data:
             test_category = test_data.get("category", [])
             if set(test_category) & set(categories):
                 start = time.time()
@@ -237,7 +219,8 @@ def _run_test_specs(
                 timeout_expired = None
                 timeout = test_data.get("timeout")
                 try:
-                    env = settings.get("_env", {})
+                    env = settings._env if settings._env else {}
+
                     env_vars = {**os.environ, **_get_env_vars(test_username), **env}
                     env_vars = _update_env_vars(env_vars, test_env_vars)
                     proc = subprocess.Popen(
@@ -253,7 +236,8 @@ def _run_test_specs(
                         executable="/bin/bash",
                     )
                     try:
-                        settings_json = json.dumps({**settings, "test_data": test_data})
+                        settings.test_data = test_data
+                        settings_json = msgspec.json.encode(settings).decode("utf-8")
                         out, err = proc.communicate(input=settings_json, timeout=timeout)
                     except subprocess.TimeoutExpired:
                         if test_username == getpass.getuser():
