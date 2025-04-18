@@ -169,8 +169,6 @@ def _run_test_specs(
     results = []
 
     for settings in test_settings.testers:
-        tester_type = settings.tester_type
-
         for test_data in settings.test_data:
             test_category = test_data.get("category", [])
             if set(test_category) & set(categories):
@@ -202,9 +200,7 @@ def _run_test_specs(
                         resource_settings = msgspec.json.encode(
                             {"resource_settings": get_resource_settings(config)}
                         ).decode("utf-8")
-                        out, err = proc.communicate(
-                            input=f"{tester_type}\n{resource_settings}\n{settings_json}", timeout=timeout
-                        )
+                        out, err = proc.communicate(input=f"{resource_settings}\n{settings_json}", timeout=timeout)
                     except subprocess.TimeoutExpired:
                         if test_username == getpass.getuser():
                             pgrp = os.getpgid(proc.pid)
