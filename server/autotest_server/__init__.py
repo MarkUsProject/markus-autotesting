@@ -21,7 +21,7 @@ from types import TracebackType
 import msgspec
 from pathlib import Path
 
-from .models import TestSettingsModel
+from .testers.models import TestSettingsModel, BaseTestDatum
 from .config import config
 from .utils import (
     loads_partial_json,
@@ -114,8 +114,8 @@ def _get_env_vars(test_username: str) -> Dict[str, str]:
     return env_vars
 
 
-def _get_feedback(test_data, tests_path, test_id) -> tuple[dict, str]:
-    feedback_files = test_data.get("feedback_file_names", [])
+def _get_feedback(test_data: BaseTestDatum, tests_path, test_id) -> tuple[dict, str]:
+    feedback_files = test_data.feedback_file_names
     feedback, feedback_errors = [], []
     for feedback_file in feedback_files:
         feedback_path = os.path.join(tests_path, feedback_file)
@@ -170,12 +170,12 @@ def _run_test_specs(
 
     for settings in test_settings.testers:
         for test_data in settings.test_data:
-            test_category = test_data.get("category", [])
+            test_category = test_data.category
             if set(test_category) & set(categories):
                 start = time.time()
                 out, err = "", ""
                 timeout_expired = None
-                timeout = test_data.get("timeout")
+                timeout = test_data.timeout
                 try:
                     env = settings._env if settings._env else {}
 
@@ -195,7 +195,6 @@ def _run_test_specs(
                         executable="/bin/bash",
                     )
                     try:
-                        settings.test_data = test_data
                         settings_json = msgspec.json.encode(settings).decode("utf-8")
                         resource_settings = msgspec.json.encode(
                             {"resource_settings": get_resource_settings(config)}
@@ -209,7 +208,7 @@ def _run_test_specs(
                             _kill_user_processes(test_username)
                         out, err = proc.communicate()
                         if err == "Killed\n":  # Default message from shell
-                            test_group_name = test_data.get("extra_info", {}).get("name", "").strip()
+                            test_group_name = test_data.extra_info.get("name").strip()
                             if test_group_name:
                                 err = f"Tests for {test_group_name} did not complete within time limit ({timeout}s)\n"
                             else:
@@ -219,7 +218,7 @@ def _run_test_specs(
                     err += "\n\n{}".format(e)
                 finally:
                     duration = int(round(time.time() - start, 3) * 1000)
-                    extra_info = test_data.get("extra_info", {})
+                    extra_info = test_data.extra_info
                     feedback, feedback_errors = _get_feedback(test_data, tests_path, test_id)
                     if feedback_errors:
                         msg = "Cannot find feedback file(s): " + ", ".join(feedback_errors)

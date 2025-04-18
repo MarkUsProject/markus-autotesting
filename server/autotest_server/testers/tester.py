@@ -4,9 +4,10 @@ import json
 from abc import ABC, abstractmethod
 from functools import wraps
 from typing import Optional, Callable, Any, Type, Dict, Iterable, List
-from .specs import TestSpecs
 import traceback
 import resource
+
+from .models import TesterSchemas
 
 
 class TestError(Exception):
@@ -261,7 +262,7 @@ class Tester(ABC):
     @abstractmethod
     def __init__(
         self,
-        specs: TestSpecs,
+        specs: TesterSchemas,
         test_class: Optional[Type[Test]] = Test,
         resource_settings: list[tuple[int, tuple[int, int]]] | None = None,
     ) -> None:

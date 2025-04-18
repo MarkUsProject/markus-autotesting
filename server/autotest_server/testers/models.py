@@ -7,7 +7,6 @@ from msgspec import Meta, Struct, field
 
 FilesList = str
 TestDataCategories = str
-ExtraGroupData = Any
 InstalledTesters = str
 
 
@@ -23,8 +22,8 @@ class BaseTestDatum(Struct, kw_only=True):
     script_files: Annotated[List[FilesList], Meta(title="Test files")]
     timeout: Annotated[int, Meta(title="Timeout")]
     category: Optional[Annotated[List[TestDataCategories], Meta(title="Category")]] = None
-    feedback_file_names: Optional[Annotated[List[str], Meta(title="Feedback files")]] = None
-    extra_info: Optional[ExtraGroupData] = None
+    feedback_file_names: Annotated[List[str], Meta(title="Feedback files")] = []
+    extra_info: dict[str, Any] = {}
 
 
 class BaseTesterSchema(
@@ -102,7 +101,6 @@ class JupyterTestDatum(BaseTestDatum, kw_only=True):
     timeout: Annotated[int, Meta(title="Timeout")]
     category: Optional[Annotated[List[TestDataCategories], Meta(title="Category")]] = None
     feedback_file_names: Optional[Annotated[List[str], Meta(title="Feedback files")]] = None
-    extra_info: Optional[ExtraGroupData] = None
 
 
 class PyTAStudentFile(Struct, kw_only=True):
@@ -117,7 +115,6 @@ class PyTATestDatum(BaseTestDatum, kw_only=True):
     category: Optional[Annotated[List[TestDataCategories], Meta(title="Category")]] = None
     feedback_file_names: Optional[Annotated[List[str], Meta(title="Feedback files")]] = None
     upload_annotations: Optional[Annotated[bool, Meta(title="Upload Annotations")]] = None
-    extra_info: Optional[ExtraGroupData] = None
 
 
 class RacketScriptFile(Struct, kw_only=True):
@@ -130,7 +127,6 @@ class RacketTestDatum(BaseTestDatum, kw_only=True):
     timeout: Annotated[int, Meta(title="Timeout")]
     category: Optional[Annotated[List[TestDataCategories], Meta(title="Category")]] = None
     feedback_file_names: Optional[Annotated[List[str], Meta(title="Feedback files")]] = None
-    extra_info: Optional[ExtraGroupData] = None
 
 
 class PyTesterSchema(BaseTesterSchema, kw_only=True):

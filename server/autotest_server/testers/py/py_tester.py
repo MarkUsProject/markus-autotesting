@@ -5,7 +5,7 @@ from types import TracebackType
 import pytest
 import sys
 from ..tester import Tester, Test
-from ..specs import TestSpecs
+from ..models import PyTesterSchema
 
 
 class TextTestResults(unittest.TextTestResult):
@@ -207,7 +207,7 @@ class PyTest(Test):
 class PyTester(Tester):
     def __init__(
         self,
-        specs: TestSpecs,
+        specs: PyTesterSchema,
         test_class: Type[PyTest] = PyTest,
         resource_settings: list[tuple[int, tuple[int, int]]] | None = None,
     ):
