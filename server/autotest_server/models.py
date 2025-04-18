@@ -27,11 +27,21 @@ class BaseTestDatum(Struct, kw_only=True):
     extra_info: Optional[ExtraGroupData] = None
 
 
-class BaseTesterSchema(Struct, kw_only=True):
+class BaseTesterSchema(
+    Struct,
+    tag=lambda x: x.removesuffix("TesterSchema").lower(),
+    tag_field="tester_type",
+    frozen=True,
+    forbid_unknown_fields=True,
+    kw_only=True,
+):
     """Base class for tester schemas"""
 
-    tester_type: Optional[Any] = None
     test_data: Optional[Any] = None
+
+    @property
+    def tester_type(self) -> str:
+        return self.__class__.__name__.removesuffix("TesterSchema").lower()
 
 
 class PythonEnvData(BaseEnvData, kw_only=True):
@@ -123,53 +133,46 @@ class RacketTestDatum(BaseTestDatum, kw_only=True):
     extra_info: Optional[ExtraGroupData] = None
 
 
-class PythonTesterSchema(BaseTesterSchema, kw_only=True):
+class PyTesterSchema(BaseTesterSchema, kw_only=True):
     env_data: Annotated[PythonEnvData, Meta(title="Python environment")]
-    tester_type: Optional[TesterType] = None
     test_data: Optional[Annotated[List[BaseTestDatum], Meta(title="Test Groups")]] = None
+    _env: Optional[dict[str, str]] = None
 
 
 class CustomTesterSchema(BaseTesterSchema, kw_only=True):
-    tester_type: Optional[TesterType] = None
     test_data: Optional[Annotated[List[BaseTestDatum], Meta(title="Test Groups")]] = None
 
 
 class HaskellTesterSchema(BaseTesterSchema, kw_only=True):
     env_data: Annotated[HaskellEnvData, Meta(title="Haskell environment")]
-    tester_type: Optional[TesterType] = None
     test_data: Optional[Annotated[List[HaskellTestDatum], Meta(title="Test Groups")]] = None
 
 
 class JavaTesterSchema(BaseTesterSchema, kw_only=True):
-    tester_type: Optional[TesterType] = None
     test_data: Optional[Annotated[List[JavaTestDatum], Meta(title="Test Groups")]] = None
 
 
 class JupyterTesterSchema(BaseTesterSchema, kw_only=True):
     env_data: Annotated[PythonEnvData, Meta(title="Python environment")]
-    tester_type: Optional[TesterType] = None
     test_data: Optional[Annotated[List[JupyterTestDatum], Meta(title="Test Groups")]] = None
 
 
 class PyTATesterSchema(BaseTesterSchema, kw_only=True):
     env_data: Annotated[PyTAEnvData, Meta(title="Python environment")]
-    tester_type: Optional[TesterType] = None
     test_data: Optional[Annotated[List[PyTATestDatum], Meta(title="Test Groups")]] = None
 
 
 class RTesterSchema(BaseTesterSchema, kw_only=True):
     env_data: Annotated[REnvData, Meta(title="R environment")]
-    tester_type: Optional[TesterType] = None
     test_data: Optional[Annotated[List[BaseTestDatum], Meta(title="Test Groups")]] = None
 
 
 class RacketTesterSchema(BaseTesterSchema, kw_only=True):
-    tester_type: Optional[TesterType] = None
     test_data: Optional[Annotated[List[RacketTestDatum], Meta(title="Test Groups")]] = None
 
 
 TesterSchemas = Union[
-    PythonTesterSchema,
+    PyTesterSchema,
     CustomTesterSchema,
     HaskellTesterSchema,
     JavaTesterSchema,
@@ -182,13 +185,13 @@ TesterSchemas = Union[
 
 class Tester(Struct, kw_only=True):
     tester_type: Annotated[InstalledTesters, Meta(title="Tester type")]
-    env_data: dict[str, str]
     test_data: list[dict]
     _env: dict[str, str]
+    env_data: Optional[dict[str, str]]
 
 
 class TestSettingsModel(Struct, kw_only=True):
-    testers: Annotated[List[Tester], Meta(title="Testers")]
+    testers: Annotated[List[TesterSchemas], Meta(title="Testers")]
     _user: Optional[str] = None
     _last_access: Optional[int] = None
     _files: Optional[str] = None
