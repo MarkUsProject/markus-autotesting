@@ -19,6 +19,7 @@ import traceback
 from typing import Optional, Dict, Union, List, Tuple, Callable, Type
 from types import TracebackType
 import msgspec
+from pathlib import Path
 
 from .models import TestSettingsModel
 from .config import config
@@ -38,26 +39,6 @@ ResultData = Dict[str, Union[str, int, type(None), Dict]]
 
 def redis_connection() -> redis.Redis:
     return rq.get_current_job().connection
-
-
-def run_test_command(test_username: Optional[str] = None) -> str:
-    """
-    Return a command used to run test scripts as a the test_username
-    user, with the correct arguments. Set test_username to None to
-    run as the current user.
-
-    >>> test_script = 'mysscript.py'
-    >>> run_test_command('f').format(test_script)
-    "sudo -u f -- ./myscript.py"
-
-    >>> run_test_command().format(test_script)
-    './myscript.py'
-    """
-    cmd = "{}"
-    if test_username is not None:
-        cmd = f"sudo -Eu {test_username} -- " + "{}"
-
-    return cmd
 
 
 def _create_test_group_result(
@@ -99,23 +80,6 @@ def _kill_user_processes(test_username: str) -> None:
     """
     kill_cmd = f"sudo -u {test_username} -- bash -c 'kill -KILL -1'"
     subprocess.run(kill_cmd, shell=True)
-
-
-def _create_test_script_command(tester_type: str) -> str:
-    """
-    Return string representing a command line command to
-    run tests.
-    """
-    import_line = f"from testers.{tester_type}.{tester_type}_tester import {tester_type.capitalize()}Tester as Tester"
-    python_lines = [
-        "import sys, json",
-        f'sys.path.append("{os.path.dirname(os.path.abspath(__file__))}")',
-        import_line,
-        "from testers.specs import TestSpecs",
-        f"Tester(resource_settings={get_resource_settings(config)}, specs=TestSpecs.from_json(sys.stdin.read())).run()",
-    ]
-    python_str = "; ".join(python_lines)
-    return f"\"${{PYTHON}}\" -c '{python_str}'"
 
 
 def get_available_port(min_, max_, host: str = "localhost") -> str:
@@ -191,7 +155,6 @@ def _update_env_vars(base_env: Dict, test_env: Dict) -> Dict:
 
 
 def _run_test_specs(
-    cmd: str,
     test_settings: TestSettingsModel,
     categories: List[str],
     tests_path: str,
@@ -208,9 +171,6 @@ def _run_test_specs(
     for settings in test_settings.testers:
         tester_type = settings.tester_type
 
-        cmd_str = _create_test_script_command(tester_type)
-        args = cmd.format(cmd_str)
-
         for test_data in settings.test_data:
             test_category = test_data.get("category", [])
             if set(test_category) & set(categories):
@@ -223,8 +183,9 @@ def _run_test_specs(
 
                     env_vars = {**os.environ, **_get_env_vars(test_username), **env}
                     env_vars = _update_env_vars(env_vars, test_env_vars)
+                    cmd = f"sudo -Eu {test_username} -- \"${{PYTHON}}\" {Path(__file__).parent / 'run_test_script.py'}"
                     proc = subprocess.Popen(
-                        args,
+                        cmd,
                         start_new_session=True,
                         cwd=tests_path,
                         shell=True,
@@ -238,7 +199,12 @@ def _run_test_specs(
                     try:
                         settings.test_data = test_data
                         settings_json = msgspec.json.encode(settings).decode("utf-8")
-                        out, err = proc.communicate(input=settings_json, timeout=timeout)
+                        resource_settings = msgspec.json.encode(
+                            {"resource_settings": get_resource_settings(config)}
+                        ).decode("utf-8")
+                        out, err = proc.communicate(
+                            input=f"{tester_type}\n{resource_settings}\n{settings_json}", timeout=timeout
+                        )
                     except subprocess.TimeoutExpired:
                         if test_username == getpass.getuser():
                             pgrp = os.getpgid(proc.pid)
@@ -378,8 +344,7 @@ def run_test(settings_id, test_id, files_url, categories, user, test_env_vars):
         try:
             _clear_working_directory(tests_path, test_username)
             _setup_files(settings_id, user, files_url, tests_path, test_username)
-            cmd = run_test_command(test_username=test_username)
-            results = _run_test_specs(cmd, settings, categories, tests_path, test_username, test_id, test_env_vars)
+            results = _run_test_specs(settings, categories, tests_path, test_username, test_id, test_env_vars)
         finally:
             _stop_tester_processes(test_username)
             _clear_working_directory(tests_path, test_username)
