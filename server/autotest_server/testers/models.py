@@ -146,6 +146,7 @@ class HaskellTesterSchema(BaseTesterSchema, kw_only=True):
 
 class JavaTesterSchema(BaseTesterSchema, kw_only=True):
     test_data: Optional[Annotated[List[JavaTestDatum], Meta(title="Test Groups")]] = None
+    _env: dict[str, str]
 
 
 class JupyterTesterSchema(BaseTesterSchema, kw_only=True):
