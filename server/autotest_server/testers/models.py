@@ -131,8 +131,12 @@ class RacketTestDatum(BaseTestDatum, kw_only=True):
 
 class PyTesterSchema(BaseTesterSchema, kw_only=True):
     env_data: Annotated[PythonEnvData, Meta(title="Python environment")]
-    test_data: Optional[Annotated[List[BaseTestDatum], Meta(title="Test Groups")]] = None
+    test_data: Annotated[List[PyTestDatum], Meta(title="Test Groups")]
     _env: Optional[dict[str, str]] = None
+
+
+class PyTestDatum(BaseTestDatum, kw_only=True):
+    output_verbosity: Optional[Annotated[int | str, Meta(title="Output verbosity")]] = None
 
 
 class CustomTesterSchema(BaseTesterSchema, kw_only=True):
@@ -178,13 +182,6 @@ TesterSchemas = Union[
     RTesterSchema,
     RacketTesterSchema,
 ]
-
-
-class Tester(Struct, kw_only=True):
-    tester_type: Annotated[InstalledTesters, Meta(title="Tester type")]
-    test_data: list[dict]
-    _env: dict[str, str]
-    env_data: Optional[dict[str, str]]
 
 
 class TestSettingsModel(Struct, kw_only=True):

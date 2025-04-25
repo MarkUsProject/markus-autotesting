@@ -220,6 +220,7 @@ class PyTester(Tester):
         self.annotations = []
         self.overall_comments = []
         self.tags = set()
+        self.specs = specs
 
     @staticmethod
     def _load_unittest_tests(test_file: str) -> unittest.TestSuite:
@@ -240,7 +241,7 @@ class PyTester(Tester):
         test_suite = self._load_unittest_tests(test_file)
         with open(os.devnull, "w") as nullstream:
             test_runner = unittest.TextTestRunner(
-                verbosity=self.specs["test_data", "output_verbosity"],
+                verbosity=self.specs.test_data.output_verbosity,
                 stream=nullstream,
                 resultclass=TextTestResults,
             )

@@ -195,11 +195,15 @@ def _run_test_specs(
                         executable="/bin/bash",
                     )
                     try:
-                        settings_json = msgspec.json.encode(settings).decode("utf-8")
-                        resource_settings = msgspec.json.encode(
-                            {"resource_settings": get_resource_settings(config)}
-                        ).decode("utf-8")
-                        out, err = proc.communicate(input=f"{resource_settings}\n{settings_json}", timeout=timeout)
+                        resource_settings = {"resource_settings": get_resource_settings(config)}
+                        msg = "\n".join(
+                            [
+                                settings.tester_type,
+                                msgspec.json.encode(resource_settings).decode("utf-8"),
+                                msgspec.json.encode(test_data).decode("utf-8"),
+                            ]
+                        )
+                        out, err = proc.communicate(input=msg, timeout=timeout)
                     except subprocess.TimeoutExpired:
                         if test_username == getpass.getuser():
                             pgrp = os.getpgid(proc.pid)
