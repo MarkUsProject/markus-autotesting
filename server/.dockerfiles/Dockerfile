@@ -43,15 +43,12 @@ RUN chmod a+x /home/${LOGIN_USER}
 
 COPY . /app
 
-RUN python3.11 -m venv /markus_venv && \
-    /markus_venv/bin/pip install wheel && \
-    /markus_venv/bin/pip install -r /app/requirements.txt && \
-    find /app/autotest_server/testers -name requirements.system -exec {} \; && \
-    rm -rf /app/*
+RUN find /app/autotest_server/testers -name requirements.system -exec {} \;
 
 RUN echo "TZ=$( cat /etc/timezone )" >> /etc/R/Renviron.site
 
 RUN mkdir -p ${WORKSPACE} && chown ${LOGIN_USER} ${WORKSPACE}
+RUN mkdir -p /home/${LOGIN_USER}/markus_venv && chown ${LOGIN_USER} /home/${LOGIN_USER}/markus_venv
 
 WORKDIR /home/${LOGIN_USER}
 

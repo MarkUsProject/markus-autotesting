@@ -196,6 +196,8 @@ redis_url: # url of the redis database. default is: redis://127.0.0.1:6379/0
 supervisor_url: # url used by the supervisor process. default is: '127.0.0.1:9001'
                 # This can also be set with the SUPERVISOR_URL environment variable.
 
+worker_log_dir: # an absolute path to a directory containing the worker's stdout and stderr logs.
+
 rlimit_settings: # RLIMIT settings (see details below)
   nproc: # for example, this setting sets the hard and soft limits for the number of processes available to 300
     - 300

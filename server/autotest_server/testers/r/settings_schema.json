@@ -14,6 +14,11 @@
       "title": "R environment",
       "type": "object",
       "properties": {
+        "renv.lock": {
+          "title": "Use renv to set up environment",
+          "type": "boolean",
+          "default": false
+        },
         "requirements": {
           "title": "Package requirements",
           "type": "string"
