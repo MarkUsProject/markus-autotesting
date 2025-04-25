@@ -11,8 +11,16 @@ import redis
 from autotest_server.config import config
 from autotest_server import run_test_command
 from autotest_server.testers import install as install_testers
+from redis.retry import Retry
+from redis.exceptions import TimeoutError, ConnectionError
+from redis.backoff import FullJitterBackoff
 
-REDIS_CONNECTION = redis.Redis.from_url(config["redis_url"])
+REDIS_CONNECTION = redis.Redis.from_url(
+    config["redis_url"],
+    retry=Retry(FullJitterBackoff(cap=10, base=1), 25),
+    retry_on_error=[ConnectionError, TimeoutError],
+    health_check_interval=1,
+)
 
 
 def _print(*args, **kwargs):
@@ -62,6 +70,11 @@ def create_workspace():
     os.makedirs(config["workspace"], exist_ok=True)
 
 
+def create_worker_log_dir():
+    _print(f'creating worker log directory at {config["worker_log_dir"]}')
+    os.makedirs(config["worker_log_dir"], exist_ok=True)
+
+
 def install_all_testers():
     settings = install_testers()
     skeleton_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), "autotest_server", "schema_skeleton.json")
@@ -76,6 +89,7 @@ def install():
     check_dependencies()
     check_users_exist()
     create_workspace()
+    create_worker_log_dir()
     install_all_testers()
 
 

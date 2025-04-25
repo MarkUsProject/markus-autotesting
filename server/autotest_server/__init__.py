@@ -15,11 +15,18 @@ import importlib
 import psycopg2
 import mimetypes
 import rq
+import traceback
 from typing import Optional, Dict, Union, List, Tuple, Callable, Type
 from types import TracebackType
 
 from .config import config
-from .utils import loads_partial_json, set_rlimits_before_test, extract_zip_stream, recursive_iglob, copy_tree
+from .utils import (
+    loads_partial_json,
+    get_resource_settings,
+    extract_zip_stream,
+    recursive_iglob,
+    copy_tree,
+)
 
 DEFAULT_ENV_DIR = "defaultvenv"
 TEST_SCRIPT_DIR = os.path.join(config["workspace"], "scripts")
@@ -68,10 +75,16 @@ def _create_test_group_result(
         "extra_info": extra_info or {},
         "annotations": None,
         "feedback": feedback,
+        "tags": None,
+        "overall_comment": None,
     }
     for res in all_results:
         if "annotations" in res:
             result["annotations"] = res["annotations"]
+        elif "tags" in res:
+            result["tags"] = res["tags"]
+        elif "overall_comment" in res:
+            result["overall_comment"] = res["overall_comment"]
         else:
             result["tests"].append(res)
 
@@ -97,7 +110,7 @@ def _create_test_script_command(tester_type: str) -> str:
         f'sys.path.append("{os.path.dirname(os.path.abspath(__file__))}")',
         import_line,
         "from testers.specs import TestSpecs",
-        "Tester(specs=TestSpecs.from_json(sys.stdin.read())).run()",
+        f"Tester(resource_settings={get_resource_settings(config)}, specs=TestSpecs.from_json(sys.stdin.read())).run()",
     ]
     python_str = "; ".join(python_lines)
     return f"\"${{PYTHON}}\" -c '{python_str}'"
@@ -215,7 +228,6 @@ def _run_test_specs(
                         stdout=subprocess.PIPE,
                         stderr=subprocess.PIPE,
                         stdin=subprocess.PIPE,
-                        preexec_fn=set_rlimits_before_test,
                         universal_newlines=True,
                         env={**os.environ, **env_vars, **env},
                         executable="/bin/bash",
@@ -306,7 +318,9 @@ def _setup_files(settings_id: int, user: str, files_url: str, tests_path: str, t
         else:
             os.chmod(file_or_dir, 0o770)
         shutil.chown(file_or_dir, group=test_username)
-    test_script_dir = json.loads(redis_connection().hget("autotest:settings", settings_id))["_files"]
+    settings = json.loads(redis_connection().hget("autotest:settings", settings_id))
+    assert "_files" in settings, "Required key `_files` not found in settings"
+    test_script_dir = settings["_files"]
     script_files = copy_tree(test_script_dir, tests_path)
     for fd, file_or_dir in script_files:
         if fd == "d":
@@ -347,6 +361,11 @@ def run_test(settings_id, test_id, files_url, categories, user, test_env_vars):
         settings = json.loads(redis_connection().hget("autotest:settings", key=settings_id))
         settings["_last_access"] = int(time.time())
         redis_connection().hset("autotest:settings", key=settings_id, value=json.dumps(settings))
+
+        # If test settings contain errors, we do not want to run the tests.
+        assert not settings.get("_error"), f"Error in test settings: {settings['_error']}"
+        assert settings.get("_env_status") != "error", "Error in test settings"
+
         test_username, tests_path = tester_user()
         try:
             _clear_working_directory(tests_path, test_username)
@@ -356,8 +375,12 @@ def run_test(settings_id, test_id, files_url, categories, user, test_env_vars):
         finally:
             _stop_tester_processes(test_username)
             _clear_working_directory(tests_path, test_username)
-    except Exception as e:
-        error = str(e)
+    except AssertionError as e:
+        traceback.print_exc()
+        error = f"Failed to run tests: {e}"
+    except Exception:
+        traceback.print_exc()
+        error = traceback.format_exc()
     finally:
         key = f"autotest:test_result:{test_id}"
         redis_connection().set(key, json.dumps({"test_groups": results, "error": error}))
@@ -384,6 +407,7 @@ def update_test_settings(user, settings_id, test_settings, file_url):
         os.chmod(TEST_SCRIPT_DIR, 0o755)
 
         files_dir = os.path.join(settings_dir, "files")
+        test_settings["_files"] = files_dir
         shutil.rmtree(files_dir, onerror=ignore_missing_dir_error)
         os.makedirs(files_dir, exist_ok=True)
         creds = json.loads(redis_connection().hget("autotest:user_credentials", key=user))
@@ -410,7 +434,6 @@ def update_test_settings(user, settings_id, test_settings, file_url):
                     error_message += f"\nDetails (captured stderr):\n{e.stderr}"
                 raise Exception(error_message) from e
             test_settings["testers"][i] = tester_settings
-        test_settings["_files"] = files_dir
         test_settings.pop("_error", None)
         test_settings["_env_status"] = "ready"
     except Exception as e:

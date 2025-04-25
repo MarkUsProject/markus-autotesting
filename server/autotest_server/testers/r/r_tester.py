@@ -64,13 +64,14 @@ class RTester(Tester):
         self,
         specs: TestSpecs,
         test_class: Type[RTest] = RTest,
+        resource_settings: list[tuple[int, tuple[int, int]]] | None = None,
     ) -> None:
         """
         Initialize a R tester using the specifications in specs.
 
         This tester will create tests of type test_class.
         """
-        super().__init__(specs, test_class)
+        super().__init__(specs, test_class, resource_settings=resource_settings)
 
     def run_r_tests(self) -> Dict[str, List[Dict[str, Union[int, str]]]]:
         """

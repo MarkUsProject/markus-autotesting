@@ -1,6 +1,20 @@
 # CHANGELOG
 All notable changes to this project will be documented here.
 
+## [v2.7.0]
+- Update python, pyta and jupyter testers to allow a requirements file (#580)
+- Update R tester to allow a renv.lock file (#581)
+- Improve display of Python package installation errors when creating environment (#585)
+- Update "setting up test environment" message with http response of status code 503 (#589)
+- Change rlimit resource settings to apply each worker individually (#587) 
+- Drop support for Python 3.8 (#590)
+- Use Python 3.13 in development (#590)
+- Update Docker configuration to install dependencies in a separate service (#590)
+- Improve error reporting with handled assertion errors (#591)
+- Add custom pytest markers to Python tester to record MarkUs metadata (#592)
+- Stop the autotester from running tests if there are errors in test settings (#593) 
+- Implement Redis backoff strategy (#594)
+
 ## [v2.6.0]
 - Update python versions in docker file (#568)
 - Update Github Actions config to use Python 3.11-3.13 and update action versions (#569)
