@@ -7,7 +7,7 @@ from typing import Optional, Callable, Any, Type, Dict, Iterable, List
 import traceback
 import resource
 
-from .models import TesterSchemas
+from .models import TestDatum
 
 
 class TestError(Exception):
@@ -40,7 +40,7 @@ class Test(ABC):
 
     def get_total_points(self) -> int:
         """Return the total possible points for this test"""
-        return self.tester.specs.get("points", default={}).get(self.test_name, 1)
+        return self.tester.specs.points.get(self.test_name, 1)
 
     @staticmethod
     def format_result(
@@ -262,7 +262,7 @@ class Tester(ABC):
     @abstractmethod
     def __init__(
         self,
-        specs: TesterSchemas,
+        specs: TestDatum,
         test_class: Optional[Type[Test]] = Test,
         resource_settings: list[tuple[int, tuple[int, int]]] | None = None,
     ) -> None:

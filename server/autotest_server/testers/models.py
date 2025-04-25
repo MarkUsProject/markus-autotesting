@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Annotated, Any, List, Optional, Union
+from typing import Annotated, Any, List, Optional, Union, Literal
 
 from msgspec import Meta, Struct, field
 
@@ -24,6 +24,7 @@ class BaseTestDatum(Struct, kw_only=True):
     category: Optional[Annotated[List[TestDataCategories], Meta(title="Category")]] = None
     feedback_file_names: Annotated[List[str], Meta(title="Feedback files")] = []
     extra_info: dict[str, Any] = {}
+    points: dict[str, int] = {}
 
 
 class BaseTesterSchema(
@@ -73,11 +74,6 @@ class TesterType(Enum):
     pyta = "pyta"
     r = "r"
     racket = "racket"
-
-
-class PythonTesterType(Enum):
-    pytest = "pytest"
-    unittest = "unittest"
 
 
 class HaskellTestDatum(BaseTestDatum, kw_only=True):
@@ -137,6 +133,7 @@ class PyTesterSchema(BaseTesterSchema, kw_only=True):
 
 class PyTestDatum(BaseTestDatum, kw_only=True):
     output_verbosity: Optional[Annotated[int | str, Meta(title="Output verbosity")]] = None
+    tester: Optional[Annotated[Literal["pytest", "unittest"], Meta(title="Python tester")]] = None
 
 
 class CustomTesterSchema(BaseTesterSchema, kw_only=True):
@@ -171,6 +168,15 @@ class RTesterSchema(BaseTesterSchema, kw_only=True):
 class RacketTesterSchema(BaseTesterSchema, kw_only=True):
     test_data: Optional[Annotated[List[RacketTestDatum], Meta(title="Test Groups")]] = None
 
+
+TestDatum = Union[
+    PyTestDatum,
+    HaskellTestDatum,
+    JavaTestDatum,
+    JupyterTestDatum,
+    PyTATestDatum,
+    RacketTestDatum,
+]
 
 TesterSchemas = Union[
     PyTesterSchema,

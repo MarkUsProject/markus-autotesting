@@ -195,11 +195,10 @@ def _run_test_specs(
                         executable="/bin/bash",
                     )
                     try:
-                        resource_settings = {"resource_settings": get_resource_settings(config)}
                         msg = "\n".join(
                             [
                                 settings.tester_type,
-                                msgspec.json.encode(resource_settings).decode("utf-8"),
+                                msgspec.json.encode(get_resource_settings(config)).decode("utf-8"),
                                 msgspec.json.encode(test_data).decode("utf-8"),
                             ]
                         )

@@ -5,7 +5,7 @@ from types import TracebackType
 import pytest
 import sys
 from ..tester import Tester, Test
-from ..models import PyTesterSchema
+from ..models import PyTestDatum
 
 
 class TextTestResults(unittest.TextTestResult):
@@ -207,7 +207,7 @@ class PyTest(Test):
 class PyTester(Tester):
     def __init__(
         self,
-        specs: PyTesterSchema,
+        specs: PyTestDatum,
         test_class: Type[PyTest] = PyTest,
         resource_settings: list[tuple[int, tuple[int, int]]] | None = None,
     ):
@@ -241,7 +241,7 @@ class PyTester(Tester):
         test_suite = self._load_unittest_tests(test_file)
         with open(os.devnull, "w") as nullstream:
             test_runner = unittest.TextTestRunner(
-                verbosity=self.specs.test_data.output_verbosity,
+                verbosity=self.specs.output_verbosity if self.specs.output_verbosity else 1,
                 stream=nullstream,
                 resultclass=TextTestResults,
             )
@@ -257,9 +257,13 @@ class PyTester(Tester):
         with open(os.devnull, "w") as null_out:
             try:
                 sys.stdout = null_out
-                verbosity = self.specs["test_data", "output_verbosity"]
+                verbosity = self.specs.output_verbosity
+                if verbosity is None:
+                    args = [test_file]
+                else:
+                    args = [test_file, f"--tb={verbosity}"]
                 plugin = PytestPlugin()
-                pytest.main([test_file, f"--tb={verbosity}"], plugins=[plugin])
+                pytest.main(args, plugins=[plugin])
                 results.extend(plugin.results.values())
                 self.annotations = plugin.annotations
                 self.overall_comments = plugin.overall_comments
@@ -273,8 +277,8 @@ class PyTester(Tester):
         Return a dict mapping each filename to its results
         """
         results = {}
-        for test_file in self.specs["test_data", "script_files"]:
-            if self.specs["test_data", "tester"] == "unittest":
+        for test_file in self.specs.script_files:
+            if self.specs.tester == "unittest":
                 result = self._run_unittest_tests(test_file)
             else:
                 result = self._run_pytest_tests(test_file)
