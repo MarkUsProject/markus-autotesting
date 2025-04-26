@@ -105,10 +105,14 @@ class PyTAStudentFile(Struct, kw_only=True):
 
 
 class PyTATestDatum(BaseTestDatum, kw_only=True):
-    student_files: Annotated[List[PyTAStudentFile], Meta(title="Files to check")]
-    timeout: Annotated[int, Meta(title="Timeout")]
+    student_files: Annotated[List[PyTAStudentFile], Meta(title="Files to check", min_length=1)]
+    timeout: Annotated[int, Meta(title="Timeout")] = 90
     config_file_name: Optional[Annotated[FilesList, Meta(title="PyTA configuration")]] = None
-    category: Optional[Annotated[List[TestDataCategories], Meta(title="Category")]] = None
+    category: Optional[
+        Annotated[
+            List[TestDataCategories], Meta(title="Category", min_length=1, extra_json_schema={"uniqueItems": True})
+        ]
+    ] = None
     feedback_file_names: Optional[Annotated[List[str], Meta(title="Feedback files")]] = None
     upload_annotations: Optional[Annotated[bool, Meta(title="Upload Annotations")]] = None
 
@@ -191,7 +195,7 @@ TesterSchemas = Union[
 
 
 class TestSettingsModel(Struct, kw_only=True):
-    testers: Annotated[List[TesterSchemas], Meta(title="Testers")]
+    testers: Annotated[List[TesterSchemas], Meta(title="Testers", min_length=1)]
     _user: Optional[str] = None
     _last_access: Optional[int] = None
     _files: Optional[str] = None

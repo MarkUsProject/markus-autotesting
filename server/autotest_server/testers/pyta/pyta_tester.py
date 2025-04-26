@@ -5,8 +5,9 @@ import json
 from typing import Type, Dict, List
 
 import python_ta
+
+from ..models import PyTATestDatum
 from ..tester import Tester, Test
-from ..specs import TestSpecs
 
 
 class PytaReporter(python_ta.reporters.json_reporter.JSONReporter, python_ta.reporters.plain_reporter.PlainReporter):
@@ -104,7 +105,7 @@ class PytaTester(Tester):
 
     def __init__(
         self,
-        specs: TestSpecs,
+        specs: PyTATestDatum,
         test_class: Type[PytaTest] = PytaTest,
         resource_settings: list[tuple[int, tuple[int, int]]] | None = None,
     ):
@@ -114,7 +115,7 @@ class PytaTester(Tester):
         This tester will create tests of type test_class.
         """
         super().__init__(specs, test_class, resource_settings=resource_settings)
-        self.upload_annotations = self.specs.get("test_data", "upload_annotations")
+        self.upload_annotations = self.specs.upload_annotations
         self.pyta_config = self.update_pyta_config()
         self.annotations = []
 
@@ -127,7 +128,7 @@ class PytaTester(Tester):
         PytaReporter and the pyta-output-file to this tester's
         feedback file.
         """
-        config_file = self.specs.get("test_data", "config_file_name")
+        config_file = self.specs.config_file_name
         if config_file:
             with open(config_file) as f:
                 config_dict = json.load(f)
@@ -150,8 +151,8 @@ class PytaTester(Tester):
         """
         Runs all tests in this tester.
         """
-        for test_data in self.specs.get("test_data", "student_files", default=[]):
-            student_file_path = test_data["file_path"]
-            max_points = test_data.get("max_points", 10)
+        for test_data in self.specs.student_files:
+            student_file_path = test_data.file_path
+            max_points = test_data.max_points
             test = self.test_class(self, student_file_path, max_points)
             print(test.run())
