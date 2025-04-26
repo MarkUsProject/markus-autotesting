@@ -2,6 +2,8 @@ import json
 import subprocess
 import os
 from typing import Dict, Type
+
+from ..models import RacketTestDatum
 from ..tester import Tester, Test, TestError
 
 
@@ -40,7 +42,7 @@ class RacketTester(Tester):
 
     def __init__(
         self,
-        specs,
+        specs: RacketTestDatum,
         test_class: Type[RacketTest] = RacketTest,
         resource_settings: list[tuple[int, tuple[int, int]]] | None = None,
     ) -> None:
@@ -50,6 +52,7 @@ class RacketTester(Tester):
         This tester will create tests of type test_class.
         """
         super().__init__(specs, test_class, resource_settings=resource_settings)
+        self.specs = specs
 
     def run_racket_test(self) -> Dict[str, str]:
         """
@@ -57,10 +60,10 @@ class RacketTester(Tester):
         """
         results = {}
         autotester_rkt = os.path.join(os.path.dirname(os.path.realpath(__file__)), "lib", "autotester.rkt")
-        for group in self.specs["test_data", "script_files"]:
-            test_file = group.get("script_file")
+        for group in self.specs.script_files:
+            test_file = group.script_file
             if test_file:
-                suite_name = group.get("test_suite_name", "all-tests")
+                suite_name = group.test_suite_name if group.test_suite_name else "all-tests"
                 cmd = [autotester_rkt, "--test-suite", suite_name, test_file]
                 rkt = subprocess.run(
                     cmd,

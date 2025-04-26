@@ -124,7 +124,7 @@ class RacketScriptFile(Struct, kw_only=True):
 
 
 class RacketTestDatum(BaseTestDatum, kw_only=True):
-    script_files: Annotated[List[RacketScriptFile], Meta(title="Test files")]
+    script_files: Annotated[List[RacketScriptFile], Meta(title="Test files", min_length=1)]
     feedback_file_names: Optional[Annotated[List[str], Meta(title="Feedback files")]] = None
 
 
