@@ -54,10 +54,6 @@ class PythonEnvData(BaseEnvData, kw_only=True):
     pip_requirements_file: Optional[Annotated[str, Meta(title="Package requirements file")]] = None
 
 
-class HaskellEnvData(BaseEnvData, kw_only=True):
-    resolver_version: Annotated[str, Meta(title="Resolver version")]
-
-
 class REnvData(BaseEnvData, kw_only=True):
     renv_lock: Optional[Annotated[bool, Meta(title="Use renv to set up environment")]] = field(
         name="renv.lock", default=False
@@ -81,8 +77,9 @@ class TesterType(Enum):
 
 
 class HaskellTestDatum(BaseTestDatum, kw_only=True):
-    test_timeout: Annotated[int, Meta(title="Per-test timeout")]
-    test_cases: Annotated[int, Meta(title="Number of test cases (QuickCheck)")]
+    resolver_version: Annotated[str, Meta(title="Resolver version")]
+    test_timeout: Annotated[int, Meta(title="Per-test timeout")] = 10
+    test_cases: Annotated[int, Meta(title="Number of test cases (QuickCheck)")] = 100
 
 
 class JavaTestDatum(BaseTestDatum, kw_only=True):
@@ -141,7 +138,6 @@ class CustomTesterSchema(BaseTesterSchema, kw_only=True):
 
 
 class HaskellTesterSchema(BaseTesterSchema, kw_only=True):
-    env_data: Annotated[HaskellEnvData, Meta(title="Haskell environment")]
     test_data: Optional[Annotated[List[HaskellTestDatum], Meta(title="Test Groups")]] = None
 
 

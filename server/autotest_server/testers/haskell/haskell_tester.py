@@ -4,8 +4,8 @@ import tempfile
 import csv
 from typing import Dict, Type, List, Iterator, Union
 
+from ..models import HaskellTestDatum
 from ..tester import Tester, Test, TestError
-from ..specs import TestSpecs
 
 
 class HaskellTest(Test):
@@ -51,7 +51,7 @@ class HaskellTester(Tester):
 
     def __init__(
         self,
-        specs: TestSpecs,
+        specs: HaskellTestDatum,
         test_class: Type[HaskellTest] = HaskellTest,
         resource_settings: list[tuple[int, tuple[int, int]]] | None = None,
     ) -> None:
@@ -61,6 +61,7 @@ class HaskellTester(Tester):
         This tester will create tests of type test_class.
         """
         super().__init__(specs, test_class, resource_settings=resource_settings)
+        self.specs = specs
 
     def _test_run_flags(self, test_file: str) -> List[str]:
         """
@@ -71,8 +72,8 @@ class HaskellTester(Tester):
         flags = [
             module_flag,
             stats_flag,
-            f"--timeout={self.specs['test_data', 'test_timeout']}s",
-            f"--quickcheck-tests={self.specs['test_data', 'test_cases']}",
+            f"--timeout={self.specs.test_timeout}s",
+            f"--quickcheck-tests={self.specs.test_cases}",
         ]
         return flags
 
@@ -100,12 +101,12 @@ class HaskellTester(Tester):
         Tests are run by first discovering all tests from a specific module (using tasty-discover)
         and then running all the discovered tests and parsing the results from a csv file.
         """
-        resolver = self.specs["env_data", "resolver_version"]
+        resolver = self.specs.resolver_version
         STACK_OPTIONS = [f"--resolver={resolver}", "--system-ghc", "--allow-different-user"]
         results = {}
         this_dir = os.getcwd()
         haskell_lib = os.path.join(os.path.dirname(os.path.realpath(__file__)), "lib")
-        for test_file in self.specs["test_data", "script_files"]:
+        for test_file in self.specs.script_files:
             with tempfile.NamedTemporaryFile(dir=this_dir) as f:
                 cmd = [
                     "stack",
