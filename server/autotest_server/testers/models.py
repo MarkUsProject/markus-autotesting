@@ -3,7 +3,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Annotated, Any, List, Optional, Union, Literal
 
-from msgspec import Meta, Struct, field
+from msgspec import Meta, Struct
 
 FilesList = str
 TestDataCategories = str
@@ -55,9 +55,7 @@ class PythonEnvData(BaseEnvData, kw_only=True):
 
 
 class REnvData(BaseEnvData, kw_only=True):
-    renv_lock: Optional[Annotated[bool, Meta(title="Use renv to set up environment")]] = field(
-        name="renv.lock", default=False
-    )
+    renv_lock: Optional[Annotated[bool, Meta(title="Use renv to set up environment")]] = False
     requirements: Optional[Annotated[str, Meta(title="Package requirements")]] = None
 
 
@@ -101,6 +99,10 @@ class JupyterTestDatum(BaseTestDatum, kw_only=True):
 
 
 class CustomTestDatum(BaseTestDatum, kw_only=True):
+    pass
+
+
+class RTestDatum(BaseTestDatum, kw_only=True):
     pass
 
 
@@ -162,7 +164,7 @@ class PyTATesterSchema(BaseTesterSchema, kw_only=True):
 
 class RTesterSchema(BaseTesterSchema, kw_only=True):
     env_data: Annotated[REnvData, Meta(title="R environment")]
-    test_data: Optional[Annotated[List[BaseTestDatum], Meta(title="Test Groups")]] = None
+    test_data: Optional[Annotated[List[RTestDatum], Meta(title="Test Groups")]] = None
 
 
 class RacketTesterSchema(BaseTesterSchema, kw_only=True):
@@ -177,6 +179,7 @@ TestDatum = Union[
     PyTATestDatum,
     RacketTestDatum,
     CustomTestDatum,
+    RTestDatum,
 ]
 
 TesterSchemas = Union[

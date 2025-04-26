@@ -3,8 +3,8 @@ import os
 import json
 from typing import Dict, Type, List, Union
 
+from ..models import RTestDatum
 from ..tester import Tester, Test, TestError
-from ..specs import TestSpecs
 
 
 class RTest(Test):
@@ -62,7 +62,7 @@ class RTest(Test):
 class RTester(Tester):
     def __init__(
         self,
-        specs: TestSpecs,
+        specs: RTestDatum,
         test_class: Type[RTest] = RTest,
         resource_settings: list[tuple[int, tuple[int, int]]] | None = None,
     ) -> None:
@@ -79,7 +79,7 @@ class RTester(Tester):
         """
         results = {}
         r_tester = os.path.join(os.path.dirname(os.path.realpath(__file__)), "lib", "r_tester.R")
-        for test_file in self.specs["test_data", "script_files"]:
+        for test_file in self.specs.script_files:
             proc = subprocess.run(
                 ["Rscript", r_tester, test_file],
                 stdout=subprocess.PIPE,
