@@ -8,9 +8,8 @@ import subprocess
 import getpass
 import redis
 from autotest_server.config import config
-from autotest_server import run_test_command
 from autotest_server.testers import install as install_testers
-from server.autotest_server.testers import TesterType
+from autotest_server.testers import TesterType
 
 REDIS_CONNECTION = redis.Redis.from_url(config["redis_url"])
 
@@ -47,9 +46,7 @@ def check_users_exist():
             raise Exception(f"user with username {username} does not exist")
         _print(f"checking if worker with username {username} can be accessed by the current user {getpass.getuser()}")
         try:
-            subprocess.run(
-                run_test_command(username).format("echo test"), stdout=subprocess.DEVNULL, shell=True, check=True
-            )
+            subprocess.run(f"sudo -Eu {username} -- echo test", stdout=subprocess.DEVNULL, shell=True, check=True)
         except Exception as e:
             raise Exception(f"user {getpass.getuser()} cannot run commands as the {username} user") from e
         _print(f"checking if the current user belongs to the {username} group")
@@ -68,7 +65,8 @@ def create_worker_log_dir():
 
 
 def install_all_testers():
-    installed_testers, installed_tester_settings = install_testers(TesterType.list())
+    all_testers = list(TesterType)
+    installed_testers, installed_tester_settings = install_testers(all_testers)
     REDIS_CONNECTION.set("autotest:installed_testers", msgspec.json.encode(installed_testers).decode("utf-8"))
 
     for tester_enum, settings in installed_tester_settings.items():

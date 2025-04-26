@@ -193,10 +193,6 @@ class TesterType(Enum):
     r: Literal["r"] = "r"
     racket: Literal["racket"] = "racket"
 
-    @classmethod
-    def list(cls):
-        return list(map(lambda c: c.value, cls))
-
     def get_schema_type(self) -> Type[TesterSchemas]:
         """Get the schema for this tester type"""
         return {

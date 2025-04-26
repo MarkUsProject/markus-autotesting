@@ -1,5 +1,4 @@
 import os
-import json
 import subprocess
 
 HASKELL_TEST_DEPS = ["tasty-discover", "tasty-quickcheck"]
@@ -25,9 +24,5 @@ def install():
     )
 
 
-def settings():
-    with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "settings_schema.json")) as f:
-        settings_ = json.load(f)
-    resolver_versions = settings_["properties"]["env_data"]["properties"]["resolver_version"]
-    resolver_versions["default"] = STACK_RESOLVER
-    return settings_
+def settings() -> dict:
+    return {"stack_resolver": STACK_RESOLVER}
