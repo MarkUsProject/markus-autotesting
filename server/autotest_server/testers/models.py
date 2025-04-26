@@ -86,8 +86,8 @@ class HaskellTestDatum(BaseTestDatum, kw_only=True):
 
 
 class JavaTestDatum(BaseTestDatum, kw_only=True):
-    classpath: Optional[Annotated[str, Meta(title="Java Class Path")]] = None
-    sources_path: Optional[Annotated[str, Meta(title="Java Sources (glob)")]] = None
+    classpath: Optional[Annotated[str, Meta(title="Java Class Path")]] = "."
+    sources_path: Optional[Annotated[str, Meta(title="Java Sources (glob)")]] = ""
 
 
 class JupyterScriptFile(Struct, kw_only=True):

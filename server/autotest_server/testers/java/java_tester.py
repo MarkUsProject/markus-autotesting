@@ -4,8 +4,9 @@ import tempfile
 import xml.etree.ElementTree as eTree
 from glob import glob
 from typing import Type, List, Set
+
+from ..models import JavaTestDatum
 from ..tester import Tester, Test, TestError
-from ..specs import TestSpecs
 
 
 class JavaTest(Test):
@@ -36,7 +37,7 @@ class JavaTester(Tester):
 
     def __init__(
         self,
-        specs: TestSpecs,
+        specs: JavaTestDatum,
         test_class: Type[JavaTest] = JavaTest,
         resource_settings: list[tuple[int, tuple[int, int]]] | None = None,
     ) -> None:
@@ -46,7 +47,8 @@ class JavaTester(Tester):
         This tester will create tests of type test_class.
         """
         super().__init__(specs, test_class, resource_settings=resource_settings)
-        classpath = self.specs.get("test_data", "classpath", default=".") or "."
+        self.specs = specs
+        classpath = self.specs.classpath if self.specs.classpath else "."
         self.java_classpath = ":".join(self._parse_file_paths(classpath))
         self.out_dir = tempfile.TemporaryDirectory(dir=os.getcwd())
         self.reports_dir = tempfile.TemporaryDirectory(dir=os.getcwd())
@@ -64,8 +66,8 @@ class JavaTester(Tester):
         """
         Return all java source files for this test.
         """
-        sources = self.specs.get("test_data", "sources_path", default="")
-        scripts = ":".join(self.specs["test_data", "script_files"] + [sources])
+        sources = self.specs.sources_path if self.specs.sources_path else ""
+        scripts = ":".join(self.specs.script_files + [sources])
         return {path for path in self._parse_file_paths(scripts) if os.path.splitext(path)[1] == ".java"}
 
     def _parse_failure_error(self, failure, error):
@@ -137,7 +139,7 @@ class JavaTester(Tester):
             f"-cp={self.java_classpath}:{self.out_dir.name}",
             f"--reports-dir={self.reports_dir.name}",
         ]
-        classes = [f"-c={os.path.splitext(os.path.basename(f))[0]}" for f in self.specs["test_data", "script_files"]]
+        classes = [f"-c={os.path.splitext(os.path.basename(f))[0]}" for f in self.specs.script_files]
         java_command.extend(classes)
         java = subprocess.run(
             java_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, check=False
