@@ -8,9 +8,9 @@ import tempfile
 from contextlib import contextmanager
 from notebook_helper import merger
 from .lib.jupyter_pytest_plugin import JupyterPlugin
+from ..models import JupyterTestDatum
 
 from ..tester import Tester, Test
-from ..specs import TestSpecs
 
 
 class JupyterTest(Test):
@@ -56,7 +56,7 @@ class JupyterTest(Test):
 class JupyterTester(Tester):
     def __init__(
         self,
-        specs: TestSpecs,
+        specs: JupyterTestDatum,
         test_class: Type[JupyterTest] = JupyterTest,
         resource_settings: list[tuple[int, tuple[int, int]]] | None = None,
     ):
@@ -66,6 +66,7 @@ class JupyterTester(Tester):
         This tester will create tests of type test_class.
         """
         super().__init__(specs, test_class, resource_settings=resource_settings)
+        self.specs = specs
 
     @staticmethod
     def _run_jupyter_tests(test_file: str) -> List[Dict]:
@@ -113,10 +114,10 @@ class JupyterTester(Tester):
         """
         Runs all tests in this tester.
         """
-        for script_files in self.specs["test_data", "script_files"]:
-            test_file = script_files["test_file"]
-            submission_file = script_files["student_file"]
-            self.test_merge(test_file, submission_file, script_files["test_merge"])
+        for script_files in self.specs.script_files:
+            test_file = script_files.test_file
+            submission_file = script_files.student_file
+            self.test_merge(test_file, submission_file, script_files.test_merge)
             with self._merge_ipynb_files(test_file, submission_file) as merged_file:
                 for res in self._run_jupyter_tests(merged_file):
                     test = self.test_class(self, merged_file, f"{test_file}:{submission_file}", res)

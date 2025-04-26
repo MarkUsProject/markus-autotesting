@@ -20,8 +20,12 @@ class BaseTestDatum(Struct, kw_only=True):
     """Base class for test data structures"""
 
     script_files: Annotated[List[FilesList], Meta(title="Test files")]
-    timeout: Annotated[int, Meta(title="Timeout")]
-    category: Optional[Annotated[List[TestDataCategories], Meta(title="Category")]] = None
+    timeout: Annotated[int, Meta(title="Timeout")] = 30
+    category: Optional[
+        Annotated[
+            List[TestDataCategories], Meta(title="Category", min_length=1, extra_json_schema={"uniqueItems": True})
+        ]
+    ] = None
     feedback_file_names: Annotated[List[str], Meta(title="Feedback files")] = []
     extra_info: dict[str, Any] = {}
     points: dict[str, int] = {}
@@ -89,13 +93,13 @@ class JavaTestDatum(BaseTestDatum, kw_only=True):
 class JupyterScriptFile(Struct, kw_only=True):
     test_file: Annotated[FilesList, Meta(title="Test file")]
     student_file: Annotated[str, Meta(title="Student file")]
-    test_merge: Annotated[bool, Meta(title="Test that files can be merged")]
+    test_merge: Annotated[bool, Meta(title="Test that files can be merged")] = False
 
 
 class JupyterTestDatum(BaseTestDatum, kw_only=True):
-    script_files: Annotated[List[JupyterScriptFile], Meta(title="Test files")]
-    timeout: Annotated[int, Meta(title="Timeout")]
-    category: Optional[Annotated[List[TestDataCategories], Meta(title="Category")]] = None
+    script_files: Annotated[
+        List[JupyterScriptFile], Meta(title="Test files", min_length=1, extra_json_schema={"uniqueItems": True})
+    ] = []
     feedback_file_names: Optional[Annotated[List[str], Meta(title="Feedback files")]] = None
 
 
@@ -106,13 +110,7 @@ class PyTAStudentFile(Struct, kw_only=True):
 
 class PyTATestDatum(BaseTestDatum, kw_only=True):
     student_files: Annotated[List[PyTAStudentFile], Meta(title="Files to check", min_length=1)]
-    timeout: Annotated[int, Meta(title="Timeout")] = 90
     config_file_name: Optional[Annotated[FilesList, Meta(title="PyTA configuration")]] = None
-    category: Optional[
-        Annotated[
-            List[TestDataCategories], Meta(title="Category", min_length=1, extra_json_schema={"uniqueItems": True})
-        ]
-    ] = None
     feedback_file_names: Optional[Annotated[List[str], Meta(title="Feedback files")]] = None
     upload_annotations: Optional[Annotated[bool, Meta(title="Upload Annotations")]] = None
 
@@ -124,8 +122,6 @@ class RacketScriptFile(Struct, kw_only=True):
 
 class RacketTestDatum(BaseTestDatum, kw_only=True):
     script_files: Annotated[List[RacketScriptFile], Meta(title="Test files")]
-    timeout: Annotated[int, Meta(title="Timeout")]
-    category: Optional[Annotated[List[TestDataCategories], Meta(title="Category")]] = None
     feedback_file_names: Optional[Annotated[List[str], Meta(title="Feedback files")]] = None
 
 
