@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
-
+import msgspec.json
 import psycopg2
 import pwd
 import os
 import grp
-import json
 import subprocess
 import getpass
 import redis
 from autotest_server.config import config
 from autotest_server import run_test_command
 from autotest_server.testers import install as install_testers
+from server.autotest_server.testers import TesterType
 
 REDIS_CONNECTION = redis.Redis.from_url(config["redis_url"])
 
@@ -68,13 +68,13 @@ def create_worker_log_dir():
 
 
 def install_all_testers():
-    settings = install_testers()
-    skeleton_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), "autotest_server", "schema_skeleton.json")
-    with open(skeleton_file) as f:
-        skeleton = json.load(f)
-        skeleton["definitions"]["installed_testers"]["enum"] = list(settings.keys())
-        skeleton["definitions"]["tester_schemas"]["oneOf"] = list(settings.values())
-        REDIS_CONNECTION.set("autotest:schema", json.dumps(skeleton))
+    installed_testers, installed_tester_settings = install_testers(TesterType.list())
+    REDIS_CONNECTION.set("autotest:installed_testers", msgspec.json.encode(installed_testers).decode("utf-8"))
+
+    for tester_enum, settings in installed_tester_settings.items():
+        tester = tester_enum.value
+        settings_json = msgspec.json.encode(settings).decode("utf-8")
+        REDIS_CONNECTION.hset("autotest:installed_tester_settings", tester, settings_json)
 
 
 def install():

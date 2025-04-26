@@ -1,13 +1,16 @@
 import os
 
-_TESTERS = ("custom", "haskell", "java", "jupyter", "py", "pyta", "r", "racket")
+from .models import TesterType
 
 
-def install(testers=_TESTERS):
+def install(testers_to_install: list[TesterType]) -> tuple[list[TesterType], dict[TesterType, dict]]:
+    """Tries to install testers. Returns successfully installed testers and their settings."""
     import importlib
 
-    settings = {}
-    for tester in testers:
+    installed_testers = []
+    installed_tester_settings = {}
+    for tester_enum in testers_to_install:
+        tester = tester_enum.value
         mod = importlib.import_module(f".{tester}.setup", package="autotest_server.testers")
         try:
             mod.install()
@@ -19,5 +22,6 @@ def install(testers=_TESTERS):
                 " and then rerunning this function."
             )
             raise Exception(msg) from e
-        settings[tester] = mod.settings()
-    return settings
+        installed_testers.append(tester_enum)
+        installed_tester_settings[tester_enum] = mod.settings()
+    return installed_testers, installed_tester_settings

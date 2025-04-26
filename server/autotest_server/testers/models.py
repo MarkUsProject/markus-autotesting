@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Annotated, Any, List, Optional, Union, Literal
+from typing import Annotated, Any, List, Optional, Union, Literal, Type
 
 from msgspec import Meta, Struct
 
@@ -61,17 +61,6 @@ class REnvData(BaseEnvData, kw_only=True):
 
 class PyTAEnvData(PythonEnvData, kw_only=True):
     pyta_version: Optional[Annotated[str, Meta(title="PyTA version")]] = None
-
-
-class TesterType(Enum):
-    py = "py"
-    custom = "custom"
-    haskell = "haskell"
-    java = "java"
-    jupyter = "jupyter"
-    pyta = "pyta"
-    r = "r"
-    racket = "racket"
 
 
 class HaskellTestDatum(BaseTestDatum, kw_only=True):
@@ -192,6 +181,34 @@ TesterSchemas = Union[
     RTesterSchema,
     RacketTesterSchema,
 ]
+
+
+class TesterType(Enum):
+    py: Literal["py"] = "py"
+    custom: Literal["custom"] = "custom"
+    haskell: Literal["haskell"] = "haskell"
+    java: Literal["java"] = "java"
+    jupyter: Literal["jupyter"] = "jupyter"
+    pyta: Literal["pyta"] = "pyta"
+    r: Literal["r"] = "r"
+    racket: Literal["racket"] = "racket"
+
+    @classmethod
+    def list(cls):
+        return list(map(lambda c: c.value, cls))
+
+    def get_schema_type(self) -> Type[TesterSchemas]:
+        """Get the schema for this tester type"""
+        return {
+            TesterType.py: PyTesterSchema,
+            TesterType.custom: CustomTesterSchema,
+            TesterType.haskell: HaskellTesterSchema,
+            TesterType.java: JavaTesterSchema,
+            TesterType.jupyter: JupyterTesterSchema,
+            TesterType.pyta: PyTATesterSchema,
+            TesterType.r: RTesterSchema,
+            TesterType.racket: RacketTesterSchema,
+        }[self]
 
 
 class TestSettingsModel(Struct, kw_only=True):
