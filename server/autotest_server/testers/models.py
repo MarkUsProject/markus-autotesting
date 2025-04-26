@@ -100,6 +100,10 @@ class JupyterTestDatum(BaseTestDatum, kw_only=True):
     feedback_file_names: Optional[Annotated[List[str], Meta(title="Feedback files")]] = None
 
 
+class CustomTestDatum(BaseTestDatum, kw_only=True):
+    pass
+
+
 class PyTAStudentFile(Struct, kw_only=True):
     file_path: Optional[Annotated[str, Meta(title="Path")]] = None
     max_points: Optional[Annotated[int, Meta(title="Maximum mark")]] = 10
@@ -134,7 +138,7 @@ class PyTestDatum(BaseTestDatum, kw_only=True):
 
 
 class CustomTesterSchema(BaseTesterSchema, kw_only=True):
-    test_data: Optional[Annotated[List[BaseTestDatum], Meta(title="Test Groups")]] = None
+    test_data: Optional[Annotated[List[CustomTestDatum], Meta(title="Test Groups")]] = None
 
 
 class HaskellTesterSchema(BaseTesterSchema, kw_only=True):
@@ -172,6 +176,7 @@ TestDatum = Union[
     JupyterTestDatum,
     PyTATestDatum,
     RacketTestDatum,
+    CustomTestDatum,
 ]
 
 TesterSchemas = Union[
