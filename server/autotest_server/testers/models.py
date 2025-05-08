@@ -6,8 +6,8 @@ from typing import Annotated, Any, List, Optional, Union, Literal, Type
 from msgspec import Meta, Struct
 
 FilesList = str
-TestDataCategories = str
-InstalledTesters = str
+TestDataCategory = str
+InstalledTester = str
 
 
 class BaseEnvData(Struct, kw_only=True):
@@ -22,9 +22,7 @@ class BaseTestSpecs(Struct, kw_only=True):
     script_files: Annotated[List[FilesList], Meta(title="Test files")]
     timeout: Annotated[int, Meta(title="Timeout")] = 30
     category: Optional[
-        Annotated[
-            List[TestDataCategories], Meta(title="Category", min_length=1, extra_json_schema={"uniqueItems": True})
-        ]
+        Annotated[List[TestDataCategory], Meta(title="Category", min_length=1, extra_json_schema={"uniqueItems": True})]
     ] = None
     feedback_file_names: Annotated[List[str], Meta(title="Feedback files")] = []
     extra_info: dict[str, Any] = {}
@@ -171,7 +169,7 @@ TestSpecs = Union[
     RTestSpecs,
 ]
 
-TesterSchemas = Union[
+TesterSchema = Union[
     PyTesterSchema,
     CustomTesterSchema,
     HaskellTesterSchema,
@@ -193,7 +191,7 @@ class TesterType(Enum):
     r: Literal["r"] = "r"
     racket: Literal["racket"] = "racket"
 
-    def get_schema_type(self) -> Type[TesterSchemas]:
+    def get_schema_type(self) -> Type[TesterSchema]:
         """Get the schema for this tester type"""
         return {
             TesterType.py: PyTesterSchema,
@@ -208,7 +206,7 @@ class TesterType(Enum):
 
 
 class TestSettingsModel(Struct, kw_only=True):
-    testers: Annotated[List[TesterSchemas], Meta(title="Testers", min_length=1)]
+    testers: Annotated[List[TesterSchema], Meta(title="Testers", min_length=1)]
     _user: Optional[str] = None
     _last_access: Optional[int] = None
     _files: Optional[str] = None
