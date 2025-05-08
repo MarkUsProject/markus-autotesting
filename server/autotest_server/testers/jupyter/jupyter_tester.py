@@ -8,7 +8,7 @@ import tempfile
 from contextlib import contextmanager
 from notebook_helper import merger
 from .lib.jupyter_pytest_plugin import JupyterPlugin
-from ..models import JupyterTestDatum
+from ..models import JupyterTestSpecs
 
 from ..tester import Tester, Test
 
@@ -56,7 +56,7 @@ class JupyterTest(Test):
 class JupyterTester(Tester):
     def __init__(
         self,
-        specs: JupyterTestDatum,
+        specs: JupyterTestSpecs,
         test_class: Type[JupyterTest] = JupyterTest,
         resource_settings: list[tuple[int, tuple[int, int]]] | None = None,
     ):

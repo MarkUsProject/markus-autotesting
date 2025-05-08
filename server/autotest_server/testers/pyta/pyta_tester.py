@@ -6,7 +6,7 @@ from typing import Type, Dict, List
 
 import python_ta
 
-from ..models import PyTATestDatum
+from ..models import PyTATestSpecs
 from ..tester import Tester, Test
 
 
@@ -105,7 +105,7 @@ class PytaTester(Tester):
 
     def __init__(
         self,
-        specs: PyTATestDatum,
+        specs: PyTATestSpecs,
         test_class: Type[PytaTest] = PytaTest,
         resource_settings: list[tuple[int, tuple[int, int]]] | None = None,
     ):

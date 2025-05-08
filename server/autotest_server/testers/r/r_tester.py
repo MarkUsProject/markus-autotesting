@@ -3,7 +3,7 @@ import os
 import json
 from typing import Dict, Type, List, Union
 
-from ..models import RTestDatum
+from ..models import RTestSpecs
 from ..tester import Tester, Test, TestError
 
 
@@ -62,7 +62,7 @@ class RTest(Test):
 class RTester(Tester):
     def __init__(
         self,
-        specs: RTestDatum,
+        specs: RTestSpecs,
         test_class: Type[RTest] = RTest,
         resource_settings: list[tuple[int, tuple[int, int]]] | None = None,
     ) -> None:

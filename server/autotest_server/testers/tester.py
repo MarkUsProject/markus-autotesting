@@ -7,7 +7,7 @@ from typing import Optional, Callable, Any, Type, Dict, Iterable, List
 import traceback
 import resource
 
-from .models import TestDatum
+from .models import TestSpecs
 
 
 class TestError(Exception):
@@ -262,7 +262,7 @@ class Tester(ABC):
     @abstractmethod
     def __init__(
         self,
-        specs: TestDatum,
+        specs: TestSpecs,
         test_class: Optional[Type[Test]] = Test,
         resource_settings: list[tuple[int, tuple[int, int]]] | None = None,
     ) -> None:

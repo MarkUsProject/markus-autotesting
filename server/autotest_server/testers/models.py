@@ -16,7 +16,7 @@ class BaseEnvData(Struct, kw_only=True):
     pass
 
 
-class BaseTestDatum(Struct, kw_only=True):
+class BaseTestSpecs(Struct, kw_only=True):
     """Base class for test data structures"""
 
     script_files: Annotated[List[FilesList], Meta(title="Test files")]
@@ -63,13 +63,13 @@ class PyTAEnvData(PythonEnvData, kw_only=True):
     pyta_version: Optional[Annotated[str, Meta(title="PyTA version")]] = None
 
 
-class HaskellTestDatum(BaseTestDatum, kw_only=True):
+class HaskellTestSpecs(BaseTestSpecs, kw_only=True):
     resolver_version: Annotated[str, Meta(title="Resolver version")]
     test_timeout: Annotated[int, Meta(title="Per-test timeout")] = 10
     test_cases: Annotated[int, Meta(title="Number of test cases (QuickCheck)")] = 100
 
 
-class JavaTestDatum(BaseTestDatum, kw_only=True):
+class JavaTestSpecs(BaseTestSpecs, kw_only=True):
     classpath: Optional[Annotated[str, Meta(title="Java Class Path")]] = "."
     sources_path: Optional[Annotated[str, Meta(title="Java Sources (glob)")]] = ""
 
@@ -80,18 +80,18 @@ class JupyterScriptFile(Struct, kw_only=True):
     test_merge: Annotated[bool, Meta(title="Test that files can be merged")] = False
 
 
-class JupyterTestDatum(BaseTestDatum, kw_only=True):
+class JupyterTestSpecs(BaseTestSpecs, kw_only=True):
     script_files: Annotated[
         List[JupyterScriptFile], Meta(title="Test files", min_length=1, extra_json_schema={"uniqueItems": True})
     ] = []
     feedback_file_names: Optional[Annotated[List[str], Meta(title="Feedback files")]] = None
 
 
-class CustomTestDatum(BaseTestDatum, kw_only=True):
+class CustomTestSpecs(BaseTestSpecs, kw_only=True):
     pass
 
 
-class RTestDatum(BaseTestDatum, kw_only=True):
+class RTestSpecs(BaseTestSpecs, kw_only=True):
     pass
 
 
@@ -100,7 +100,7 @@ class PyTAStudentFile(Struct, kw_only=True):
     max_points: Optional[Annotated[int, Meta(title="Maximum mark")]] = 10
 
 
-class PyTATestDatum(BaseTestDatum, kw_only=True):
+class PyTATestSpecs(BaseTestSpecs, kw_only=True):
     student_files: Annotated[List[PyTAStudentFile], Meta(title="Files to check", min_length=1)]
     config_file_name: Optional[Annotated[FilesList, Meta(title="PyTA configuration")]] = None
     feedback_file_names: Optional[Annotated[List[str], Meta(title="Feedback files")]] = None
@@ -112,63 +112,63 @@ class RacketScriptFile(Struct, kw_only=True):
     test_suite_name: Optional[Annotated[str, Meta(title="Test suite name")]] = "all-tests"
 
 
-class RacketTestDatum(BaseTestDatum, kw_only=True):
+class RacketTestSpecs(BaseTestSpecs, kw_only=True):
     script_files: Annotated[List[RacketScriptFile], Meta(title="Test files", min_length=1)]
     feedback_file_names: Optional[Annotated[List[str], Meta(title="Feedback files")]] = None
 
 
 class PyTesterSchema(BaseTesterSchema, kw_only=True):
     env_data: Annotated[PythonEnvData, Meta(title="Python environment")]
-    test_data: Annotated[List[PyTestDatum], Meta(title="Test Groups")]
+    test_data: Annotated[List[PyTestSpecs], Meta(title="Test Groups")]
     _env: Optional[dict[str, str]] = None
 
 
-class PyTestDatum(BaseTestDatum, kw_only=True):
+class PyTestSpecs(BaseTestSpecs, kw_only=True):
     output_verbosity: Optional[Annotated[int | str, Meta(title="Output verbosity")]] = None
     tester: Optional[Annotated[Literal["pytest", "unittest"], Meta(title="Python tester")]] = None
 
 
 class CustomTesterSchema(BaseTesterSchema, kw_only=True):
-    test_data: Optional[Annotated[List[CustomTestDatum], Meta(title="Test Groups")]] = None
+    test_data: Optional[Annotated[List[CustomTestSpecs], Meta(title="Test Groups")]] = None
 
 
 class HaskellTesterSchema(BaseTesterSchema, kw_only=True):
-    test_data: Optional[Annotated[List[HaskellTestDatum], Meta(title="Test Groups")]] = None
+    test_data: Optional[Annotated[List[HaskellTestSpecs], Meta(title="Test Groups")]] = None
 
 
 class JavaTesterSchema(BaseTesterSchema, kw_only=True):
-    test_data: Optional[Annotated[List[JavaTestDatum], Meta(title="Test Groups")]] = None
+    test_data: Optional[Annotated[List[JavaTestSpecs], Meta(title="Test Groups")]] = None
     _env: dict[str, str]
 
 
 class JupyterTesterSchema(BaseTesterSchema, kw_only=True):
     env_data: Annotated[PythonEnvData, Meta(title="Python environment")]
-    test_data: Optional[Annotated[List[JupyterTestDatum], Meta(title="Test Groups")]] = None
+    test_data: Optional[Annotated[List[JupyterTestSpecs], Meta(title="Test Groups")]] = None
 
 
 class PyTATesterSchema(BaseTesterSchema, kw_only=True):
     env_data: Annotated[PyTAEnvData, Meta(title="Python environment")]
-    test_data: Optional[Annotated[List[PyTATestDatum], Meta(title="Test Groups")]] = None
+    test_data: Optional[Annotated[List[PyTATestSpecs], Meta(title="Test Groups")]] = None
 
 
 class RTesterSchema(BaseTesterSchema, kw_only=True):
     env_data: Annotated[REnvData, Meta(title="R environment")]
-    test_data: Optional[Annotated[List[RTestDatum], Meta(title="Test Groups")]] = None
+    test_data: Optional[Annotated[List[RTestSpecs], Meta(title="Test Groups")]] = None
 
 
 class RacketTesterSchema(BaseTesterSchema, kw_only=True):
-    test_data: Optional[Annotated[List[RacketTestDatum], Meta(title="Test Groups")]] = None
+    test_data: Optional[Annotated[List[RacketTestSpecs], Meta(title="Test Groups")]] = None
 
 
-TestDatum = Union[
-    PyTestDatum,
-    HaskellTestDatum,
-    JavaTestDatum,
-    JupyterTestDatum,
-    PyTATestDatum,
-    RacketTestDatum,
-    CustomTestDatum,
-    RTestDatum,
+TestSpecs = Union[
+    PyTestSpecs,
+    HaskellTestSpecs,
+    JavaTestSpecs,
+    JupyterTestSpecs,
+    PyTATestSpecs,
+    RacketTestSpecs,
+    CustomTestSpecs,
+    RTestSpecs,
 ]
 
 TesterSchemas = Union[

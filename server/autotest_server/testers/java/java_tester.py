@@ -5,7 +5,7 @@ import xml.etree.ElementTree as eTree
 from glob import glob
 from typing import Type, List, Set
 
-from ..models import JavaTestDatum
+from ..models import JavaTestSpecs
 from ..tester import Tester, Test, TestError
 
 
@@ -37,7 +37,7 @@ class JavaTester(Tester):
 
     def __init__(
         self,
-        specs: JavaTestDatum,
+        specs: JavaTestSpecs,
         test_class: Type[JavaTest] = JavaTest,
         resource_settings: list[tuple[int, tuple[int, int]]] | None = None,
     ) -> None:

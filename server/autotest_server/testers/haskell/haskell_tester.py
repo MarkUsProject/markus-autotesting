@@ -4,7 +4,7 @@ import tempfile
 import csv
 from typing import Dict, Type, List, Iterator, Union
 
-from ..models import HaskellTestDatum
+from ..models import HaskellTestSpecs
 from ..tester import Tester, Test, TestError
 
 
@@ -51,7 +51,7 @@ class HaskellTester(Tester):
 
     def __init__(
         self,
-        specs: HaskellTestDatum,
+        specs: HaskellTestSpecs,
         test_class: Type[HaskellTest] = HaskellTest,
         resource_settings: list[tuple[int, tuple[int, int]]] | None = None,
     ) -> None:

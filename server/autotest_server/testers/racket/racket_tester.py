@@ -3,7 +3,7 @@ import subprocess
 import os
 from typing import Dict, Type
 
-from ..models import RacketTestDatum
+from ..models import RacketTestSpecs
 from ..tester import Tester, Test, TestError
 
 
@@ -42,7 +42,7 @@ class RacketTester(Tester):
 
     def __init__(
         self,
-        specs: RacketTestDatum,
+        specs: RacketTestSpecs,
         test_class: Type[RacketTest] = RacketTest,
         resource_settings: list[tuple[int, tuple[int, int]]] | None = None,
     ) -> None:

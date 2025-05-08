@@ -1,12 +1,12 @@
 import subprocess
 
-from ..models import CustomTestDatum
+from ..models import CustomTestSpecs
 from ..tester import Tester
 
 
 class CustomTester(Tester):
     def __init__(
-        self, specs: CustomTestDatum, resource_settings: list[tuple[int, tuple[int, int]]] | None = None
+        self, specs: CustomTestSpecs, resource_settings: list[tuple[int, tuple[int, int]]] | None = None
     ) -> None:
         """Initialize a CustomTester"""
         super().__init__(specs, test_class=None, resource_settings=resource_settings)

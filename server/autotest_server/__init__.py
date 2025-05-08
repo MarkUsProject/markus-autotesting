@@ -21,7 +21,7 @@ from types import TracebackType
 import msgspec
 from pathlib import Path
 
-from .testers.models import TestSettingsModel, BaseTestDatum
+from .testers.models import TestSettingsModel, BaseTestSpecs
 from .config import config
 from .utils import (
     loads_partial_json,
@@ -114,7 +114,7 @@ def _get_env_vars(test_username: str) -> Dict[str, str]:
     return env_vars
 
 
-def _get_feedback(test_data: BaseTestDatum, tests_path, test_id) -> tuple[dict, str]:
+def _get_feedback(test_data: BaseTestSpecs, tests_path, test_id) -> tuple[dict, str]:
     feedback_files = test_data.feedback_file_names
     feedback, feedback_errors = [], []
     for feedback_file in feedback_files:
