@@ -5,8 +5,8 @@ from typing import Annotated, Any, List, Optional, Union, Literal, Type
 
 from msgspec import Meta, Struct
 
-FilesList = str
-TestDataCategory = str
+# An empty enum is used by MarkUs to populate the schema with a list of files that were uploaded
+FilesList = Annotated[str, Meta(extra_json_schema={"enum": []})]
 InstalledTester = str
 
 
@@ -19,14 +19,21 @@ class BaseEnvData(Struct, kw_only=True):
 class BaseTestSpecs(Struct, kw_only=True):
     """Base class for test data structures"""
 
-    script_files: Annotated[List[FilesList], Meta(title="Test files")]
-    timeout: Annotated[int, Meta(title="Timeout")] = 30
-    category: Optional[
-        Annotated[List[TestDataCategory], Meta(title="Category", min_length=1, extra_json_schema={"uniqueItems": True})]
-    ] = None
-    feedback_file_names: Annotated[List[str], Meta(title="Feedback files")] = []
-    extra_info: dict[str, Any] = {}
-    points: dict[str, int] = {}
+    script_files: Annotated[
+        List[FilesList], Meta(title="Test files", min_length=1, extra_json_schema={"uniqueItems": True})
+    ]
+
+    category: Annotated[
+        List[Annotated[str, Meta(extra_json_schema={"enum": [], "enumNames": []})]],
+        Meta(title="Category", extra_json_schema={"uniqueItems": True}),
+    ]
+
+    timeout: Annotated[int, Meta(title="Timeout", extra_json_schema={"default": 30})]
+
+    feedback_file_names: Annotated[List[str], Meta(title="Feedback files")]
+
+    extra_info: dict = {}
+    # points: dict[str, int] = {}
 
 
 class BaseTesterSchema(
@@ -115,19 +122,46 @@ class RacketTestSpecs(BaseTestSpecs, kw_only=True):
     feedback_file_names: Optional[Annotated[List[str], Meta(title="Feedback files")]] = None
 
 
+class PyUnittestTestSpecs(
+    Struct,
+    kw_only=True,
+    tag=lambda x: x.removeprefix("Py").removesuffix("TestSpecs").lower(),
+    tag_field="tester",
+):
+    output_verbosity: Annotated[Literal[0, 1, 2], Meta(title="Unittest Output verbosity")] = 2
+
+    @property
+    def tester(self) -> str:
+        return self.__class__.__name__.removeprefix("Py").removesuffix("TestSpecs").lower()
+
+
+class PyPytestTestSpecs(
+    Struct,
+    kw_only=True,
+    tag=lambda x: x.removeprefix("Py").removesuffix("TestSpecs").lower(),
+    tag_field="tester",
+):
+
+    output_verbosity: Annotated[
+        Literal["short", "auto", "long", "no", "line", "native"], Meta(title="Output verbosity")
+    ] = "short"
+
+    @property
+    def tester(self) -> str:
+        return self.__class__.__name__.removeprefix("Py").removesuffix("TestSpecs").lower()
+
+
+PyTestSpecs = Union[PyPytestTestSpecs, PyUnittestTestSpecs]
+
+
 class PyTesterSchema(BaseTesterSchema, kw_only=True):
     env_data: Annotated[PythonEnvData, Meta(title="Python environment")]
     test_data: Annotated[List[PyTestSpecs], Meta(title="Test Groups")]
     _env: Optional[dict[str, str]] = None
 
 
-class PyTestSpecs(BaseTestSpecs, kw_only=True):
-    output_verbosity: Optional[Annotated[int | str, Meta(title="Output verbosity")]] = None
-    tester: Optional[Annotated[Literal["pytest", "unittest"], Meta(title="Python tester")]] = None
-
-
 class CustomTesterSchema(BaseTesterSchema, kw_only=True):
-    test_data: Optional[Annotated[List[CustomTestSpecs], Meta(title="Test Groups")]] = None
+    test_data: Annotated[List[CustomTestSpecs], Meta(title="Test Groups", min_length=1)]
 
 
 class HaskellTesterSchema(BaseTesterSchema, kw_only=True):
