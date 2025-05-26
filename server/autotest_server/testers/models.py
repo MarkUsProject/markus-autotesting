@@ -20,7 +20,8 @@ class BaseTestSpecs(Struct, kw_only=True):
     """Base class for test data structures"""
 
     script_files: Annotated[
-        List[FilesList], Meta(title="Test files", min_length=1, extra_json_schema={"uniqueItems": True})
+        List[Annotated[str, Meta(extra_json_schema={"enum": []})]],
+        Meta(title="Test files", min_length=1, extra_json_schema={"uniqueItems": True}),
     ]
 
     category: Annotated[
@@ -33,7 +34,6 @@ class BaseTestSpecs(Struct, kw_only=True):
     feedback_file_names: Annotated[List[str], Meta(title="Feedback files")]
 
     extra_info: dict = {}
-    # points: dict[str, int] = {}
 
 
 class BaseTesterSchema(
@@ -155,9 +155,9 @@ PyTestSpecs = Union[PyPytestTestSpecs, PyUnittestTestSpecs]
 
 
 class PyTesterSchema(BaseTesterSchema, kw_only=True):
-    env_data: Annotated[PythonEnvData, Meta(title="Python environment")]
     test_data: Annotated[List[PyTestSpecs], Meta(title="Test Groups")]
-    _env: Optional[dict[str, str]] = None
+    env_data: Annotated[PythonEnvData, Meta(title="Python environment")]
+    # _env: Optional[dict[str, str]] = None
 
 
 class CustomTesterSchema(BaseTesterSchema, kw_only=True):
