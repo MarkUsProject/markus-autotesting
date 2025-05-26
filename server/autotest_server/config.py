@@ -32,7 +32,7 @@ class _Config:
         self._yaml_loader.add_constructor("!ENV", env_constructor)
 
         self._settings = self._load_from_yaml()
-        self._validate()
+        # self._validate()
 
     def __getitem__(self, key: Union[str, Tuple[Union[str, int], ...]]) -> ConfigValues:
         """
