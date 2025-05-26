@@ -8,3 +8,12 @@ workers:
       - high
       - low
       - batch
+  - user: abc
+    queues:
+      - high
+      - low
+      - batch
+rlimit_settings: # RLIMIT settings (see details below)
+  nproc: # for example, this setting sets the hard and soft limits for the number of processes available to 300
+    - 300
+    - 300
