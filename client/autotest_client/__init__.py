@@ -14,6 +14,7 @@ import redis
 from datetime import datetime
 from contextlib import contextmanager
 
+from . import schema
 from . import form_management
 
 DOTENVFILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env")
@@ -186,9 +187,9 @@ def reset_credentials(user):
 
 
 @app.route("/schema", methods=["GET"])
-@authorize
-def schema(**_kwargs):
-    return json.loads(REDIS_CONNECTION.get("autotest:schema") or "{}")
+# @authorize
+def schema_route(**_kwargs):
+    return schema.generate()
 
 
 @app.route("/settings/<settings_id>", methods=["GET"])
