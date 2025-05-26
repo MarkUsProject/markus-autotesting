@@ -61,6 +61,23 @@ services:
     ports:
       - 6379
 
+  redis-commander:
+    container_name: redis-commander
+    hostname: redis-commander
+    image: ghcr.io/joeferner/redis-commander:latest
+    restart: always
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_USERNAME=
+      - REDIS_PASSWORD=
+      - REDIS_DB=0
+    ports:
+      - "8081:8081"
+    user: redis
+    depends_on:
+      - redis
+
   rq_dashboard:
     image: eoranged/rq-dashboard
     environment:
