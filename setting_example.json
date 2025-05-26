@@ -1,0 +1,70 @@
+{
+  "testers": [
+    {
+      "tester_type": "py",
+      "env_data": {
+        "pip_requirements": "matplotlib numpy git+https://github.com/MarkUsProject/autotest-helpers.git#subdirectory=notebook_helper",
+        "python_version": "3.13"
+      },
+      "test_data": [
+        {
+          "script_files": [
+            "test.py"
+          ],
+          "tester": "pytest",
+          "timeout": 30,
+          "category": [
+            "instructor"
+          ],
+          "extra_info": {
+            "name": "Python Test Group",
+            "display_output": "instructors",
+            "test_group_id": 144,
+            "criterion": "criterion"
+          },
+          "feedback_file_names": [],
+          "output_verbosity": "short"
+        }
+      ],
+      "_env": {
+        "PYTHON": "/home/docker/.autotesting/scripts/10/py_0/bin/python3"
+      }
+    },
+    {
+      "tester_type": "jupyter",
+      "env_data": {
+        "python_version": "3.13",
+        "pip_requirements": "matplotlib numpy"
+      },
+      "test_data": [
+        {
+          "script_files": [
+            {
+              "student_file": "submission.ipynb",
+              "test_file": "test.ipynb",
+              "test_merge": true
+            }
+          ],
+          "timeout": 30,
+          "category": [
+            "instructor"
+          ],
+          "extra_info": {
+            "name": "Jupyter Test Group",
+            "display_output": "instructors",
+            "test_group_id": 145,
+            "criterion": "criterion"
+          },
+          "feedback_file_names": []
+        }
+      ],
+      "_env": {
+        "PYTHON": "/home/docker/.autotesting/scripts/10/jupyter_1/bin/python3"
+      }
+    }
+  ],
+  "_user": "717K6lyV0FnjRqAkL9RnIrzTaeeqBodq",
+  "_last_access": 1742759472,
+  "_files": "/home/docker/.autotesting/scripts/10/files",
+  "_env_status": "ready"
+}

@@ -1,0 +1,114 @@
+{
+  "type": "object",
+  "properties": {
+    "tester_type": {
+      "enum": [
+        "py"
+      ]
+    },
+    "test_data": {
+      "title": "Test Groups",
+      "type": "array",
+      "items": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "tester": {
+                "enum": [
+                  "pytest"
+                ]
+              },
+              "output_verbosity": {
+                "title": "Output verbosity",
+                "enum": [
+                  "auto",
+                  "line",
+                  "long",
+                  "native",
+                  "no",
+                  "short"
+                ],
+                "default": "short"
+              }
+            },
+            "required": [
+              "tester"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "tester": {
+                "enum": [
+                  "unittest"
+                ]
+              },
+              "output_verbosity": {
+                "title": "Unittest Output verbosity",
+                "enum": [
+                  0,
+                  1,
+                  2
+                ],
+                "default": 2
+              }
+            },
+            "required": [
+              "tester"
+            ]
+          }
+        ],
+        "discriminator": {
+          "propertyName": "tester",
+          "mapping": {
+            "pytest": "#/$defs/PyPytestTestSpecs",
+            "unittest": "#/$defs/PyUnittestTestSpecs"
+          }
+        }
+      }
+    },
+    "env_data": {
+      "title": "Python environment",
+      "type": "object",
+      "properties": {
+        "python_version": {
+          "title": "Python version",
+          "type": "string"
+        },
+        "pip_requirements": {
+          "anyOf": [
+            {
+              "title": "Package requirements",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "pip_requirements_file": {
+          "anyOf": [
+            {
+              "title": "Package requirements file",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "python_version"
+      ]
+    }
+  },
+  "required": [
+    "tester_type",
+    "test_data",
+    "env_data"
+  ]
+}
