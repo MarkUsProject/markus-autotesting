@@ -2,6 +2,7 @@ from ....testers.specs import TestSpecs
 from ....testers.py.py_tester import PyTester
 import re
 
+
 def test_success(request, monkeypatch) -> None:
     """Test that when a test succeeds, it is added to the results."""
     monkeypatch.chdir(request.fspath.dirname)
