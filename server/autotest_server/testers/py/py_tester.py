@@ -31,7 +31,9 @@ class TextTestResults(unittest.TextTestResult):
         test_file = test.__module__.split(".")[-1]
         func_name = test._testMethodName
         readable_name = f"[{test_file}.py] {func_name}"
-        self.results.append({"status": "success", "name": readable_name, "errors": "", "description": test._testMethodDoc})
+        self.results.append(
+            {"status": "success", "name": readable_name, "errors": "", "description": test._testMethodDoc}
+        )
         self.successes.append(test)
 
     def addFailure(
@@ -68,7 +70,12 @@ class TextTestResults(unittest.TextTestResult):
         readable_name = f"[{test_file}.py] {func_name}"
         super().addError(test, err)
         self.results.append(
-            {"status": "error", "name": readable_name, "errors": self.errors[-1][-1], "description": test._testMethodDoc}
+            {
+                "status": "error",
+                "name": readable_name,
+                "errors": self.errors[-1][-1],
+                "description": test._testMethodDoc,
+            }
         )
 
 
