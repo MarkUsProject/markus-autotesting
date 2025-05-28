@@ -1,6 +1,6 @@
 from ....testers.specs import TestSpecs
 from ....testers.py.py_tester import PyTester
-
+import re
 
 def test_success(request, monkeypatch) -> None:
     """Test that when a test succeeds, it is added to the results."""
@@ -32,7 +32,7 @@ def test_success(request, monkeypatch) -> None:
     result = results["fixtures/sample_tests_success.py"][0]
     assert result["status"] == "success"
     # nodeid is inexact in CI test
-    assert result["name"].endswith("[fixtures/sample_tests_success.py] test_add_one")
+    assert re.search(r"\[.*sample_tests_success\.py\] test_add_one$", result["name"])
     assert result["errors"] == ""
     assert result["description"] is None
 
