@@ -32,7 +32,7 @@ def test_success(request, monkeypatch) -> None:
     result = results["fixtures/sample_tests_success.py"][0]
     assert result["status"] == "success"
     # nodeid is inexact in CI test
-    assert result["name"].endswith("[sample_tests_success.py] test_add_one")
+    assert result["name"].endswith("[fixtures/sample_tests_success.py] test_add_one")
     assert result["errors"] == ""
     assert result["description"] is None
 
