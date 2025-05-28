@@ -28,7 +28,10 @@ class TextTestResults(unittest.TextTestResult):
         """
         Record that a test passed.
         """
-        self.results.append({"status": "success", "name": test.id(), "errors": "", "description": test._testMethodDoc})
+        test_file = test.__module__.split(".")[-1]
+        func_name = test._testMethodName
+        readable_name = f"[{test_file}.py] {func_name}"
+        self.results.append({"status": "success", "name": readable_name, "errors": "", "description": test._testMethodDoc})
         self.successes.append(test)
 
     def addFailure(
@@ -39,11 +42,14 @@ class TextTestResults(unittest.TextTestResult):
         """
         Record that a test failed.
         """
+        test_file = test.__module__.split(".")[-1]
+        func_name = test._testMethodName
+        readable_name = f"[{test_file}.py] {func_name}"
         super().addFailure(test, err)
         self.results.append(
             {
                 "status": "failure",
-                "name": test.id(),
+                "name": readable_name,
                 "errors": self.failures[-1][-1],
                 "description": test._testMethodDoc,
             }
@@ -57,9 +63,12 @@ class TextTestResults(unittest.TextTestResult):
         """
         Record that a test failed with an error.
         """
+        test_file = test.__module__.split(".")[-1]
+        func_name = test._testMethodName
+        readable_name = f"[{test_file}.py] {func_name}"
         super().addError(test, err)
         self.results.append(
-            {"status": "error", "name": test.id(), "errors": self.errors[-1][-1], "description": test._testMethodDoc}
+            {"status": "error", "name": readable_name, "errors": self.errors[-1][-1], "description": test._testMethodDoc}
         )
 
 
@@ -108,9 +117,13 @@ class PytestPlugin:
         outcome = yield
         rep = outcome.get_result()
         if rep.failed or (item.nodeid not in self.results and not rep.skipped and rep.when != "teardown"):
+            parts = item.nodeid.split("::")
+            filename = os.path.basename(parts[0])
+            funcname = parts[-1] if len(parts) > 1 else ""
+            readable_name = f"[{filename}] {funcname}"
             self.results[item.nodeid] = {
                 "status": "failure" if rep.failed else "success",
-                "name": item.nodeid,
+                "name": readable_name,
                 "errors": str(rep.longrepr) if rep.failed else "",
                 "description": item.obj.__doc__,
             }
@@ -157,9 +170,13 @@ class PytestPlugin:
         types and the return value.
         """
         if report.failed:
+            parts = report.nodeid.split("::")
+            filename = os.path.basename(parts[0])
+            funcname = parts[-1] if len(parts) > 1 else ""
+            readable_name = f"[{filename}] {funcname}"
             self.results[report.nodeid] = {
                 "status": "error",
-                "name": report.nodeid,
+                "name": readable_name,
                 "errors": str(report.longrepr),
                 "description": None,
             }
