@@ -13,9 +13,7 @@ def test_success_with_context(request, monkeypatch):
         {
             "context": "Basic arithmetic",
             "test": "addition works correctly",
-            "results": [
-                {"type": "expectation_success", "message": ""}
-            ]
+            "results": [{"type": "expectation_success", "message": ""}],
         }
     ]
 
@@ -25,7 +23,7 @@ def test_success_with_context(request, monkeypatch):
     mock_process.stdout = json.dumps(mock_r_output)
     mock_process.stderr = ""
 
-    with patch('subprocess.run', return_value=mock_process):
+    with patch("subprocess.run", return_value=mock_process):
         tester = RTester(
             specs=TestSpecs.from_json(
                 """
