@@ -79,8 +79,7 @@ class TextTestResults(unittest.TextTestResult):
 
         try:
             module_path = "/".join(parts[:-2]) + ".py"
-            method_name = parts[-1]
-            return f"[{module_path}] {method_name}"
+            return f"[{module_path}] {parts[-2]}.{parts[-1]}"
         except (IndexError, TypeError):
             return full_id
 
