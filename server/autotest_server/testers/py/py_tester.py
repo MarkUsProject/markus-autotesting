@@ -28,11 +28,8 @@ class TextTestResults(unittest.TextTestResult):
         """
         Record that a test passed.
         """
-        test_file = test.__module__.split(".")[-1]
-        func_name = test._testMethodName
-        readable_name = f"[{test_file}.py] {func_name}"
         self.results.append(
-            {"status": "success", "name": readable_name, "errors": "", "description": test._testMethodDoc}
+            {"status": "success", "name": self._format_test_name(test), "errors": "", "description": test._testMethodDoc}
         )
         self.successes.append(test)
 
@@ -44,14 +41,11 @@ class TextTestResults(unittest.TextTestResult):
         """
         Record that a test failed.
         """
-        test_file = test.__module__.split(".")[-1]
-        func_name = test._testMethodName
-        readable_name = f"[{test_file}.py] {func_name}"
         super().addFailure(test, err)
         self.results.append(
             {
                 "status": "failure",
-                "name": readable_name,
+                "name": self._format_test_name(test),
                 "errors": self.failures[-1][-1],
                 "description": test._testMethodDoc,
             }
@@ -65,18 +59,30 @@ class TextTestResults(unittest.TextTestResult):
         """
         Record that a test failed with an error.
         """
-        test_file = test.__module__.split(".")[-1]
-        func_name = test._testMethodName
-        readable_name = f"[{test_file}.py] {func_name}"
         super().addError(test, err)
         self.results.append(
             {
                 "status": "error",
-                "name": readable_name,
+                "name": self._format_test_name(test),
                 "errors": self.errors[-1][-1],
                 "description": test._testMethodDoc,
             }
         )
+
+    def _format_test_name(self, test: unittest.TestCase) -> str:
+        full_id = test.id()
+        parts = full_id.split(".")
+
+        if len(parts) < 3:
+            # Not enough parts to extract module/class/method structure
+            return full_id
+
+        try:
+            module_path = "/".join(parts[:-2]) + ".py"
+            method_name = parts[-1]
+            return f"[{module_path}] {method_name}"
+        except (IndexError, TypeError):
+            return full_id
 
 
 class PytestPlugin:
@@ -124,13 +130,9 @@ class PytestPlugin:
         outcome = yield
         rep = outcome.get_result()
         if rep.failed or (item.nodeid not in self.results and not rep.skipped and rep.when != "teardown"):
-            parts = item.nodeid.split("::")
-            filename = os.path.basename(parts[0])
-            funcname = parts[-1] if len(parts) > 1 else ""
-            readable_name = f"[{filename}] {funcname}"
             self.results[item.nodeid] = {
                 "status": "failure" if rep.failed else "success",
-                "name": readable_name,
+                "name": self._format_test_name(item),
                 "errors": str(rep.longrepr) if rep.failed else "",
                 "description": item.obj.__doc__,
             }
@@ -177,16 +179,16 @@ class PytestPlugin:
         types and the return value.
         """
         if report.failed:
-            parts = report.nodeid.split("::")
-            filename = os.path.basename(parts[0])
-            funcname = parts[-1] if len(parts) > 1 else ""
-            readable_name = f"[{filename}] {funcname}"
             self.results[report.nodeid] = {
                 "status": "error",
-                "name": readable_name,
+                "name": self._format_test_name(report),
                 "errors": str(report.longrepr),
                 "description": None,
             }
+
+    def _format_test_name(self, report):
+        parts = report.nodeid.split("::")
+        return f"[{parts[0]}] {parts[-1]}" if len(parts) > 1 else f"[{parts[0]}]"
 
 
 class PyTest(Test):
