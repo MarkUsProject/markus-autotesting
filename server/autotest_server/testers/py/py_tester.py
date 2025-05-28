@@ -29,7 +29,12 @@ class TextTestResults(unittest.TextTestResult):
         Record that a test passed.
         """
         self.results.append(
-            {"status": "success", "name": self._format_test_name(test), "errors": "", "description": test._testMethodDoc}
+            {
+                "status": "success",
+                "name": self._format_test_name(test),
+                "errors": "",
+                "description": test._testMethodDoc,
+            }
         )
         self.successes.append(test)
 
