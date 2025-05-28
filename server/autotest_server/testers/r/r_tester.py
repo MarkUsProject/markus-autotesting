@@ -20,11 +20,28 @@ class RTest(Test):
         The result was created after running the tests in test_file.
         """
         # Format: [test_file] test_name
-        test_name = " ".join(info for info in [result.get("context"), result["test"]] if info)
-        self._test_name = f"[{test_file}] {test_name}"
+        self._test_name = self._format_node_id(test_file, result)
         self.result = result["results"]
         super().__init__(tester)
         self.points_total = 0
+
+    @staticmethod
+    def _format_node_id(test_file: str, result: Dict) -> str:
+        """
+        Parse the test node id and format it as [relative_path] context test.
+
+        Original format: test_file::context::test or test_file::test
+        New format: [test_file] context test or [test_file] test
+        """
+        context = result.get("context", "")
+        test_name = result["test"]
+
+        if context:
+            # Format: [test_file] context test
+            return f"[{test_file}] {context} {test_name}"
+        else:
+            # Format: [test_file] test
+            return f"[{test_file}] {test_name}"
 
     @property
     def test_name(self):

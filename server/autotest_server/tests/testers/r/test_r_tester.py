@@ -23,7 +23,6 @@ def test_success_with_context(request, monkeypatch):
         )
     )
 
-    # Run the actual R tests
     results = tester.run_r_tests()
 
     # Check basic structure
