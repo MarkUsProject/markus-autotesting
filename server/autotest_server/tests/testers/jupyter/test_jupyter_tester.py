@@ -1,5 +1,5 @@
-from ....testers.specs import TestSpecs
-from ....testers.jupyter.jupyter_tester import JupyterTest, JupyterTester
+from server.autotest_server.testers.specs import TestSpecs
+from server.autotest_server.testers.jupyter.jupyter_tester import JupyterTest, JupyterTester
 
 
 def test_jupyter_test_name_format_direct():

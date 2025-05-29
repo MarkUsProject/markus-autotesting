@@ -1,6 +1,5 @@
 import os
 import sys
-import re
 from typing import Type, Dict, List, ContextManager
 import pytest
 import nbformat
