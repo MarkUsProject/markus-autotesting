@@ -55,6 +55,6 @@ def test_success_with_context(request, monkeypatch):
         result = test_results[0]
         test = RTest(tester, "fixtures/sample_tests_success.R", result)
 
-        # nodeid is inexact in CI test
+        # Test name formatting verification
         assert test.test_name.endswith("[fixtures/sample_tests_success.R] Basic arithmetic addition works correctly")
         assert test.test_name.startswith("[")

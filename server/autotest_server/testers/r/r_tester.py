@@ -9,29 +9,26 @@ from ..specs import TestSpecs
 
 class RTest(Test):
     def __init__(
-        self,
-        tester: "RTester",
-        test_file: str,
-        result: Dict,
+            self,
+            tester: "RTester",
+            test_file: str,
+            result: Dict,
     ) -> None:
         """
         Initialize a R test created by tester.
 
         The result was created after running the tests in test_file.
         """
-        # Format: [test_file] test_name
-        self._test_name = self._format_node_id(test_file, result)
+        self._test_name = self._format_test_name(test_file, result)
         self.result = result["results"]
         super().__init__(tester)
         self.points_total = 0
 
     @staticmethod
-    def _format_node_id(test_file: str, result: Dict) -> str:
-        """
-        Parse the test node id and format it as [relative_path] context test.
+    def _format_test_name(test_file: str, result: Dict) -> str:
+        """Format the test name as [relative_path] context test.
 
-        Original format: test_file::context::test or test_file::test
-        New format: [test_file] context test or [test_file] test
+        Format: [test_file] context test or [test_file] test
         """
         context = result.get("context", "")
         test_name = result["test"]
@@ -80,10 +77,10 @@ class RTest(Test):
 
 class RTester(Tester):
     def __init__(
-        self,
-        specs: TestSpecs,
-        test_class: Type[RTest] = RTest,
-        resource_settings: list[tuple[int, tuple[int, int]]] | None = None,
+            self,
+            specs: TestSpecs,
+            test_class: Type[RTest] = RTest,
+            resource_settings: list[tuple[int, tuple[int, int]]] | None = None,
     ) -> None:
         """
         Initialize a R tester using the specifications in specs.
