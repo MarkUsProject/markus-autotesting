@@ -2,6 +2,7 @@
 All notable changes to this project will be documented here.
 
 ## [unreleased]
+- Updated python and jupyter test names to follow [file] class.funcname format 
 
 ## [v2.7.0]
 - Update python, pyta and jupyter testers to allow a requirements file (#580)
