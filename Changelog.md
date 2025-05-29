@@ -2,6 +2,7 @@
 All notable changes to this project will be documented here.
 
 ## [unreleased]
+- Update Python and Jupyter test names to follow `[file] class.funcname` format (#605)
 - Update r tester test_name formatting and add r tester tests (#606)
 
 ## [v2.7.0]
