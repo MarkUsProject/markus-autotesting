@@ -9,16 +9,17 @@ from ..specs import TestSpecs
 
 class RTest(Test):
     def __init__(
-            self,
-            tester: "RTester",
-            test_file: str,
-            result: Dict,
+        self,
+        tester: "RTester",
+        test_file: str,
+        result: Dict,
     ) -> None:
         """
         Initialize a R test created by tester.
 
         The result was created after running the tests in test_file.
         """
+        # Format: [test_file] test_name
         self._test_name = self._format_test_name(test_file, result)
         self.result = result["results"]
         super().__init__(tester)
@@ -77,10 +78,10 @@ class RTest(Test):
 
 class RTester(Tester):
     def __init__(
-            self,
-            specs: TestSpecs,
-            test_class: Type[RTest] = RTest,
-            resource_settings: list[tuple[int, tuple[int, int]]] | None = None,
+        self,
+        specs: TestSpecs,
+        test_class: Type[RTest] = RTest,
+        resource_settings: list[tuple[int, tuple[int, int]]] | None = None,
     ) -> None:
         """
         Initialize a R tester using the specifications in specs.
