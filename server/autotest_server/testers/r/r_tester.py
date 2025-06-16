@@ -25,6 +25,25 @@ class RTest(Test):
         super().__init__(tester)
         self.points_total = 0
 
+    def render_rmd_files(self) -> None:
+        """
+        Render all .Rmd files in the working directory to HTML using Rscript and rmarkdown::render.
+        Only runs if the GENERATE_RMD_HTML environment variable is set to 'true'.
+        """
+        if os.getenv("GENERATE_RMD_HTML", "false").lower() != "true":
+            return
+
+        rmd_files = [f for f in os.listdir(".") if f.endswith(".Rmd")]
+        for rmd_file in rmd_files:
+            try:
+                subprocess.run([
+                    "Rscript", "-e",
+                    f'rmarkdown::render("{rmd_file}", output_format="html_document")'
+                ], check=True)
+                print(f"Rendered {rmd_file} to HTML.", flush=True)
+            except subprocess.CalledProcessError as e:
+                print(f"Failed to render {rmd_file}: {e}", flush=True)
+    
     @staticmethod
     def _format_test_name(test_file: str, result: Dict) -> str:
         """Format the test name as [relative_path] context test.
@@ -45,8 +64,22 @@ class RTest(Test):
     def test_name(self):
         return self._test_name
 
-    @Test.run_decorator
-    def run(self):
+    @Tester.run_decorator
+    def run(self) -> None:
+        """
+        Runs all tests in this tester.
+        """
+        self.render_rmd_files()
+
+        try:
+            results = self.run_r_tests()
+        except subprocess.CalledProcessError as e:
+            raise TestError(e.stderr) from e
+        for test_file, result in results.items():
+            for res in result:
+                test = self.test_class(self, test_file, res)
+                print(test.run(), flush=True)
+
         messages = []
         successes = 0
         error = False
