@@ -1,6 +1,6 @@
 rq==2.4.0
 click==8.1.8
-redis==5.2.1
+redis==6.2.0
 pyyaml==6.0.2
 jsonschema==4.24.0
 requests==2.32.4
