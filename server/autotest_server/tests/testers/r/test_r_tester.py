@@ -9,13 +9,15 @@ def test_success_with_context(request, monkeypatch):
     monkeypatch.chdir(request.fspath.dirname)
 
     # Mock R test results - simulates what R would return as JSON
-    mock_r_output = [
-        {
-            "context": "Basic arithmetic",
-            "test": "addition works correctly",
-            "results": [{"type": "expectation_success", "message": ""}],
-        }
-    ]
+    mock_r_output = {
+        "test_results": [
+            {
+                "context": "Basic arithmetic",
+                "test": "addition works correctly",
+                "results": [{"type": "expectation_success", "message": ""}],
+            }
+        ]
+    }
 
     # Mock subprocess.run to return our simulated R output
     mock_process = MagicMock()
