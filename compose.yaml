@@ -75,7 +75,7 @@ services:
     volumes:
       - redis_autotest:/data
     ports:
-      - 6379
+      - '6379:6379'
 
   rq_dashboard:
     image: eoranged/rq-dashboard
