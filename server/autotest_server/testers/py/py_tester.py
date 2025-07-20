@@ -170,6 +170,10 @@ class PytestPlugin:
                     self.results[item.nodeid]["errors"] += f"\n\n{marker.args[0]}"
                 else:
                     self.results[item.nodeid]["errors"] = marker.args[0]
+            elif marker.name == "markus_marks_total" and marker.args != [] and item.nodeid in self.results:
+                self.results[item.nodeid]["marks_total"] = marker.args[0]
+            elif marker.name == "markus_marks_earned" and marker.args != [] and item.nodeid in self.results:
+                self.results[item.nodeid]["marks_earned"] = marker.args[0]
 
     def pytest_collectreport(self, report):
         """
@@ -214,6 +218,12 @@ class PyTest(Test):
         self.message = result["errors"]
         super().__init__(tester)
 
+        # Override self.points_total attribute (set in Test initializer)
+        if "marks_total" in result:
+            self.points_total = result["marks_total"]
+
+        self.points_earned = result.get("marks_earned")
+
     @property
     def test_name(self) -> str:
         """The name of this test"""
@@ -226,7 +236,12 @@ class PyTest(Test):
         """
         Return a json string containing all test result information.
         """
-        if self.status == "success":
+        if self.points_earned is not None and 0 < self.points_earned < self.points_total:
+            return self.partially_passed(points_earned=self.points_earned, message=self.message)
+        elif self.points_earned is not None and self.points_earned > self.points_total:
+            bonus = self.points_earned - self.points_total
+            return self.passed_with_bonus(points_bonus=bonus, message=self.message)
+        elif self.status == "success":
             return self.passed(message=self.message)
         elif self.status == "failure":
             return self.failed(message=self.message)
