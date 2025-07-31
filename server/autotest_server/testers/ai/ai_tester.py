@@ -7,10 +7,10 @@ import subprocess
 from typing import Type
 
 
-class AIFeedbackTest(Test):
+class AITest(Test):
     def __init__(
             self,
-            tester: 'AIFeedbackTester',
+            tester: 'AITester',
             result: dict = None,
     ):
         self._test_name = result["title"]
@@ -34,11 +34,11 @@ class AIFeedbackTest(Test):
             return self.error(message=self.message)
 
 
-class AIFeedbackTester(Tester):
+class AITester(Tester):
     def __init__(
             self,
             specs: TestSpecs,
-            test_class: Type[AIFeedbackTest] = AIFeedbackTest,
+            test_class: Type[AITest] = AITest,
             resource_settings: list[tuple[int, tuple[int, int]]] | None = None,
     ) -> None:
         """
