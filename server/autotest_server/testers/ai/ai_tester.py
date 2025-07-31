@@ -9,9 +9,9 @@ from typing import Type
 
 class AITest(Test):
     def __init__(
-            self,
-            tester: 'AITester',
-            result: dict = None,
+        self,
+        tester: "AITester",
+        result: dict = None,
     ):
         self._test_name = result["title"]
         self.message = result["message"]
@@ -36,10 +36,10 @@ class AITest(Test):
 
 class AITester(Tester):
     def __init__(
-            self,
-            specs: TestSpecs,
-            test_class: Type[AITest] = AITest,
-            resource_settings: list[tuple[int, tuple[int, int]]] | None = None,
+        self,
+        specs: TestSpecs,
+        test_class: Type[AITest] = AITest,
+        resource_settings: list[tuple[int, tuple[int, int]]] | None = None,
     ) -> None:
         """
         Initialize a new AIFeedbackTester using the specifications in the specs
@@ -54,19 +54,19 @@ class AITester(Tester):
         Supports all standard arguments from ai_feedback.
         """
         results = {}
-        for test_group in self.specs['test_data']:
-            config = test_group['config']
-            title = test_group['title']
-            cmd = [sys.executable, '-m', 'ai_feedback']
+        for test_group in self.specs["test_data"]:
+            config = test_group["config"]
+            title = test_group["title"]
+            cmd = [sys.executable, "-m", "ai_feedback"]
             for key, value in config.items():
-                cmd.extend(['--' + key, str(value)])
+                cmd.extend(["--" + key, str(value)])
 
             try:
-                result = subprocess.run(cmd, capture_output=True, text=True, check=True, timeout=test_group['timeout'])
+                result = subprocess.run(cmd, capture_output=True, text=True, check=True, timeout=test_group["timeout"])
                 results[title] = {"title": title, "status": "success", "message": result.stdout}
-                if test_group['output'] == 'overall':
+                if test_group["output"] == "overall":
                     self.overall_comments.append(result.stdout)
-                elif test_group['output'] == 'annotation':
+                elif test_group["output"] == "annotation":
                     self.annotations.append(result.stdout)
 
             except subprocess.CalledProcessError as e:
