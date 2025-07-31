@@ -1,7 +1,6 @@
 import sys
 
-from ..tester import Test
-from ..tester import Tester
+from ..tester import Test, Tester
 from ..specs import TestSpecs
 import subprocess
 from typing import Type
