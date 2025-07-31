@@ -47,7 +47,6 @@ class AITester(Tester):
         super().__init__(specs, test_class, resource_settings=resource_settings)
         self.annotations = []
         self.overall_comments = []
-        self.tags = set()
 
     def call_ai_feedback(self) -> dict:
         """
