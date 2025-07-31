@@ -1,9 +1,9 @@
-rq==2.1.0
+rq==2.4.0
 click==8.1.8
 redis==5.2.1
 pyyaml==6.0.2
-jsonschema==4.23.0
-requests==2.32.3
+jsonschema==4.24.0
+requests==2.32.4
 psycopg2-binary==2.9.10
 supervisor==4.2.5
 git+https://github.com/MarkUsProject/ai-autograding-feedback.git@main#egg=ai_feedback
