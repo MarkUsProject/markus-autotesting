@@ -8,7 +8,6 @@ All notable changes to this project will be documented here.
 - Update Python tester to support MarkUs metadata for test-specific marks earned and marks total (#619)
 - Add `ai_tester` module to support AI-based autograding via `ai-autograding-feedback` (#620)
 
-
 ## [v2.7.0]
 - Update python, pyta and jupyter testers to allow a requirements file (#580)
 - Update R tester to allow a renv.lock file (#581)
