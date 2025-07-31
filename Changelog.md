@@ -2,6 +2,7 @@
 All notable changes to this project will be documented here.
 
 ## [unreleased]
+- Add `ai_tester` module to support AI-based autograding via ai-autograding-feedback (#620)
 
 ## [v2.7.0]
 - Update python, pyta and jupyter testers to allow a requirements file (#580)

@@ -6,3 +6,4 @@ jsonschema==4.23.0
 requests==2.32.3
 psycopg2-binary==2.9.10
 supervisor==4.2.5
+git+https://github.com/MarkUsProject/ai-autograding-feedback.git@main#egg=ai_feedback
