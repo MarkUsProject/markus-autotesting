@@ -24,11 +24,7 @@ def create_ai_tester(output="overall"):
 
 
 def test_ai_test_success_runs_properly():
-    result = {
-        "title": "Test A",
-        "message": "Looks good",
-        "status": "success"
-    }
+    result = {"title": "Test A", "message": "Looks good", "status": "success"}
     test = AITest(tester=create_ai_tester(), result=result)
     output = test.run()
     assert '"status": "pass"' in output
@@ -36,11 +32,7 @@ def test_ai_test_success_runs_properly():
 
 
 def test_ai_test_error_runs_properly():
-    result = {
-        "title": "Test A",
-        "message": "Syntax error",
-        "status": "error"
-    }
+    result = {"title": "Test A", "message": "Syntax error", "status": "error"}
     test = AITest(tester=create_ai_tester(), result=result)
     output = test.run()
     assert '"status": "error"' in output
@@ -51,10 +43,7 @@ def test_call_ai_feedback_success(monkeypatch):
     tester = create_ai_tester()
 
     mocked_result = subprocess.CompletedProcess(
-        args=["python", "-m", "ai_feedback"],
-        returncode=0,
-        stdout="Great job!",
-        stderr=""
+        args=["python", "-m", "ai_feedback"], returncode=0, stdout="Great job!", stderr=""
     )
 
     monkeypatch.setattr(subprocess, "run", lambda *a, **kw: mocked_result)
@@ -86,9 +75,11 @@ def test_run_prints_test_results(monkeypatch, capsys):
     tester = create_ai_tester()
 
     # Mock subprocess to simulate successful CLI call
-    monkeypatch.setattr(subprocess, "run", lambda *a, **kw: subprocess.CompletedProcess(
-        args=a, returncode=0, stdout="Nice work", stderr=""
-    ))
+    monkeypatch.setattr(
+        subprocess,
+        "run",
+        lambda *a, **kw: subprocess.CompletedProcess(args=a, returncode=0, stdout="Nice work", stderr=""),
+    )
 
     # Replace AITest.run with a stub that returns a dummy string
     monkeypatch.setattr(AITest, "run", lambda self: '{"status": "success", "message": "Test Passed"}')
