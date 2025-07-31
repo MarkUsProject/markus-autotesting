@@ -1,0 +1,71 @@
+{
+  "type": "object",
+  "required": ["tester_type", "env_data", "test_data"],
+  "properties": {
+    "tester_type": {
+      "type": "string",
+      "enum": ["ai"]
+    },
+    "env_data": {
+      "type": "object",
+      "required": ["python_version"],
+      "properties": {
+        "python_version": {
+          "type": "string"
+        },
+        "pip_requirements": {
+          "type": "string"
+        }
+      }
+    },
+    "test_data": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["config", "timeout", "output"],
+        "properties": {
+          "config": {
+            "type": "object",
+            "required": ["scope", "submission", "model"],
+            "properties": {
+              "submission_type": { "type": "string" },
+              "prompt": { "type": "string" },
+              "prompt_text": { "type": "string" },
+              "scope": {
+                "type": "string",
+                "enum": ["code", "text", "image"]
+              },
+              "submission": { "type": "string" },
+              "question": { "type": "string" },
+              "model": { "type": "string" },
+              "output": { "type": "string" },
+              "solution": { "type": "string" },
+              "test_output": { "type": "string" },
+              "submission_image": { "type": "string" },
+              "solution_image": { "type": "string" },
+              "system_prompt": { "type": "string" },
+              "llama_mode": {
+                "type": "string",
+                "enum": ["cli", "server"]
+              },
+              "output_template": { "type": "string" },
+              "json_schema": { "type": "string" }
+            }
+          },
+          "timeout": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "output": {
+            "type": "string",
+            "enum": ["comments", "annotations", "test_output"]
+          },
+          "title": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
