@@ -129,15 +129,14 @@ def simple_test(
     def _t(self: "TestExecutable") -> None:
         stdout, stderr, returncode = self._run_exec(args=args, input_=input_, timeout=timeout, check=check)
 
-        nonlocal expected_stderr
-        nonlocal expected_stdout
-
         if rstrip:
             stdout = stdout.rstrip()
             stderr = stderr.rstrip()
             if expected_stderr is not None:
+                nonlocal expected_stderr
                 expected_stderr = expected_stderr.rstrip()
             if expected_stdout is not None:
+                nonlocal expected_stdout
                 expected_stdout = expected_stdout.rstrip()
 
         if expected_stderr is not None:
@@ -183,9 +182,6 @@ def substr_test(
 
     def _t(self: "TestExecutable") -> None:
         stdout, stderr, returncode = self._run_exec(args=args, input_=input_, timeout=timeout, check=check)
-
-        nonlocal expected_stderr
-        nonlocal expected_stdout
 
         if expected_stderr is not None:
             self.assertIn(expected_stderr.rstrip(), stderr)

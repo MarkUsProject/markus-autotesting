@@ -51,6 +51,10 @@ class RTest(Test):
         successes = 0
         error = False
         for result in self.result:
+            # Skip results that were only used to specify MarkUs metadata
+            if result["type"] == "metadata":
+                continue
+
             # Only add message if not a success, as testthat reports failure messages only
             if result["type"] != "expectation_success":
                 messages.append(result["message"])
@@ -89,6 +93,9 @@ class RTester(Tester):
         This tester will create tests of type test_class.
         """
         super().__init__(specs, test_class, resource_settings=resource_settings)
+        self.annotations = []
+        self.overall_comments = []
+        self.tags = set()
 
     def run_r_tests(self) -> Dict[str, List[Dict[str, Union[int, str]]]]:
         """
@@ -108,7 +115,11 @@ class RTester(Tester):
             if not results.get(test_file):
                 results[test_file] = []
             if proc.returncode == 0:
-                results[test_file].extend(json.loads(proc.stdout))
+                test_data = json.loads(proc.stdout)
+                results[test_file].extend(test_data.get("test_results", []))
+                self.annotations.extend(test_data.get("annotations", []))
+                self.tags.update(test_data.get("tags", []))
+                self.overall_comments.extend(test_data.get("overall_comments", []))
             else:
                 raise TestError(proc.stderr)
         return results
@@ -126,3 +137,12 @@ class RTester(Tester):
             for res in result:
                 test = self.test_class(self, test_file, res)
                 print(test.run(), flush=True)
+
+    def after_tester_run(self) -> None:
+        """Print all MarkUs metadata from the tests."""
+        if self.annotations:
+            print(self.test_class.format_annotations(self.annotations))
+        if self.tags:
+            print(self.test_class.format_tags(self.tags))
+        if self.overall_comments:
+            print(self.test_class.format_overall_comment(self.overall_comments, separator="\n\n"))
