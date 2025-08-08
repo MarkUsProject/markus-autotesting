@@ -1,0 +1,2 @@
+python-dotenv
+git+https://github.com/MarkUsProject/ai-autograding-feedback.git@main#egg=ai_feedback

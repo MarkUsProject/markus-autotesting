@@ -1,19 +1,22 @@
+import json
+import os
 import sys
 
 from ..tester import Test, Tester
 from ..specs import TestSpecs
 import subprocess
 from typing import Type
+from dotenv import load_dotenv
 
 
-class AITest(Test):
+class AiTest(Test):
     def __init__(
-        self,
-        tester: "AITester",
-        result: dict = None,
+            self,
+            tester: "AiTester",
+            result: dict = None,
     ):
         self._test_name = result["title"]
-        self.message = result["message"]
+        self.message = result.get("message", "")
         self.status = result["status"]
         super().__init__(tester)
 
@@ -27,18 +30,20 @@ class AITest(Test):
         """
         Return a json string containing all test result information.
         """
-        if self.status == "success":
+        if self.status in ("success", "pass"):
             return self.passed(message=self.message)
+        elif self.status == "partial":
+            return self.partially_passed(points_earned=1, message=self.message)  # update points as needed
         else:
             return self.error(message=self.message)
 
 
-class AITester(Tester):
+class AiTester(Tester):
     def __init__(
-        self,
-        specs: TestSpecs,
-        test_class: Type[AITest] = AITest,
-        resource_settings: list[tuple[int, tuple[int, int]]] | None = None,
+            self,
+            specs: TestSpecs,
+            test_class: Type[AiTest] = AiTest,
+            resource_settings: list[tuple[int, tuple[int, int]]] | None = None,
     ) -> None:
         """
         Initialize a new AIFeedbackTester using the specifications in the specs
@@ -53,20 +58,37 @@ class AITester(Tester):
         Supports all standard arguments from ai_feedback.
         """
         results = {}
-        for test_group in self.specs["test_data"]:
-            config = test_group["config"]
-            title = test_group["title"]
+
+        test_data = self.specs["test_data"]
+        if isinstance(test_data, dict):
+            test_data = [test_data]
+        for test_group in test_data:
+            config = test_group.get("config", {})
+            title = test_group.get("title", "Unnamed Test")
+            timeout = test_group.get("timeout", 60)
+            output_mode = test_group.get("output", "comment")
             cmd = [sys.executable, "-m", "ai_feedback"]
             for key, value in config.items():
                 cmd.extend(["--" + key, str(value)])
 
             try:
-                result = subprocess.run(cmd, capture_output=True, text=True, check=True, timeout=test_group["timeout"])
-                results[title] = {"title": title, "status": "success", "message": result.stdout}
-                if test_group["output"] == "overall":
-                    self.overall_comments.append(result.stdout)
-                elif test_group["output"] == "annotation":
-                    self.annotations.append(result.stdout)
+                load_dotenv()
+                env = os.environ.copy()
+                result = subprocess.run(cmd, capture_output=True, text=True, check=True, timeout=timeout, env=env)
+                output = result.stdout
+                if output_mode == "overall":
+                    self.overall_comments.append(output)
+                    results[title] = {"title": title, "status": "success", "message": output}
+                elif output_mode == "annotations":
+                    try:
+                        annotations_data = json.loads(output)
+                        annotations = annotations_data.get("annotations", annotations_data)
+                    except json.JSONDecodeError as e:
+                        raise ValueError(f"Invalid JSON in output for {title}: {e}")
+                    self.annotations.extend(annotations)
+                    results[title] = {"title": title, "status": "success"}
+                else:
+                    results[title] = {"title": title, "status": "success", "message": output}
 
             except subprocess.CalledProcessError as e:
                 results[title] = {"title": title, "status": "error", "message": e.stderr or str(e)}
@@ -83,4 +105,12 @@ class AITester(Tester):
         results = self.call_ai_feedback()
         for _, result in results.items():
             test = self.test_class(self, result=result)
-            print(test.run(), flush=True)
+            test_result = test.run()
+            print(test_result, flush=True)
+
+    def after_tester_run(self) -> None:
+        """Print all Markus metadata from the tests."""
+        if self.annotations:
+            print(self.test_class.format_annotations(self.annotations))
+        if self.overall_comments:
+            print(self.test_class.format_overall_comment(self.overall_comments, separator="\n\n"))
