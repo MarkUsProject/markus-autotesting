@@ -59,7 +59,7 @@
           "output": {
             "title": "Output Type",
             "type": "string",
-            "enum": ["comments", "annotations", "test_output"]
+            "enum": ["overall_comment", "annotations", "message"]
           },
           "title": {
             "type": "string"
