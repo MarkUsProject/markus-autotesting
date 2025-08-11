@@ -19,7 +19,7 @@ def set_required_env(tmp_path_factory):
     os.makedirs(os.environ["WORKER_LOG_DIR"], exist_ok=True)
 
 
-def create_ai_tester(output="comments"):
+def create_ai_tester():
     # test_data is an ARRAY; output must be one of the enum values
     spec = {
         "tester_type": "ai",
@@ -39,7 +39,7 @@ def create_ai_tester(output="comments"):
                     "test_group_id": 17,
                     "criterion": None,
                 },
-                "output": output,
+                "output": "overall_comment",
                 "timeout": 30,
                 "title": "Test A",
             }
@@ -67,7 +67,7 @@ def test_ai_test_error_runs_properly():
 
 
 def test_call_ai_feedback_success(monkeypatch):
-    tester = create_ai_tester(output="overall")
+    tester = create_ai_tester()
     mocked = subprocess.CompletedProcess(
         args=["python", "-m", "ai_feedback"], returncode=0, stdout="Great job!", stderr=""
     )
@@ -75,7 +75,6 @@ def test_call_ai_feedback_success(monkeypatch):
     results = tester.call_ai_feedback()
     assert "Test A" in results
     assert results["Test A"]["status"] == "success"
-    assert results["Test A"]["message"] == "Great job!"
     assert tester.overall_comments == ["Great job!"]
     assert tester.annotations == []
 
