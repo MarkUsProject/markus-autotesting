@@ -63,6 +63,9 @@
           },
           "title": {
             "type": "string"
+          },
+          "extra_info": {
+            "$ref": "#/definitions/extra_group_data"
           }
         }
       }
