@@ -33,7 +33,7 @@ class AiTest(Test):
         if self.status in ("success", "pass"):
             return self.passed(message=self.message)
         elif self.status == "partial":
-            return self.partially_passed(points_earned=1, message=self.message)  # update points as needed
+            return self.partially_passed(points_earned=1, message=self.message)
         else:
             return self.error(message=self.message)
 
