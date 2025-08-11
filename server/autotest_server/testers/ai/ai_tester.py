@@ -11,9 +11,9 @@ from dotenv import load_dotenv
 
 class AiTest(Test):
     def __init__(
-            self,
-            tester: "AiTester",
-            result: dict = None,
+        self,
+        tester: "AiTester",
+        result: dict = None,
     ):
         self._test_name = result["title"]
         self.message = result.get("message", "")
@@ -40,10 +40,10 @@ class AiTest(Test):
 
 class AiTester(Tester):
     def __init__(
-            self,
-            specs: TestSpecs,
-            test_class: Type[AiTest] = AiTest,
-            resource_settings: list[tuple[int, tuple[int, int]]] | None = None,
+        self,
+        specs: TestSpecs,
+        test_class: Type[AiTest] = AiTest,
+        resource_settings: list[tuple[int, tuple[int, int]]] | None = None,
     ) -> None:
         """
         Initialize a new AIFeedbackTester using the specifications in the specs
