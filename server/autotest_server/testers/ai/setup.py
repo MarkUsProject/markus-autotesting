@@ -18,7 +18,7 @@ def create_environment(settings_, env_dir, _default_env_dir):
             capture_output=True,
         )
     except subprocess.CalledProcessError as e:
-        raise
+        raise RuntimeError(f"Failed to create environment: {e}")
 
     pip_install_command = [pip, "install", "wheel", "-r", requirements]
 
@@ -30,7 +30,7 @@ def create_environment(settings_, env_dir, _default_env_dir):
             capture_output=True,
         )
     except subprocess.CalledProcessError as e:
-        raise
+        raise RuntimeError(f"Failed to install requirements: {e}")
 
     return {"PYTHON": python_exe}
 
