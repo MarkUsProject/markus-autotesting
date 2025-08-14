@@ -23,34 +23,6 @@
             },
             "uniqueItems": true
           },
-          "config": {
-            "type": "object",
-            "required": ["scope", "submission", "model"],
-            "properties": {
-              "submission_type": { "type": "string" },
-              "prompt": { "type": "string" },
-              "prompt_text": { "type": "string" },
-              "scope": {
-                "type": "string",
-                "enum": ["code", "text", "image"]
-              },
-              "submission": { "type": "string" },
-              "question": { "type": "string" },
-              "model": { "type": "string" },
-              "output": { "type": "string" },
-              "solution": { "type": "string" },
-              "test_output": { "type": "string" },
-              "submission_image": { "type": "string" },
-              "solution_image": { "type": "string" },
-              "system_prompt": { "type": "string" },
-              "llama_mode": {
-                "type": "string",
-                "enum": ["cli", "server"]
-              },
-              "output_template": { "type": "string" },
-              "json_schema": { "type": "string" }
-            }
-          },
           "timeout": {
             "title": "Timeout",
             "type": "integer",
@@ -63,6 +35,34 @@
           },
           "title": {
             "type": "string"
+          },
+          "config": {
+            "type": "object",
+            "required": ["scope", "submission", "model"],
+            "properties": {
+              "scope": {
+                "type": "string",
+                "enum": ["code", "text", "image"]
+              },
+              "submission": { "type": "string" },
+              "model": { "type": "string" },
+              "json_schema": { "type": "string" },
+              "llama_mode": {
+                "type": "string",
+                "enum": ["cli", "server"]
+              },
+              "output": { "type": "string" },
+              "output_template": { "type": "string" },
+              "prompt": { "type": "string" },
+              "prompt_text": { "type": "string" },
+              "question": { "type": "string" },
+              "solution": { "type": "string" },
+              "solution_image": { "type": "string" },
+              "submission_image": { "type": "string" },
+              "submission_type": { "type": "string" },
+              "system_prompt": { "type": "string" },
+              "test_output": { "type": "string" }
+            }
           },
           "extra_info": {
             "$ref": "#/definitions/extra_group_data"
