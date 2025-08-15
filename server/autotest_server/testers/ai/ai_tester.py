@@ -61,39 +61,37 @@ class AiTester(Tester):
         load_dotenv()
         env = os.environ.copy()
 
-        test_data = self.specs["test_data"]
-        if isinstance(test_data, dict):
-            test_data = [test_data]
-        for test_group in test_data:
-            config = test_group.get("config", {})
-            title = test_group.get("title", "Unnamed Test")
-            timeout = test_group.get("timeout", 60)
-            output_mode = test_group.get("output")
-            cmd = [sys.executable, "-m", "ai_feedback"]
-            for key, value in config.items():
-                cmd.extend(["--" + key, str(value)])
+        test_group = self.specs["test_data"]
 
-            try:
-                result = subprocess.run(cmd, capture_output=True, text=True, check=True, timeout=timeout, env=env)
-                output = result.stdout
-                if output_mode == "overall_comment":
-                    self.overall_comments.append(output)
-                    results[title] = {"title": title, "status": "success"}
-                elif output_mode == "annotations":
-                    try:
-                        annotations_data = json.loads(output)
-                        annotations = annotations_data.get("annotations", annotations_data)
-                    except json.JSONDecodeError as e:
-                        raise ValueError(f"Invalid JSON in output for {title}: {e}")
-                    self.annotations.extend(annotations)
-                    results[title] = {"title": title, "status": "success"}
-                elif output_mode == "message":
-                    results[title] = {"title": title, "status": "success", "message": output}
+        config = test_group.get("config", {})
+        test_label = test_group.get("test_label")
+        timeout = test_group.get("timeout", 30)
+        output_mode = test_group.get("output")
+        cmd = [sys.executable, "-m", "ai_feedback"]
+        for key, value in config.items():
+            cmd.extend(["--" + key, str(value)])
 
-            except subprocess.CalledProcessError as e:
-                results[title] = {"title": title, "status": "error", "message": e.stderr or str(e)}
-            except ValueError as ve:
-                results[title] = {"title": title, "status": "error", "message": str(ve)}
+        try:
+            result = subprocess.run(cmd, capture_output=True, text=True, check=True, timeout=timeout, env=env)
+            output = result.stdout
+            if output_mode == "overall_comment":
+                self.overall_comments.append(output)
+                results[test_label] = {"title": test_label, "status": "success"}
+            elif output_mode == "annotations":
+                try:
+                    annotations_data = json.loads(output)
+                    annotations = annotations_data.get("annotations", annotations_data)
+                except json.JSONDecodeError as e:
+                    raise ValueError(f"Invalid JSON in output for {test_label}: {e}")
+                self.annotations.extend(annotations)
+                results[test_label] = {"title": test_label, "status": "success"}
+            elif output_mode == "message":
+                results[test_label] = {"title": test_label, "status": "success", "message": output}
+
+        except subprocess.CalledProcessError as e:
+            results[test_label] = {"title": test_label, "status": "error", "message": e.stderr or str(e)}
+        except ValueError as ve:
+            results[test_label] = {"title": test_label, "status": "error", "message": str(ve)}
 
         return results
 

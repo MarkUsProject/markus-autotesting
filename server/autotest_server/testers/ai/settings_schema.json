@@ -7,13 +7,26 @@
       "type": "string",
       "enum": ["ai"]
     },
+    "env_data": {
+      "title": "AI Feedback Settings",
+      "type": "object",
+      "required": [
+        "ai_feedback_version"
+      ],
+      "properties":{
+         "ai_feedback_version": {
+           "title": "AI Feedback library version",
+           "type": "string"
+         }
+      }
+    },
     "test_data": {
       "title": "Test Groups",
       "type": "array",
       "minItems": 1,
       "items": {
         "type": "object",
-        "required": ["config", "timeout", "output", "title", "category"],
+        "required": ["config", "timeout", "output"],
         "properties": {
           "category": {
             "title": "Category",
@@ -29,12 +42,13 @@
             "default": 30
           },
           "output": {
-            "title": "Output Type",
+            "title": "Output Display",
             "type": "string",
             "enum": ["overall_comment", "annotations", "message"]
           },
-          "title": {
-            "type": "string"
+          "test_label": {
+            "type": "string",
+            "default": "Generate AI Feedback"
           },
           "config": {
             "type": "object",

@@ -4,7 +4,6 @@ import subprocess
 
 
 def create_environment(settings_, env_dir, _default_env_dir):
-
     # Determine paths
     requirements = os.path.join(os.path.dirname(os.path.realpath(__file__)), "requirements.txt")
     pip = os.path.join(env_dir, "bin", "pip")
@@ -31,6 +30,25 @@ def create_environment(settings_, env_dir, _default_env_dir):
         )
     except subprocess.CalledProcessError as e:
         raise RuntimeError(f"Failed to install requirements: {e}")
+
+    env_data = settings_.get("env_data", {})
+    branch = env_data.get("ai_feedback_version", "main")
+    ai_feedback_install_cmd = [
+        python_exe,
+        "-m",
+        "pip",
+        "install",
+        f"git+https://github.com/MarkUsProject/ai-autograding-feedback.git@{branch}",
+    ]
+    try:
+        subprocess.run(
+            ai_feedback_install_cmd,
+            check=True,
+            text=True,
+            capture_output=True,
+        )
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(f"Failed to install ai-feedback version: {e}")
 
     return {"PYTHON": python_exe}
 
