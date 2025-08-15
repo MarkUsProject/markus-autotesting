@@ -23,27 +23,26 @@ def create_ai_tester():
     # test_data is an ARRAY; output must be one of the enum values
     spec = {
         "tester_type": "ai",
-        "test_data": [
-            {
-                "category": ["instructor"],
-                "config": {
-                    "model": "openai",
-                    "prompt": "code_table",
-                    "scope": "code",
-                    "submission": "submission.py",
-                    "submission_type": "python",
-                },
-                "extra_info": {
-                    "name": "AI FEEDBACK COMMENTS",
-                    "display_output": "instructors",
-                    "test_group_id": 17,
-                    "criterion": None,
-                },
-                "output": "overall_comment",
-                "timeout": 30,
-                "title": "Test A",
-            }
-        ],
+        "env_data": {"ai_feedback_version": "main"},
+        "test_data": {
+            "category": ["instructor"],
+            "config": {
+                "model": "openai",
+                "prompt": "code_table",
+                "scope": "code",
+                "submission": "submission.py",
+                "submission_type": "python",
+            },
+            "extra_info": {
+                "name": "AI FEEDBACK COMMENTS",
+                "display_output": "instructors",
+                "test_group_id": 17,
+                "criterion": None,
+            },
+            "output": "overall_comment",
+            "timeout": 30,
+            "test_label": "Test A",
+        },
         "_env": {"PYTHON": "/home/docker/.autotesting/scripts/128/ai_1/bin/python3"},
     }
     raw_spec = json.dumps(spec)
@@ -73,6 +72,7 @@ def test_call_ai_feedback_success(monkeypatch):
     )
     monkeypatch.setattr(subprocess, "run", lambda *a, **kw: mocked)
     results = tester.call_ai_feedback()
+    print(results)
     assert "Test A" in results
     assert results["Test A"]["status"] == "success"
     assert tester.overall_comments == ["Great job!"]
