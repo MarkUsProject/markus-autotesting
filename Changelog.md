@@ -6,6 +6,7 @@ All notable changes to this project will be documented here.
 - Update r tester test_name formatting and add r tester tests (#606)
 - Update R tester to support MarkUs metadata (#615)
 - Update Python tester to support MarkUs metadata for test-specific marks earned and marks total (#619)
+- Add `ai_tester` module to support AI-based autograding via `ai-autograding-feedback` (#625)
 
 ## [v2.7.0]
 - Update python, pyta and jupyter testers to allow a requirements file (#580)

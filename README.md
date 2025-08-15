@@ -140,7 +140,8 @@ The autotester currently supports testers for the following languages and testin
     - [TestThat](https://testthat.r-lib.org/)
 - `custom`
     - see more information [here](#the-custom-tester)
-
+- `ai`
+    - [ai-autograding-feedback](https://github.com/MarkUsProject/ai-autograding-feedback)
 #### Tester Dependencies
 
 Installing each tester will also install the following additional packages (system-wide):
@@ -163,6 +164,8 @@ Installing each tester will also install the following additional packages (syst
     - R
 - `custom`
     - none
+- `ai`
+  - none
 
 ## Autotester configuration options
 
