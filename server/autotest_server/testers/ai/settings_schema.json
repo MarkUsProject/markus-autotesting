@@ -52,7 +52,7 @@
           },
           "config": {
             "type": "object",
-            "required": ["scope", "submission", "model"],
+            "required": ["scope", "submission", "model", "test_label"],
             "properties": {
               "scope": {
                 "type": "string",
