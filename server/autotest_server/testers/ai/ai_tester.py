@@ -30,7 +30,7 @@ class AiTest(Test):
         """
         Return a json string containing all test result information.
         """
-        if self.status in ("success", "pass"):
+        if self.status == "success":
             return self.passed(message=self.message)
         elif self.status == "partial":
             return self.partially_passed(points_earned=1, message=self.message)
