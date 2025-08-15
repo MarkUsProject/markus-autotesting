@@ -26,7 +26,7 @@
       "minItems": 1,
       "items": {
         "type": "object",
-        "required": ["config", "timeout", "output"],
+        "required": ["config", "timeout", "output", "test_label"],
         "properties": {
           "category": {
             "title": "Category",
@@ -52,7 +52,7 @@
           },
           "config": {
             "type": "object",
-            "required": ["scope", "submission", "model", "test_label"],
+            "required": ["scope", "submission", "model"],
             "properties": {
               "scope": {
                 "type": "string",
