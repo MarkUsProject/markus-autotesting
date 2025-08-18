@@ -33,7 +33,7 @@ jobs:
             ${{ runner.os }}-pip-
       - name: Install python packages
         run: |
-          python -m pip install pytest fakeredis typing-extensions nbformat \
+          python -m pip install pytest python-dotenv fakeredis typing-extensions nbformat \
             -r ${{ matrix.test-dir }}/requirements.txt \
             -r server/autotest_server/testers/jupyter/requirements.txt
       - name: Create users
