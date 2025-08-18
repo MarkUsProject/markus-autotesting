@@ -101,7 +101,7 @@ class AiTester(Tester):
         Gets the AI feedback based on the specifications in the specs.
         """
         results = self.call_ai_feedback()
-        for _, result in results.items():
+        for result in results.values():
             test = self.test_class(self, result=result)
             test_result = test.run()
             print(test_result, flush=True)

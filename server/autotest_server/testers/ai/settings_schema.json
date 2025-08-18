@@ -16,7 +16,8 @@
       "properties":{
          "ai_feedback_version": {
            "title": "AI Feedback library version",
-           "type": "string"
+           "type": "string",
+           "default": "main"
          }
       }
     },
