@@ -5,6 +5,9 @@ import subprocess
 HASKELL_TEST_DEPS = ["tasty-discover", "tasty-quickcheck", "tasty-hunit"]
 STACK_RESOLVER = "lts-16.17"
 
+home = os.getenv("HOME")
+os.environ["PATH"] = f"{home}/.cabal/bin:{home}/.ghcup/bin:" + os.environ["PATH"]
+
 
 def create_environment(_settings, _env_dir, default_env_dir):
     env_data = _settings.get("env_data", {})
