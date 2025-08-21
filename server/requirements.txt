@@ -6,3 +6,4 @@ jsonschema==4.25.0
 requests==2.32.4
 psycopg2-binary==2.9.10
 supervisor==4.2.5
+PyPDF2==3.0.0
