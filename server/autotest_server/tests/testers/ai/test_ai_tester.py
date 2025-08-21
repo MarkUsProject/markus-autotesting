@@ -1,5 +1,6 @@
 import json
 import os
+from pathlib import Path
 
 import subprocess
 import pytest
@@ -21,6 +22,7 @@ def set_required_env(tmp_path_factory):
 
 def create_ai_tester():
     # test_data is an ARRAY; output must be one of the enum values
+    parent_dir = str(Path(__file__).resolve().parent)
     spec = {
         "tester_type": "ai",
         "env_data": {"ai_feedback_version": "main"},
@@ -30,7 +32,7 @@ def create_ai_tester():
                 "model": "openai",
                 "prompt": "code_table",
                 "scope": "code",
-                "submission": "./fixtures/sample_submission.py",
+                "submission": parent_dir + "/fixtures/sample_submission.py",
                 "submission_type": "python",
             },
             "extra_info": {
