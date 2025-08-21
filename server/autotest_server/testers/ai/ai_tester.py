@@ -76,7 +76,8 @@ class AiTester(Tester):
             results[test_label] = {
                 "title": test_label,
                 "status": "success",
-                "message": "STUDENT OPTED OUT OF AI FEEDBACK",
+                "message": "Student included the text 'NO_EXTERNAL_AI_FEEDBACK' in their submission file. No AI "
+                "feedback generated.",
             }
             return results
 
