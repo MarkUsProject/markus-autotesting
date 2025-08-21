@@ -30,7 +30,7 @@ def create_ai_tester():
                 "model": "openai",
                 "prompt": "code_table",
                 "scope": "code",
-                "submission": "submission.py",
+                "submission": "./fixtures/sample_submission.py",
                 "submission_type": "python",
             },
             "extra_info": {
