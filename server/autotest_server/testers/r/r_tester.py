@@ -55,8 +55,7 @@ class RTest(Test):
             if result["type"] == "metadata":
                 continue
 
-            # Only add message if not a success, as testthat reports failure messages only
-            if result["type"] != "expectation_success":
+            if result.get("message"):
                 messages.append(result["message"])
 
             if result["type"] == "expectation_success":
