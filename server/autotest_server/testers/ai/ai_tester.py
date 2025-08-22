@@ -7,6 +7,8 @@ from ..specs import TestSpecs
 import subprocess
 from typing import Type
 from dotenv import load_dotenv
+from pathlib import Path
+import PyPDF2
 
 
 class AiTest(Test):
@@ -69,6 +71,17 @@ class AiTester(Tester):
         timeout = test_group.get("timeout", 30)
         output_mode = test_group.get("output")
         cmd = [sys.executable, "-m", "ai_feedback"]
+
+        submission_file = config.get("submission")
+        if self._term_in_file(submission_file):
+            results[test_label] = {
+                "title": test_label,
+                "status": "success",
+                "message": "Student included the text 'NO_EXTERNAL_AI_FEEDBACK' in their submission file. No AI "
+                "feedback generated.",
+            }
+            return results
+
         for key, value in config.items():
             cmd.extend(["--" + key, str(value)])
 
@@ -105,6 +118,29 @@ class AiTester(Tester):
             results[test_label] = {"title": test_label, "status": "error", "message": str(ve)}
 
         return results
+
+    def _term_in_file(self, file_path: str) -> bool:
+        """Check for NO_EXTERNAL_AI_FEEDBACK string in submission file"""
+        term = "NO_EXTERNAL_AI_FEEDBACK"
+        path = Path(file_path)
+
+        try:
+            if path.suffix.lower() == ".pdf":
+                with open(file_path, "rb") as f:
+                    reader = PyPDF2.PdfReader(f)
+                    for page in reader.pages:
+                        text = page.extract_text() or ""
+                        if term in text:
+                            return True
+                return False
+            else:
+                with open(file_path, "r", encoding="utf-8") as f:
+                    for line in f:
+                        if term in line:
+                            return True
+                return False
+        except FileNotFoundError:
+            return True
 
     @Tester.run_decorator
     def run(self) -> None:
