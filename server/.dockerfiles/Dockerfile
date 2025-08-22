@@ -29,6 +29,7 @@ RUN apt-get update -y && \
                        libharfbuzz-dev \
                        libfribidi-dev \
                        libxml2-dev \
+                       libnuma-dev \
                        r-base
 
 RUN useradd -ms /bin/bash $LOGIN_USER && \
