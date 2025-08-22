@@ -19,10 +19,27 @@ class RTest(Test):
 
         The result was created after running the tests in test_file.
         """
-        self._test_name = ":".join(info for info in [test_file, result.get("context"), result["test"]] if info)
+        # Format: [test_file] test_name
+        self._test_name = self._format_test_name(test_file, result)
         self.result = result["results"]
         super().__init__(tester)
         self.points_total = 0
+
+    @staticmethod
+    def _format_test_name(test_file: str, result: Dict) -> str:
+        """Format the test name as [relative_path] context test.
+
+        Format: [test_file] context test or [test_file] test
+        """
+        context = result.get("context", "")
+        test_name = result["test"]
+
+        if context:
+            # Format: [test_file] context test
+            return f"[{test_file}] {context} {test_name}"
+        else:
+            # Format: [test_file] test
+            return f"[{test_file}] {test_name}"
 
     @property
     def test_name(self):
@@ -34,8 +51,11 @@ class RTest(Test):
         successes = 0
         error = False
         for result in self.result:
-            # Only add message if not a success, as testthat reports failure messages only
-            if result["type"] != "expectation_success":
+            # Skip results that were only used to specify MarkUs metadata
+            if result["type"] == "metadata":
+                continue
+
+            if result.get("message"):
                 messages.append(result["message"])
 
             if result["type"] == "expectation_success":
@@ -72,6 +92,9 @@ class RTester(Tester):
         This tester will create tests of type test_class.
         """
         super().__init__(specs, test_class, resource_settings=resource_settings)
+        self.annotations = []
+        self.overall_comments = []
+        self.tags = set()
 
     def run_r_tests(self) -> Dict[str, List[Dict[str, Union[int, str]]]]:
         """
@@ -91,7 +114,11 @@ class RTester(Tester):
             if not results.get(test_file):
                 results[test_file] = []
             if proc.returncode == 0:
-                results[test_file].extend(json.loads(proc.stdout))
+                test_data = json.loads(proc.stdout)
+                results[test_file].extend(test_data.get("test_results", []))
+                self.annotations.extend(test_data.get("annotations", []))
+                self.tags.update(test_data.get("tags", []))
+                self.overall_comments.extend(test_data.get("overall_comments", []))
             else:
                 raise TestError(proc.stderr)
         return results
@@ -109,3 +136,12 @@ class RTester(Tester):
             for res in result:
                 test = self.test_class(self, test_file, res)
                 print(test.run(), flush=True)
+
+    def after_tester_run(self) -> None:
+        """Print all MarkUs metadata from the tests."""
+        if self.annotations:
+            print(self.test_class.format_annotations(self.annotations))
+        if self.tags:
+            print(self.test_class.format_tags(self.tags))
+        if self.overall_comments:
+            print(self.test_class.format_overall_comment(self.overall_comments, separator="\n\n"))

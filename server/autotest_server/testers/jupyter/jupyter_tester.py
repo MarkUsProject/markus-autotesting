@@ -1,6 +1,5 @@
 import os
 import sys
-import re
 from typing import Type, Dict, List, ContextManager
 import pytest
 import nbformat
@@ -26,7 +25,7 @@ class JupyterTest(Test):
 
         The result was created after running some pytest tests.
         """
-        self._test_name = re.sub(r"^.*?(?=::)", test_file_name, result["name"])
+        self._test_name = f"[{test_file_name}] {result['name'].split('::')[-1]}"
         self._file_name = test_file
         self.description = result.get("description")
         self.status = result["status"]
@@ -102,7 +101,7 @@ class JupyterTester(Tester):
                 result = {"status": "success", "name": "merge_check", "errors": ""}
             else:
                 result = {"status": "failure", "name": "merge_check", "errors": error}
-            test = self.test_class(self, test_file, f"{test_file}:{submission_file}", result)
+            test = self.test_class(self, test_file, f"{test_file}", result)
             print(test.run(), flush=True)
         elif error:
             sys.stderr.write(error)
@@ -119,5 +118,5 @@ class JupyterTester(Tester):
             self.test_merge(test_file, submission_file, script_files["test_merge"])
             with self._merge_ipynb_files(test_file, submission_file) as merged_file:
                 for res in self._run_jupyter_tests(merged_file):
-                    test = self.test_class(self, merged_file, f"{test_file}:{submission_file}", res)
+                    test = self.test_class(self, merged_file, f"{test_file}", res)
                     print(test.run(), flush=True)
