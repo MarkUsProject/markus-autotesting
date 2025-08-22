@@ -1,6 +1,17 @@
 # CHANGELOG
 All notable changes to this project will be documented here.
 
+## [v2.8.0]
+- Update Python and Jupyter test names to follow `[file] class.funcname` format (#605)
+- Update r tester test_name formatting and add r tester tests (#606)
+- Update R tester to support MarkUs metadata (#615)
+- Update Python tester to support MarkUs metadata for test-specific marks earned and marks total (#619)
+- Add `ai_tester` module to support AI-based autograding via `ai-autograding-feedback` (#625)
+- Add `ai` to list of testers (#628)
+- Fixed an `AttributeError` when handling exceptions in server `update_test_settings` (#629)
+- Added opt out feature to the `ai_tester` by searching for `NO_EXTERNAL_AI_FEEDBACK` (#632)
+- Modified R tester to always display test result messages, even when tests pass (#633)
+
 ## [v2.7.0]
 - Update python, pyta and jupyter testers to allow a requirements file (#580)
 - Update R tester to allow a renv.lock file (#581)
