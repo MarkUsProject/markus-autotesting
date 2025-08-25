@@ -11,6 +11,7 @@ All notable changes to this project will be documented here.
 - Add `ai_tester` module to support AI-based autograding via `ai-autograding-feedback` (#625)
 - Add `ai` to list of testers (#628)
 - Fixed an `AttributeError` when handling exceptions in server `update_test_settings` (#629)
+- Add tag functionalty to `ai_tester` (#631)
 - Added opt out feature to the `ai_tester` by searching for `NO_EXTERNAL_AI_FEEDBACK` (#632)
 - Modified R tester to always display test result messages, even when tests pass (#633)
 
