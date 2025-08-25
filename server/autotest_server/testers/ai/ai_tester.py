@@ -94,19 +94,20 @@ class AiTester(Tester):
                 parsed = json.loads(output)
             except json.JSONDecodeError:
                 pass
-            if isinstance(parsed, dict) and "tags" in parsed:
-                tags = parsed.pop("tags")
-                output = parsed.pop("output")
-                self.tags.extend(tags)
+            if isinstance(parsed, dict):
+                if "tags" in parsed:
+                    tags = parsed["tags"]
+                    self.tags.extend(tags)
+                if "output" in parsed:
+                    output = parsed["output"]
 
             if output_mode == "overall_comment":
                 self.overall_comments.append(output)
                 results[test_label] = {"title": test_label, "status": "success"}
             elif output_mode == "annotations":
-                try:
-                    annotations = parsed.get("annotations", parsed)
-                except json.JSONDecodeError as e:
-                    raise ValueError(f"Invalid JSON in output for {test_label}: {e}")
+                if parsed is None:
+                    raise ValueError(f"Unable to parse the output of '{output}'")
+                annotations = parsed.get("annotations", parsed)
                 self.annotations.extend(annotations)
                 results[test_label] = {"title": test_label, "status": "success"}
             elif output_mode == "message":
