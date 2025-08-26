@@ -30,8 +30,9 @@ class HaskellTest(Test):
     def test_name(self) -> str:
         """The name of this test"""
         if self._test_name:
-            return ".".join([self._file_name, self._test_name])
-        return self._file_name
+            return f"[{self._file_name}] {self._test_name}"
+        else:
+            return f"[{self._file_name}]"
 
     @Test.run_decorator
     def run(self) -> str:
