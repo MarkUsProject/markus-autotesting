@@ -124,7 +124,8 @@ Both the autotester and the API are designed to be run on Ubuntu 20.04 (or suffi
 The autotester currently supports testers for the following languages and testing frameworks:
 
 - `haskell`
-    - [QuickCheck](http://hackage.haskell.org/package/QuickCheck)
+    - [`tasty-hunit`](https://hackage.haskell.org/package/tasty-hunit)
+    - [`tasty-quickcheck`](https://hackage.haskell.org/package/tasty-quickcheck)
 - `java`
     - [JUnit](https://junit.org/junit4/)
 - `py` (python3)
@@ -149,8 +150,8 @@ Installing each tester will also install the following additional packages (syst
     - ghc 
     - cabal-install 
     - haskell-stack
-    - tasty-stats (cabal package)
     - tasty-discover (cabal package)
+    - tasty-hunit (cabal package)
     - tasty-quickcheck (cabal package)
 - `java`
     - openjdk-8-jdk
