@@ -73,8 +73,11 @@ class HaskellTester(Tester):
             module_flag,
             stats_flag,
             f"--timeout={self.specs['test_data', 'test_timeout']}s",
-            f"--quickcheck-tests={self.specs['test_data', 'test_cases']}",
         ]
+        test_cases = self.specs["test_data", "test_cases"] or 0
+        if test_cases > 0:
+            flags.append(f"--quickcheck-tests={test_cases}")
+
         return flags
 
     def _parse_test_results(self, reader: Iterator) -> List[Dict[str, Union[int, str]]]:

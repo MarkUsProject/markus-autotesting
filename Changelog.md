@@ -5,6 +5,7 @@ All notable changes to this project will be documented here.
 
 - Update Haskell tester to report installation errors (#636)
 - Update Haskell tester test name formatting (#636)
+- Update Haskell tester to support `tasty-hunit` adapter (#636)
 
 ## [v2.8.0]
 - Update Python and Jupyter test names to follow `[file] class.funcname` format (#605)
