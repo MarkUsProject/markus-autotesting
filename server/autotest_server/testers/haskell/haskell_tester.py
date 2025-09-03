@@ -135,7 +135,7 @@ class HaskellTester(Tester):
                         results[test_file] = r
                     else:
                         raise Exception(out.stderr)
-        os.unlink(tasty_discover_tmp_file.name)
+        os.remove(tasty_discover_tmp_file.name)
         return results
 
     @Tester.run_decorator
