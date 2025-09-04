@@ -2,6 +2,7 @@
 All notable changes to this project will be documented here.
 
 ## [unreleased]
+- Changed tasty-discover argument of source directory to a file (#648)
 
 ## [v2.8.1]
 - Update Haskell tester to report installation errors (#636)
