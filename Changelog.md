@@ -2,6 +2,8 @@
 All notable changes to this project will be documented here.
 
 ## [unreleased]
+
+## [v2.8.2]
 - Changed tasty-discover argument of source directory to a file (#648)
 - Disabled access to third-party models in AI tester (#649)
 
