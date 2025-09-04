@@ -71,6 +71,15 @@ class AiTester(Tester):
         output_mode = test_group.get("output")
         cmd = [sys.executable, "-m", "ai_feedback"]
 
+        # Temporarily disable non-local models
+        if config.get("model", "") != "remote":
+            results[test_label] = {
+                "title": test_label,
+                "status": "error",
+                "message": f"Unsupported model type: \"{config.get('model', '')}\"",
+            }
+            return results
+
         submission_file = config.get("submission")
         if self._term_in_file(submission_file):
             results[test_label] = {
