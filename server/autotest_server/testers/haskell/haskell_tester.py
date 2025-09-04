@@ -109,6 +109,8 @@ class HaskellTester(Tester):
         results = {}
         this_dir = os.getcwd()
         haskell_lib = os.path.join(os.path.dirname(os.path.realpath(__file__)), "lib")
+        tasty_discover_tmp_file = tempfile.NamedTemporaryFile(delete=False, dir=this_dir)
+        tasty_discover_tmp_file.close()
         for test_file in self.specs["test_data", "script_files"]:
             with tempfile.NamedTemporaryFile(dir=this_dir) as f:
                 cmd = [
@@ -117,7 +119,7 @@ class HaskellTester(Tester):
                     *STACK_OPTIONS,
                     "--",
                     "tasty-discover",
-                    ".",
+                    tasty_discover_tmp_file.name,
                     "_",
                     f.name,
                     *self._test_run_flags(test_file),
@@ -133,6 +135,7 @@ class HaskellTester(Tester):
                         results[test_file] = r
                     else:
                         raise Exception(out.stderr)
+        os.remove(tasty_discover_tmp_file.name)
         return results
 
     @Tester.run_decorator
