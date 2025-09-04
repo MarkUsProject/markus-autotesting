@@ -29,7 +29,7 @@ def create_ai_tester():
         "test_data": {
             "category": ["instructor"],
             "config": {
-                "model": "openai",
+                "model": "remote",
                 "prompt": "code_table",
                 "scope": "code",
                 "submission": parent_dir + "/fixtures/sample_submission.py",
