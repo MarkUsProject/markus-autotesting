@@ -336,13 +336,13 @@ Downloading root
 
 This was fixed after disabling the Docker Content Trust. To disable Docker Content Trust for Docker Desktop on a Mac, the most common method involves setting or unsetting an environment variable in your shell.
 
-Method 1: Unsetting the DOCKER_CONTENT_TRUST environment variable
+**Method 1:** Unsetting the DOCKER_CONTENT_TRUST environment variable
 
 This method disables Content Trust for the current shell session and any new shell sessions you open afterwards. Open your terminal application (e.g., Terminal, iTerm2). Execute the following command.
 
    `unset DOCKER_CONTENT_TRUST`
 
-Method 2: Setting DOCKER_CONTENT_TRUST to 0
+**Method 2:** Setting DOCKER_CONTENT_TRUST to 0
 
 This method achieves the same outcome as unsetting the variable. Open your terminal application and Execute the following command.
 
