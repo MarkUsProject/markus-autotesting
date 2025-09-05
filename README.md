@@ -320,3 +320,30 @@ To see which settings *would be* deleted without actually deleting them, use the
 
 Users who try to run tests after the settings have been cleaned up in this manner will see an error message telling them
 that the test settings have expired and prompting them to upload more.
+
+## Troubleshooting
+
+### Docker Content Trust (DCT)
+
+Docker Content Trust (DCT) is a security feature in Docker that ensures container images are trusted using digital signatures. Docker Content Trust is disabled by default in Docker clients. If somehow it was enabled you may receive an error like the following, for example when saving the Haskell assignment automated test settings. 
+
+```text
+No information from Hackage index, updating
+Selected mirror https://s3.amazonaws.com/hackage.fpcomplete.com/
+Downloading root
+<repo>/root.json does not have enough signatures signed with the appropriate keys
+```
+
+This was fixed after disabling the Docker Content Trust. To disable Docker Content Trust for Docker Desktop on a Mac, the most common method involves setting or unsetting an environment variable in your shell.
+
+Method 1: Unsetting the DOCKER_CONTENT_TRUST environment variable
+
+This method disables Content Trust for the current shell session and any new shell sessions you open afterwards. Open your terminal application (e.g., Terminal, iTerm2). Execute the following command.
+
+   `unset DOCKER_CONTENT_TRUST`
+
+Method 2: Setting DOCKER_CONTENT_TRUST to 0
+
+This method achieves the same outcome as unsetting the variable. Open your terminal application and Execute the following command.
+
+   `export DOCKER_CONTENT_TRUST=0`
