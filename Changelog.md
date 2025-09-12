@@ -2,6 +2,7 @@
 All notable changes to this project will be documented here.
 
 ## [unreleased]
+- Add troubleshooting section talking about Docker Content Trust (DCT) (#653)
 
 ## [v2.8.2]
 - Changed tasty-discover argument of source directory to a file (#648)
