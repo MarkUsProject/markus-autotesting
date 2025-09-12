@@ -2,6 +2,7 @@
 All notable changes to this project will be documented here.
 
 ## [unreleased]
+- Install stack with GHCup (#626)
 
 ## [v2.8.2]
 - Changed tasty-discover argument of source directory to a file (#648)
