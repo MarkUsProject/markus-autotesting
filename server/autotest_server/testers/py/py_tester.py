@@ -196,7 +196,7 @@ class PytestPlugin:
 
     def _format_test_name(self, report):
         parts = report.nodeid.split("::")
-        return f"[{parts[0]}] {parts[-1]}" if len(parts) > 1 else f"[{parts[0]}]"
+        return f"[{parts[0]}] {'.'.join(parts[1:])}" if len(parts) > 1 else f"[{parts[0]}]"
 
 
 class PyTest(Test):
