@@ -3,6 +3,7 @@ All notable changes to this project will be documented here.
 
 ## [unreleased]
 - Install stack with GHCup (#626)
+- Fixed AI tester to report error when the specified `submission` file is not found (#663)
 
 ## [v2.8.3]
 - Add troubleshooting section talking about Docker Content Trust (DCT) (#653)
