@@ -30,7 +30,11 @@ RUN apt-get update -y && \
                        libfribidi-dev \
                        libxml2-dev \
                        libnuma-dev \
-                       r-base
+                       r-base \
+                       curl \
+                       ghc \
+                       cabal-install \ 
+                       haskell-stack
 
 RUN useradd -ms /bin/bash $LOGIN_USER && \
     usermod -aG sudo $LOGIN_USER && \
