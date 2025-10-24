@@ -1,7 +1,9 @@
-ARG UBUNTU_VERSION=22.04
+ARG UBUNTU_VERSION=24.04
 
 FROM ubuntu:$UBUNTU_VERSION AS base
 
+# Remove ubuntu user, added in the 23.04 image
+RUN userdel -r ubuntu
 
 ARG LOGIN_USER
 ARG WORKSPACE
@@ -38,9 +40,8 @@ RUN useradd -ms /bin/bash $LOGIN_USER && \
         adduser --disabled-login --no-create-home $worker && \
         echo "$LOGIN_USER ALL=($worker) NOPASSWD:ALL" | EDITOR="tee -a" visudo && \
         usermod -aG $worker $LOGIN_USER; \
-    done
-
-RUN chmod a+x /home/${LOGIN_USER}
+    done && \
+    chmod a+x /home/${LOGIN_USER}
 
 COPY . /app
 
@@ -48,8 +49,8 @@ RUN find /app/autotest_server/testers -name requirements.system -exec {} \;
 
 RUN echo "TZ=$( cat /etc/timezone )" >> /etc/R/Renviron.site
 
-RUN mkdir -p ${WORKSPACE} && chown ${LOGIN_USER} ${WORKSPACE}
-RUN mkdir -p /home/${LOGIN_USER}/markus_venv && chown ${LOGIN_USER} /home/${LOGIN_USER}/markus_venv
+RUN mkdir -p ${WORKSPACE} && chown ${LOGIN_USER} ${WORKSPACE} && \
+    mkdir -p /home/${LOGIN_USER}/markus_venv && chown ${LOGIN_USER} /home/${LOGIN_USER}/markus_venv
 
 WORKDIR /home/${LOGIN_USER}
 
