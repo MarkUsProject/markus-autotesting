@@ -5,6 +5,7 @@ from types import TracebackType
 import pytest
 import sys
 from ..tester import Tester, Test
+import uuid
 from ..specs import TestSpecs
 
 
@@ -174,6 +175,19 @@ class PytestPlugin:
                 self.results[item.nodeid]["marks_total"] = marker.args[0]
             elif marker.name == "markus_marks_earned" and marker.args != [] and item.nodeid in self.results:
                 self.results[item.nodeid]["marks_earned"] = marker.args[0]
+            elif marker.name == "markus_extra_marks" and marker.args != [] and item.nodeid in self.results:
+                self.results[item.nodeid]["marks_earned"] += marker.args[0]
+                bonus_comment = {
+                    "id": str(uuid.uuid4()),
+                    "mark": marker.args[0],
+                    "fn": item.nodeid,
+                    "comment": marker.args[1],
+                }
+
+                if self.results[item.nodeid].get("bonus_comments"):
+                    self.results[item.nodeid]["bonus_comments"].append(bonus_comment)
+                else:
+                    self.results[item.nodeid]["bonus_comments"] = [bonus_comment]
 
     def pytest_collectreport(self, report):
         """
@@ -211,16 +225,19 @@ class PyTest(Test):
 
         The result was created after running some unittest or pytest tests.
         """
-        self._test_name = result["name"]
+        self.extra_properties = {}
         self._file_name = test_file
-        self.description = result.get("description")
         self.status = result["status"]
         self.message = result["errors"]
+        self._test_name = result["name"]
+        self.description = result.get("description")
         super().__init__(tester)
 
         # Override self.points_total attribute (set in Test initializer)
         if "marks_total" in result:
             self.points_total = result["marks_total"]
+        if "bonus_comments" in result:
+            self.extra_properties["bonus_comments"] = result["bonus_comments"]
 
         self.points_earned = result.get("marks_earned")
 
@@ -237,16 +254,20 @@ class PyTest(Test):
         Return a json string containing all test result information.
         """
         if self.points_earned is not None and 0 < self.points_earned < self.points_total:
-            return self.partially_passed(points_earned=self.points_earned, message=self.message)
+            return self.partially_passed(
+                points_earned=self.points_earned, message=self.message, extra_properties=self.extra_properties
+            )
         elif self.points_earned is not None and self.points_earned > self.points_total:
             bonus = self.points_earned - self.points_total
-            return self.passed_with_bonus(points_bonus=bonus, message=self.message)
+            return self.passed_with_bonus(
+                points_bonus=bonus, message=self.message, extra_properties=self.extra_properties
+            )
         elif self.status == "success":
-            return self.passed(message=self.message)
+            return self.passed(message=self.message, extra_properties=self.extra_properties)
         elif self.status == "failure":
-            return self.failed(message=self.message)
+            return self.failed(message=self.message, extra_properties=self.extra_properties)
         else:
-            return self.error(message=self.message)
+            return self.error(message=self.message, extra_properties=self.extra_properties)
 
 
 class PyTester(Tester):
