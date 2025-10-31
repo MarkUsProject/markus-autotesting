@@ -78,7 +78,7 @@ class Test(ABC):
                 "marks_total": points_total,
                 "status": status,
                 "time": time,
-                "extra_properties:": extra_properties,
+                "extra_properties": extra_properties,
             }
         )
         return result_json

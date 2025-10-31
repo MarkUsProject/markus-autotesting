@@ -182,6 +182,7 @@ class PytestPlugin:
                     "mark": marker.args[0],
                     "fn": item.nodeid,
                     "comment": marker.args[1],
+                    "unit": marker.args[2] if len(marker.args) > 2 else "points",
                 }
 
                 if self.results[item.nodeid].get("bonus_comments"):
