@@ -1,5 +1,5 @@
 flask==3.1.2
-python-dotenv==1.1.1
+python-dotenv==1.2.1
 rq==2.6.0
 redis==6.4.0
 jsonschema==4.25.1
