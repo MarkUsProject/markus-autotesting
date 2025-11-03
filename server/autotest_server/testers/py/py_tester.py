@@ -181,7 +181,7 @@ class PytestPlugin:
                     "id": str(uuid.uuid4()),
                     "mark": marker.args[0],
                     "fn": item.nodeid,
-                    "comment": marker.args[1],
+                    "description": marker.args[1],
                     "unit": marker.args[2] if len(marker.args) > 2 else "points",
                 }
 
