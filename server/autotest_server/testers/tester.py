@@ -60,6 +60,7 @@ class Test(ABC):
                               points when assigning bonus points).
         :param points_total: The total points the test could earn, must be a float >= 0.
         :param time: The time it took to run the test, can be None
+        :param extra_properties: adds useful information to the test result.
         :return The formatted test result.
         """
         if points_total < 0:
@@ -90,6 +91,7 @@ class Test(ABC):
         :param output: The test output.
         :param points_earned: The points earned by the test, must be a float >= 0 (can be greater than the test total
                               points when assigning bonus points).
+        :param extra_properties: adds useful information to the test result.
         :return The formatted test result.
         """
         return Test.format_result(
@@ -141,6 +143,7 @@ class Test(ABC):
         feedback to it.
         :param points_bonus: The bonus points, must be an int >= 0.
         :param message: An optional message, will be shown as test output.
+        :param extra_properties: adds useful information to the test result.
         :return The formatted passed test.
         """
         if points_bonus < 0:
@@ -157,6 +160,7 @@ class Test(ABC):
         """
         Passes this test earning the test total points. If a feedback file is enabled, adds feedback to it.
         :param message: An optional message, will be shown as test output.
+        :param extra_properties: adds useful information to the test result.
         :return The formatted passed test.
         """
         result = self.format(
@@ -169,7 +173,7 @@ class Test(ABC):
         Partially passes this test with some points earned. If a feedback file is enabled, adds feedback to it.
         :param points_earned: The points earned by the test, must be an int > 0 and < the test total points.
         :param message: The message explaining why the test was not fully passed, will be shown as test output.
-        :param message: Extra properties returned, useful to the test result.
+        :param extra_properties: adds useful information to the test result.
         :return The formatted partially passed test.
         """
         if points_earned <= 0:
@@ -185,6 +189,7 @@ class Test(ABC):
         """
         Fails this test with 0 points earned. If a feedback file is enabled, adds feedback to it.
         :param message: The failure message, will be shown as test output.
+        :param extra_properties: adds useful information to the test result.
         :return The formatted failed test.
         """
         result = self.format(
@@ -216,6 +221,7 @@ class Test(ABC):
         """
         Err this test. If a feedback file is enabled, adds feedback to it.
         :param message: The error message, will be shown as test output.
+        :param extra_properties: adds useful information to the test result.
         :return The formatted erred test.
         """
         result = self.format(
