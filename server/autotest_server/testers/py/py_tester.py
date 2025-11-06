@@ -119,6 +119,10 @@ class PytestPlugin:
             "markers",
             "markus_message(text): indicate text that is displayed as part of the test output (even on success)",
         )
+        config.addinivalue_line(
+            "markers",
+            "markus_extra_marks(mark, description, unit): add extra marks with custom description",
+        )
 
     @pytest.hookimpl(hookwrapper=True, tryfirst=True)
     def pytest_runtest_makereport(self, item, call):
