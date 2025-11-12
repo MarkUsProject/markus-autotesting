@@ -43,13 +43,7 @@ class Test(ABC):
 
     @staticmethod
     def format_result(
-        test_name: str,
-        status: str,
-        output: str,
-        points_earned: int,
-        points_total: int,
-        time: Optional[int] = None,
-        extra_properties: Dict = {},
+        test_name: str, status: str, output: str, points_earned: int, points_total: int, time: Optional[int] = None
     ) -> str:
         """
         Formats a test result.
@@ -60,7 +54,6 @@ class Test(ABC):
                               points when assigning bonus points).
         :param points_total: The total points the test could earn, must be a float >= 0.
         :param time: The time it took to run the test, can be None
-        :param extra_properties: adds useful information to the test result.
         :return The formatted test result.
         """
         if points_total < 0:
@@ -79,24 +72,20 @@ class Test(ABC):
                 "marks_total": points_total,
                 "status": status,
                 "time": time,
-                "extra_properties": extra_properties,
             }
         )
         return result_json
 
-    def format(self, status: str, output: str, points_earned: int, extra_properties: Dict = {}) -> str:
+    def format(self, status: str, output: str, points_earned: int) -> str:
         """
         Formats the result of this test.
         :param status: A member of Test.Status.
         :param output: The test output.
         :param points_earned: The points earned by the test, must be a float >= 0 (can be greater than the test total
                               points when assigning bonus points).
-        :param extra_properties: adds useful information to the test result.
         :return The formatted test result.
         """
-        return Test.format_result(
-            self.test_name, status, output, points_earned, self.points_total, extra_properties=extra_properties
-        )
+        return Test.format_result(self.test_name, status, output, points_earned, self.points_total)
 
     @staticmethod
     def format_annotations(annotation_data: List[Dict[str, Any]]) -> str:
@@ -137,64 +126,49 @@ class Test(ABC):
                 tag_list.append(tag)
         return json.dumps({"tags": tag_list})
 
-    def passed_with_bonus(self, points_bonus: int, message: str = "", extra_properties: Dict = {}) -> str:
+    def passed_with_bonus(self, points_bonus: int, message: str = "") -> str:
         """
         Passes this test earning bonus points in addition to the test total points. If a feedback file is enabled, adds
         feedback to it.
         :param points_bonus: The bonus points, must be an int >= 0.
         :param message: An optional message, will be shown as test output.
-        :param extra_properties: adds useful information to the test result.
         :return The formatted passed test.
         """
         if points_bonus < 0:
             raise ValueError("The test bonus points must be >= 0")
-        result = self.format(
-            status=self.Status.PASS,
-            output=message,
-            points_earned=self.points_total + points_bonus,
-            extra_properties=extra_properties,
-        )
+        result = self.format(status=self.Status.PASS, output=message, points_earned=self.points_total + points_bonus)
         return result
 
-    def passed(self, message: str = "", extra_properties: Dict = {}) -> str:
+    def passed(self, message: str = "") -> str:
         """
         Passes this test earning the test total points. If a feedback file is enabled, adds feedback to it.
         :param message: An optional message, will be shown as test output.
-        :param extra_properties: adds useful information to the test result.
         :return The formatted passed test.
         """
-        result = self.format(
-            status=self.Status.PASS, output=message, points_earned=self.points_total, extra_properties=extra_properties
-        )
+        result = self.format(status=self.Status.PASS, output=message, points_earned=self.points_total)
         return result
 
-    def partially_passed(self, points_earned: int, message: str, extra_properties: Dict = {}) -> str:
+    def partially_passed(self, points_earned: int, message: str) -> str:
         """
         Partially passes this test with some points earned. If a feedback file is enabled, adds feedback to it.
         :param points_earned: The points earned by the test, must be an int > 0 and < the test total points.
         :param message: The message explaining why the test was not fully passed, will be shown as test output.
-        :param extra_properties: adds useful information to the test result.
         :return The formatted partially passed test.
         """
         if points_earned <= 0:
             raise ValueError("The test points earned must be > 0")
         if points_earned >= self.points_total:
             raise ValueError("The test points earned must be < the test total points")
-        result = self.format(
-            status=self.Status.PARTIAL, output=message, points_earned=points_earned, extra_properties=extra_properties
-        )
+        result = self.format(status=self.Status.PARTIAL, output=message, points_earned=points_earned)
         return result
 
-    def failed(self, message: str, extra_properties: Dict = {}) -> str:
+    def failed(self, message: str) -> str:
         """
         Fails this test with 0 points earned. If a feedback file is enabled, adds feedback to it.
         :param message: The failure message, will be shown as test output.
-        :param extra_properties: adds useful information to the test result.
         :return The formatted failed test.
         """
-        result = self.format(
-            status=self.Status.FAIL, output=message, points_earned=0, extra_properties=extra_properties
-        )
+        result = self.format(status=self.Status.FAIL, output=message, points_earned=0)
         return result
 
     def done(self, points_earned: int, message: str = "") -> str:
@@ -217,16 +191,13 @@ class Test(ABC):
         else:
             return self.partially_passed(points_earned, message)
 
-    def error(self, message: str, extra_properties: Dict = {}) -> str:
+    def error(self, message: str) -> str:
         """
         Err this test. If a feedback file is enabled, adds feedback to it.
         :param message: The error message, will be shown as test output.
-        :param extra_properties: adds useful information to the test result.
         :return The formatted erred test.
         """
-        result = self.format(
-            status=self.Status.ERROR, output=message, points_earned=0, extra_properties=extra_properties
-        )
+        result = self.format(status=self.Status.ERROR, output=message, points_earned=0)
         return result
 
     def before_test_run(self) -> None:

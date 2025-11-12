@@ -230,7 +230,6 @@ class PyTest(Test):
 
         The result was created after running some unittest or pytest tests.
         """
-        self.extra_properties = {}
         self._file_name = test_file
         self.status = result["status"]
         self.message = result["errors"]
@@ -241,8 +240,6 @@ class PyTest(Test):
         # Override self.points_total attribute (set in Test initializer)
         if "marks_total" in result:
             self.points_total = result["marks_total"]
-        if "bonus_comments" in result:
-            self.extra_properties["bonus_comments"] = result["bonus_comments"]
 
         self.points_earned = result.get("marks_earned")
 
@@ -259,20 +256,16 @@ class PyTest(Test):
         Return a json string containing all test result information.
         """
         if self.points_earned is not None and 0 < self.points_earned < self.points_total:
-            return self.partially_passed(
-                points_earned=self.points_earned, message=self.message, extra_properties=self.extra_properties
-            )
+            return self.partially_passed(points_earned=self.points_earned, message=self.message)
         elif self.points_earned is not None and self.points_earned > self.points_total:
             bonus = self.points_earned - self.points_total
-            return self.passed_with_bonus(
-                points_bonus=bonus, message=self.message, extra_properties=self.extra_properties
-            )
+            return self.passed_with_bonus(points_bonus=bonus, message=self.message)
         elif self.status == "success":
-            return self.passed(message=self.message, extra_properties=self.extra_properties)
+            return self.passed(message=self.message)
         elif self.status == "failure":
-            return self.failed(message=self.message, extra_properties=self.extra_properties)
+            return self.failed(message=self.message)
         else:
-            return self.error(message=self.message, extra_properties=self.extra_properties)
+            return self.error(message=self.message)
 
 
 class PyTester(Tester):
