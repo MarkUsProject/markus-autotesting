@@ -111,6 +111,15 @@ class Test(ABC):
         return json.dumps({"overall_comment": content})
 
     @staticmethod
+    def format_extra_marks(extra_marks: List[Dict[str, Any]]) -> str:
+        """
+        Formats extra marks data.
+        :param extra_marks: the contents of the extra marks
+        :return a json string representation of the extra marks data.
+        """
+        return json.dumps({"extra_marks": extra_marks})
+
+    @staticmethod
     def format_tags(tag_data: Iterable[str | dict[str, str]]) -> str:
         """
         Formats tag data.

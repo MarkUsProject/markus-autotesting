@@ -103,6 +103,7 @@ class PytestPlugin:
         self.results = {}
         self.tags = set()
         self.annotations = []
+        self.extra_marks = []
         self.overall_comments = []
 
     def pytest_configure(self, config):
@@ -181,18 +182,14 @@ class PytestPlugin:
                 self.results[item.nodeid]["marks_earned"] = marker.args[0]
             elif marker.name == "markus_extra_marks" and marker.args != [] and item.nodeid in self.results:
                 self.results[item.nodeid]["marks_earned"] += marker.args[0]
-                bonus_comment = {
+                extra_mark = {
                     "id": str(uuid.uuid4()),
                     "mark": marker.args[0],
                     "fn": item.nodeid,
                     "description": marker.args[1],
                     "unit": marker.args[2] if len(marker.args) > 2 else "points",
                 }
-
-                if self.results[item.nodeid].get("bonus_comments"):
-                    self.results[item.nodeid]["bonus_comments"].append(bonus_comment)
-                else:
-                    self.results[item.nodeid]["bonus_comments"] = [bonus_comment]
+                self.extra_marks.append(extra_mark)
 
     def pytest_collectreport(self, report):
         """
@@ -282,6 +279,7 @@ class PyTester(Tester):
         """
         super().__init__(specs, test_class, resource_settings=resource_settings)
         self.annotations = []
+        self.extra_marks = []
         self.overall_comments = []
         self.tags = set()
 
@@ -326,6 +324,7 @@ class PyTester(Tester):
                 results.extend(plugin.results.values())
                 self.annotations = plugin.annotations
                 self.overall_comments = plugin.overall_comments
+                self.extra_marks = plugin.extra_marks
                 self.tags = plugin.tags
             finally:
                 sys.stdout = sys.__stdout__
@@ -363,3 +362,5 @@ class PyTester(Tester):
             print(self.test_class.format_tags(self.tags))
         if self.overall_comments:
             print(self.test_class.format_overall_comment(self.overall_comments, separator="\n\n"))
+        if self.extra_marks:
+            print(self.test_class.format_extra_marks(self.extra_marks))
