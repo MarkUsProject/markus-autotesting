@@ -181,7 +181,6 @@ class PytestPlugin:
             elif marker.name == "markus_marks_earned" and marker.args != [] and item.nodeid in self.results:
                 self.results[item.nodeid]["marks_earned"] = marker.args[0]
             elif marker.name == "markus_extra_marks" and marker.args != [] and item.nodeid in self.results:
-                self.results[item.nodeid]["marks_earned"] += marker.args[0]
                 extra_mark = {
                     "id": str(uuid.uuid4()),
                     "mark": marker.args[0],
@@ -227,11 +226,11 @@ class PyTest(Test):
 
         The result was created after running some unittest or pytest tests.
         """
+        self._test_name = result["name"]
         self._file_name = test_file
+        self.description = result.get("description")
         self.status = result["status"]
         self.message = result["errors"]
-        self._test_name = result["name"]
-        self.description = result.get("description")
         super().__init__(tester)
 
         # Override self.points_total attribute (set in Test initializer)
