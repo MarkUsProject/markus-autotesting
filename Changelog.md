@@ -7,6 +7,7 @@ All notable changes to this project will be documented here.
 - Updated docker image to use Ubuntu 24.04 (#668)
 - Fixed stack installation in Docker environment (#668)
 - Removed `click` from server requirements.txt file (#679)
+- Fixed bug in R tester setup that always triggered reinstallation of R dependencies (#680)
 
 ## [v2.8.3]
 - Add troubleshooting section talking about Docker Content Trust (DCT) (#653)
