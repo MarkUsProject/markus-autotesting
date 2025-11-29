@@ -6,6 +6,7 @@ All notable changes to this project will be documented here.
 - Fixed AI tester to report error when the specified `submission` file is not found (#663)
 - Updated docker image to use Ubuntu 24.04 (#668)
 - Fixed stack installation in Docker environment (#668)
+- Removed `click` from server requirements.txt file (#679)
 
 ## [v2.8.3]
 - Add troubleshooting section talking about Docker Content Trust (DCT) (#653)

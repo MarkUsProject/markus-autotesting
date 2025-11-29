@@ -1,5 +1,4 @@
 rq==2.6.0
-click==8.1.8
 redis==6.4.0
 pyyaml==6.0.3
 jsonschema==4.25.1
