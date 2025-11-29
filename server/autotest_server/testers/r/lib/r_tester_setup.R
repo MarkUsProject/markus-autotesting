@@ -38,7 +38,7 @@ install_dep <- function(row) {
   } else {
     remote_type <- NA_character_
   }
-  if (!('stringi' %in% rownames(installed.packages))) {
+  if (!('stringi' %in% rownames(installed.packages()))) {
     install.packages(name, configure.args="--disable-pkg-config")
   }
 
