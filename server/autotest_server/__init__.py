@@ -83,6 +83,8 @@ def _create_test_group_result(
             result["annotations"] = res["annotations"]
         elif "tags" in res:
             result["tags"] = res["tags"]
+        elif "extra_marks" in res:
+            result["extra_marks"] = res["extra_marks"]
         elif "overall_comment" in res:
             result["overall_comment"] = res["overall_comment"]
         else:

@@ -5,6 +5,7 @@ from types import TracebackType
 import pytest
 import sys
 from ..tester import Tester, Test
+import uuid
 from ..specs import TestSpecs
 
 
@@ -102,6 +103,7 @@ class PytestPlugin:
         self.results = {}
         self.tags = set()
         self.annotations = []
+        self.extra_marks = []
         self.overall_comments = []
 
     def pytest_configure(self, config):
@@ -117,6 +119,10 @@ class PytestPlugin:
         config.addinivalue_line(
             "markers",
             "markus_message(text): indicate text that is displayed as part of the test output (even on success)",
+        )
+        config.addinivalue_line(
+            "markers",
+            "markus_extra_marks(mark, description, unit): add extra marks with custom description",
         )
 
     @pytest.hookimpl(hookwrapper=True, tryfirst=True)
@@ -174,6 +180,15 @@ class PytestPlugin:
                 self.results[item.nodeid]["marks_total"] = marker.args[0]
             elif marker.name == "markus_marks_earned" and marker.args != [] and item.nodeid in self.results:
                 self.results[item.nodeid]["marks_earned"] = marker.args[0]
+            elif marker.name == "markus_extra_marks" and marker.args != [] and item.nodeid in self.results:
+                extra_mark = {
+                    "id": str(uuid.uuid4()),
+                    "mark": marker.args[0],
+                    "fn": item.nodeid,
+                    "description": marker.args[1],
+                    "unit": marker.args[2] if len(marker.args) > 2 else "points",
+                }
+                self.extra_marks.append(extra_mark)
 
     def pytest_collectreport(self, report):
         """
@@ -263,6 +278,7 @@ class PyTester(Tester):
         """
         super().__init__(specs, test_class, resource_settings=resource_settings)
         self.annotations = []
+        self.extra_marks = []
         self.overall_comments = []
         self.tags = set()
 
@@ -307,6 +323,7 @@ class PyTester(Tester):
                 results.extend(plugin.results.values())
                 self.annotations = plugin.annotations
                 self.overall_comments = plugin.overall_comments
+                self.extra_marks = plugin.extra_marks
                 self.tags = plugin.tags
             finally:
                 sys.stdout = sys.__stdout__
@@ -344,3 +361,5 @@ class PyTester(Tester):
             print(self.test_class.format_tags(self.tags))
         if self.overall_comments:
             print(self.test_class.format_overall_comment(self.overall_comments, separator="\n\n"))
+        if self.extra_marks:
+            print(self.test_class.format_extra_marks(self.extra_marks))

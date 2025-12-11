@@ -1,8 +1,15 @@
 #!/usr/bin/env bash
 
-if ! dpkg -l ghc cabal-install haskell-stack &> /dev/null; then
-  apt-get -y update
-  DEBIAN_FRONTEND=noninteractive apt-get install -y -o 'Dpkg::Options::=--force-confdef' -o 'Dpkg::Options::=--force-confold' ghc cabal-install haskell-stack
+apt-get -y update
+
+if ! dpkg -l ghc cabal-install &> /dev/null; then
+  DEBIAN_FRONTEND=noninteractive apt-get install -y -o 'Dpkg::Options::=--force-confdef' -o 'Dpkg::Options::=--force-confold' ghc cabal-install
 fi
 
-stack update
+if [ ! -x "$HOME/.ghcup/bin/ghcup" ] && [ ! -x "/usr/local/bin/stack" ]; then
+  BOOTSTRAP_HASKELL_NONINTERACTIVE=1 BOOTSTRAP_HASKELL_INSTALL_NO_STACK=1 curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
+  $HOME/.ghcup/bin/ghcup install stack recommended
+  if [ "$(id -u)" -eq 0 ]; then
+    cp $HOME/.ghcup/bin/stack /usr/local/bin/
+  fi
+fi

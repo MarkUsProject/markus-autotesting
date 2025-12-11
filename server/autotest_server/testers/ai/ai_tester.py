@@ -53,6 +53,7 @@ class AiTester(Tester):
         super().__init__(specs, test_class, resource_settings=resource_settings)
         self.annotations = []
         self.overall_comments = []
+        self.tags = []
 
     def call_ai_feedback(self) -> dict:
         """
@@ -81,7 +82,17 @@ class AiTester(Tester):
             return results
 
         submission_file = config.get("submission")
-        if self._term_in_file(submission_file):
+        try:
+            disallowed_term_in_file = self._term_in_file(submission_file)
+        except FileNotFoundError:
+            results[test_label] = {
+                "title": test_label,
+                "status": "error",
+                "message": f'Could not file submission file "{submission_file}"',
+            }
+            return results
+
+        if disallowed_term_in_file:
             results[test_label] = {
                 "title": test_label,
                 "status": "success",
@@ -96,15 +107,26 @@ class AiTester(Tester):
         try:
             result = subprocess.run(cmd, capture_output=True, text=True, check=True, timeout=timeout, env=env)
             output = result.stdout
+
+            parsed = None
+            try:
+                parsed = json.loads(output)
+            except json.JSONDecodeError:
+                pass
+            if isinstance(parsed, dict):
+                if "tags" in parsed:
+                    tags = parsed["tags"]
+                    self.tags.extend(tags)
+                if "output" in parsed:
+                    output = parsed["output"]
+
             if output_mode == "overall_comment":
                 self.overall_comments.append(output)
                 results[test_label] = {"title": test_label, "status": "success"}
             elif output_mode == "annotations":
-                try:
-                    annotations_data = json.loads(output)
-                    annotations = annotations_data.get("annotations", annotations_data)
-                except json.JSONDecodeError as e:
-                    raise ValueError(f"Invalid JSON in output for {test_label}: {e}")
+                if parsed is None:
+                    raise ValueError(f"Unable to parse the output of '{output}'")
+                annotations = parsed.get("annotations", parsed)
                 self.annotations.extend(annotations)
                 results[test_label] = {"title": test_label, "status": "success"}
             elif output_mode == "message":
@@ -122,23 +144,20 @@ class AiTester(Tester):
         term = "NO_EXTERNAL_AI_FEEDBACK"
         path = Path(file_path)
 
-        try:
-            if path.suffix.lower() == ".pdf":
-                with open(file_path, "rb") as f:
-                    reader = PyPDF2.PdfReader(f)
-                    for page in reader.pages:
-                        text = page.extract_text() or ""
-                        if term in text:
-                            return True
-                return False
-            else:
-                with open(file_path, "r", encoding="utf-8") as f:
-                    for line in f:
-                        if term in line:
-                            return True
-                return False
-        except FileNotFoundError:
-            return True
+        if path.suffix.lower() == ".pdf":
+            with open(file_path, "rb") as f:
+                reader = PyPDF2.PdfReader(f)
+                for page in reader.pages:
+                    text = page.extract_text() or ""
+                    if term in text:
+                        return True
+            return False
+        else:
+            with open(file_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    if term in line:
+                        return True
+            return False
 
     @Tester.run_decorator
     def run(self) -> None:
@@ -157,3 +176,5 @@ class AiTester(Tester):
             print(self.test_class.format_annotations(self.annotations))
         if self.overall_comments:
             print(self.test_class.format_overall_comment(self.overall_comments, separator="\n\n"))
+        if self.tags:
+            print(self.test_class.format_tags(self.tags))

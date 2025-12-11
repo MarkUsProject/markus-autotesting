@@ -43,12 +43,7 @@ class Test(ABC):
 
     @staticmethod
     def format_result(
-        test_name: str,
-        status: str,
-        output: str,
-        points_earned: int,
-        points_total: int,
-        time: Optional[int] = None,
+        test_name: str, status: str, output: str, points_earned: int, points_total: int, time: Optional[int] = None
     ) -> str:
         """
         Formats a test result.
@@ -116,6 +111,15 @@ class Test(ABC):
         return json.dumps({"overall_comment": content})
 
     @staticmethod
+    def format_extra_marks(extra_marks: List[Dict[str, Any]]) -> str:
+        """
+        Formats extra marks data.
+        :param extra_marks: the contents of the extra marks
+        :return a json string representation of the extra marks data.
+        """
+        return json.dumps({"extra_marks": extra_marks})
+
+    @staticmethod
     def format_tags(tag_data: Iterable[str | dict[str, str]]) -> str:
         """
         Formats tag data.
@@ -141,11 +145,7 @@ class Test(ABC):
         """
         if points_bonus < 0:
             raise ValueError("The test bonus points must be >= 0")
-        result = self.format(
-            status=self.Status.PASS,
-            output=message,
-            points_earned=self.points_total + points_bonus,
-        )
+        result = self.format(status=self.Status.PASS, output=message, points_earned=self.points_total + points_bonus)
         return result
 
     def passed(self, message: str = "") -> str:
@@ -171,10 +171,7 @@ class Test(ABC):
         result = self.format(status=self.Status.PARTIAL, output=message, points_earned=points_earned)
         return result
 
-    def failed(
-        self,
-        message: str,
-    ) -> str:
+    def failed(self, message: str) -> str:
         """
         Fails this test with 0 points earned. If a feedback file is enabled, adds feedback to it.
         :param message: The failure message, will be shown as test output.
