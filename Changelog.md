@@ -1,6 +1,14 @@
 # CHANGELOG
 All notable changes to this project will be documented here.
 
+## [v2.9.0]
+- Install stack with GHCup (#626)
+- Fixed AI tester to report error when the specified `submission` file is not found (#663)
+- Updated docker image to use Ubuntu 24.04 (#668)
+- Fixed stack installation in Docker environment (#668)
+- Removed `click` from server requirements.txt file (#679)
+- Fixed bug in R tester setup that always triggered reinstallation of R dependencies (#680)
+
 ## [v2.8.3]
 - Add troubleshooting section talking about Docker Content Trust (DCT) (#653)
 - Fixed Python tester to display fully qualified name when running pytest (#656)
@@ -22,6 +30,7 @@ All notable changes to this project will be documented here.
 - Add `ai_tester` module to support AI-based autograding via `ai-autograding-feedback` (#625)
 - Add `ai` to list of testers (#628)
 - Fixed an `AttributeError` when handling exceptions in server `update_test_settings` (#629)
+- Add tag functionalty to `ai_tester` (#631)
 - Added opt out feature to the `ai_tester` by searching for `NO_EXTERNAL_AI_FEEDBACK` (#632)
 - Modified R tester to always display test result messages, even when tests pass (#633)
 
