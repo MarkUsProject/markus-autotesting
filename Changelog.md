@@ -2,6 +2,8 @@
 All notable changes to this project will be documented here.
 
 ## [unreleased]
+
+## [v2.9.0]
 - Install stack with GHCup (#626)
 - Fixed AI tester to report error when the specified `submission` file is not found (#663)
 - Updated docker image to use Ubuntu 24.04 (#668)
