@@ -85,4 +85,10 @@ resultRow results = do
     \(show -> idx, (name, Result { resultDescription=dropWhileEnd isSpace -> description
                                  , resultShortDescription=result
                                  , resultTime=show -> time })) ->
-    [idx, name, time, result, description]
+    [ idx
+      -- Extract the property name from the TestName. Tasty uses '.' to join module and test name.
+    , reverse $ takeWhile (/= '.') $ reverse name
+    , time
+    , result
+    , description
+    ]

@@ -2,6 +2,7 @@
 All notable changes to this project will be documented here.
 
 ## [unreleased]
+- Fixed Haskell test results to only include the function name (#687)
 
 ## [v2.9.0]
 - Install stack with GHCup (#626)
