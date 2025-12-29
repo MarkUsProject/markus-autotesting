@@ -58,4 +58,4 @@ WORKDIR /home/${LOGIN_USER}
 
 USER ${LOGIN_USER}
 
-CMD /app/.dockerfiles/cmd-dev.sh
+CMD ["/app/.dockerfiles/cmd-dev.sh"]
