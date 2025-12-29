@@ -3,6 +3,8 @@ All notable changes to this project will be documented here.
 
 ## [unreleased]
 - Fixed Haskell test results to only include the function name (#687)
+- Improved robustness of tester installation scripts and Docker configuration (#688)
+- Moved tidyverse installation steps from server Dockerfile into R tester requirements.system (#688)
 
 ## [v2.9.0]
 - Install stack with GHCup (#626)
