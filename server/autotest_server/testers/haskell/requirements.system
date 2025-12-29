@@ -1,16 +1,25 @@
 #!/usr/bin/env bash
 set -euxo pipefail
 
-apt-get -y update
-
+# Install a system-wide ghc, which can be used as a default version in the Haskell tester.
+# This should be synchronized with the LTS version and dependencies in setup.py
 if ! dpkg -l ghc cabal-install &> /dev/null; then
+  apt-get -y update
   DEBIAN_FRONTEND=noninteractive apt-get install -y -o 'Dpkg::Options::=--force-confdef' -o 'Dpkg::Options::=--force-confold' ghc cabal-install
 fi
 
-if [ ! -x "$HOME/.ghcup/bin/ghcup" ] && [ ! -x "/usr/local/bin/stack" ]; then
-  BOOTSTRAP_HASKELL_NONINTERACTIVE=1 BOOTSTRAP_HASKELL_INSTALL_NO_STACK=1 curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
-  $HOME/.ghcup/bin/ghcup install stack recommended
-  if [ "$(id -u)" -eq 0 ]; then
-    cp $HOME/.ghcup/bin/stack /usr/local/bin/
-  fi
+if [ ! -x "/usr/local/bin/stack" ]; then
+  # We use ghcup to install stack rather than relying on system packages. This enables newer versions of Stack to be installed.
+  # Install ghcup dependencies: https://www.haskell.org/ghcup/install/#linux-ubuntu
+  apt-get -y update
+  DEBIAN_FRONTEND=noninteractive apt-get install -y -o 'Dpkg::Options::=--force-confdef' -o 'Dpkg::Options::=--force-confold' \
+    build-essential \
+    curl \
+    libffi-dev \
+    libffi8ubuntu1 \
+    libgmp-dev \
+    libgmp10 \
+    libncurses-dev
+  curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | BOOTSTRAP_HASKELL_NONINTERACTIVE=1 BOOTSTRAP_HASKELL_MINIMAL=1 sh
+  $HOME/.ghcup/bin/ghcup install stack recommended --isolate /usr/local/bin
 fi

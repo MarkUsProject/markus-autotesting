@@ -7,9 +7,6 @@ from typing import Dict, Type, List, Iterator, Union
 from ..tester import Tester, Test, TestError
 from ..specs import TestSpecs
 
-home = os.getenv("HOME")
-os.environ["PATH"] = f"{home}/.cabal/bin:{home}/.ghcup/bin:" + os.environ["PATH"]
-
 
 class HaskellTest(Test):
     def __init__(
