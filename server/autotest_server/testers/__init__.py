@@ -10,6 +10,7 @@ def install(testers=_TESTERS):
     for tester in testers:
         mod = importlib.import_module(f".{tester}.setup", package="autotest_server.testers")
         try:
+            print(f"[AUTOTESTER] calling autotest_server.testers.{tester}.setup.install()")
             mod.install()
         except Exception as e:
             msg = (

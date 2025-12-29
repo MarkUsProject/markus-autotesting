@@ -8,7 +8,9 @@ RUN userdel -r ubuntu
 ARG LOGIN_USER
 ARG WORKSPACE
 
-RUN apt-get update -y && \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update -y && \
     DEBIAN_FRONTEND=noninteractive apt-get -y install software-properties-common && \
     DEBIAN_FRONTEND=noninteractive add-apt-repository -y ppa:deadsnakes/ppa && \
     DEBIAN_FRONTEND=noninteractive apt-get -y install python3.11 \
@@ -21,18 +23,7 @@ RUN apt-get update -y && \
                        postgresql-client \
                        libpq-dev \
                        sudo \
-                       git \
-                       libfontconfig1-dev \
-                       libcurl4-openssl-dev \
-                       libfreetype6-dev \
-                       libpng-dev \
-                       libtiff5-dev \
-                       libjpeg-dev \
-                       libharfbuzz-dev \
-                       libfribidi-dev \
-                       libxml2-dev \
-                       libnuma-dev \
-                       r-base
+                       git
 
 RUN useradd -ms /bin/bash $LOGIN_USER && \
     usermod -aG sudo $LOGIN_USER && \
@@ -43,14 +34,25 @@ RUN useradd -ms /bin/bash $LOGIN_USER && \
     done && \
     chmod a+x /home/${LOGIN_USER}
 
-COPY . /app
-
-RUN find /app/autotest_server/testers -name requirements.system -exec {} \;
-
-RUN echo "TZ=$( cat /etc/timezone )" >> /etc/R/Renviron.site
-
 RUN mkdir -p ${WORKSPACE} && chown ${LOGIN_USER} ${WORKSPACE} && \
     mkdir -p /home/${LOGIN_USER}/markus_venv && chown ${LOGIN_USER} /home/${LOGIN_USER}/markus_venv
+
+
+# Copy requirements.system files for all testers. These are copied separately from other files
+# to avoid Docker cache invalidation of the subsequent RUN command if any other files are changed
+# in markus-autotesting/server.
+COPY --parents \
+    ./autotest_server/testers/java/requirements.system \
+    ./autotest_server/testers/haskell/requirements.system \
+    ./autotest_server/testers/r/requirements.system \
+    ./autotest_server/testers/racket/requirements.system \
+    /app
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    --mount=type=cache,target=$WORKSPACE/.stack,sharing=locked \
+    find /app/autotest_server/testers -name requirements.system -exec {} \;
+
+COPY . /app
 
 WORKDIR /home/${LOGIN_USER}
 

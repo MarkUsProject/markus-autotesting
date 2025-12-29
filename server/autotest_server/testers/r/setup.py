@@ -39,4 +39,6 @@ def settings():
 
 
 def install():
-    subprocess.run(os.path.join(os.path.dirname(os.path.realpath(__file__)), "requirements.system"), check=True)
+    path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "requirements.system")
+    print(f"[AUTOTESTER] Running {path}", flush=True)
+    subprocess.run(path, check=True)

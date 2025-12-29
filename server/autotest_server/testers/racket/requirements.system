@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euxo pipefail
 
 if ! dpkg -l racket &> /dev/null; then
   apt-get -y update
