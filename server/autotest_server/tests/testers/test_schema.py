@@ -58,8 +58,10 @@ def test_valid_simple_schema(tester, files_list):
     if "definitions" not in schema:
         schema["definitions"] = {}
     schema["definitions"].update(create_refs(files_list=files_list))
-
     schema["$defs"] = definitions
+
+    # Override the installed Python versions
+    definitions["PythonVersion"]["enum"] = ["3.13"]
 
     with open(os.path.join(os.path.dirname(__file__), "..", "fixtures", "specs", tester, "simple.json")) as f:
         instance = json.load(f)
