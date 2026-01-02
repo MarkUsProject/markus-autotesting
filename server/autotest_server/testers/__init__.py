@@ -37,8 +37,8 @@ def get_settings(testers: list[str] = _TESTERS) -> tuple[dict, dict]:
     for tester in testers:
         mod = importlib.import_module(f".{tester}.setup", package="autotest_server.testers")
         tester_schema, tester_definitions = mod.settings()
-        if "title" in tester_schema and f"{tester_schema["title"]}TesterSettings" in tester_definitions:
-            tester_definitions.pop(f"{tester_schema["title"]}TesterSettings")
+        if "title" in tester_schema and f"{tester_schema['title']}TesterSettings" in tester_definitions:
+            tester_definitions.pop(f"{tester_schema['title']}TesterSettings")
         schemas[tester] = tester_schema
         definitions.update(tester_definitions)
 
