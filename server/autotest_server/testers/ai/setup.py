@@ -48,7 +48,7 @@ def create_environment(settings_, env_dir, _default_env_dir):
 def settings():
     with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "settings_schema.json")) as f:
         settings_ = json.load(f)
-    return settings_
+    return settings_, {}
 
 
 def install():

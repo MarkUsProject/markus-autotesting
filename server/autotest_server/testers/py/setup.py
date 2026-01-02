@@ -1,7 +1,8 @@
 import os
-import shutil
-import json
 import subprocess
+
+from ..schema import generate_schema
+from .schema import PyTesterSettings
 
 
 def create_environment(settings_, env_dir, _default_env_dir):
@@ -22,13 +23,17 @@ def create_environment(settings_, env_dir, _default_env_dir):
 
 
 def settings():
-    with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "settings_schema.json")) as f:
-        settings_ = json.load(f)
-    py_versions = [f"3.{x}" for x in range(11, 14) if shutil.which(f"python3.{x}")]
-    python_versions = settings_["properties"]["env_data"]["properties"]["python_version"]
-    python_versions["enum"] = py_versions
-    python_versions["default"] = py_versions[-1]
-    return settings_
+    json_schema, components = generate_schema(PyTesterSettings)
+
+    # Need to remove "mapping" property from "discriminator" field for test_data items;
+    # ajv (the MarkUs front-end JSON Schema validator) does not support "mapping".
+    del json_schema["properties"]["test_data"]["items"]["discriminator"]["mapping"]
+
+    # Need to rename "anyOf" key into "oneOf" for our validation in autotest_client/form_management.py
+    json_schema["properties"]["test_data"]["items"]["oneOf"] = json_schema["properties"]["test_data"]["items"]["anyOf"]
+    del json_schema["properties"]["test_data"]["items"]["anyOf"]
+
+    return json_schema, components
 
 
 def install():

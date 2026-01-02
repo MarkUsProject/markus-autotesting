@@ -1,6 +1,8 @@
 import os
-import json
 import subprocess
+
+from ..schema import generate_schema
+from .schema import HaskellTesterSettings
 
 HASKELL_TEST_DEPS = ["tasty-discover", "tasty-quickcheck", "tasty-hunit"]
 STACK_RESOLVER = "lts-21.21"
@@ -51,8 +53,6 @@ def install():
 
 
 def settings():
-    with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "settings_schema.json")) as f:
-        settings_ = json.load(f)
-    resolver_versions = settings_["properties"]["env_data"]["properties"]["resolver_version"]
-    resolver_versions["default"] = STACK_RESOLVER
-    return settings_
+    json_schema, components = generate_schema(HaskellTesterSettings)
+    components["HaskellEnvData"]["properties"]["resolver_version"]["default"] = STACK_RESOLVER
+    return json_schema, components
