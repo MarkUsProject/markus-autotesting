@@ -30,7 +30,7 @@ def create_refs(files_list: list[str]):
             },
             "required": ["display_output"],
         },
-        "test_data_categories": {"type": "string", "enum": ["instructor", "student"], "enumNames": []},
+        "test_data_categories": {"type": "string", "enum": ["instructor", "student"]},
         "criterion": {
             "type": ["string", "null"],
             "title": "Criterion",

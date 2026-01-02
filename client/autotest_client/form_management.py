@@ -135,6 +135,5 @@ def validate_against_schema(test_specs: Dict, schema: Dict, filenames: List[str]
     schema["definitions"]["files_list"]["enum"] = filenames
     # don't validate based on categories
     schema["definitions"]["test_data_categories"].pop("enum")
-    schema["definitions"]["test_data_categories"].pop("enumNames")
     error = _validate_with_defaults(schema, test_specs, best_only=True)
     return str(error) if error else None

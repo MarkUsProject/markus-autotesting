@@ -1,7 +1,7 @@
 from __future__ import annotations
 from enum import Enum
 import shutil
-from typing import Annotated, Literal, Union
+from typing import Annotated, Literal
 
 from msgspec import Meta, Struct
 from markus_autotesting_core.types import BaseTestData, BaseTesterSettings
@@ -15,7 +15,7 @@ class PyTesterSettings(BaseTesterSettings):
     """The settings for the Python tester."""
 
     env_data: Annotated[PythonEnvData, Meta(title="Python environment")]
-    test_data: Annotated[list[Union[UnittestPyTestData, PytestPyTestData]], Meta(title="Test Groups", min_length=1)]
+    test_data: Annotated[list[PyTestData], Meta(title="Test Groups", min_length=1)]
 
 
 class PythonEnvData(Struct, kw_only=True):
@@ -26,23 +26,10 @@ class PythonEnvData(Struct, kw_only=True):
     pip_requirements_file: Annotated[str, Meta(title="Package requirements file")] = ""
 
 
-class BasePyTestData(
-    BaseTestData, kw_only=True, tag=lambda x: x.removesuffix("PyTestData").lower(), tag_field="tester"
-):
-    """Base class for Python test data."""
+class PyTestData(BaseTestData, kw_only=True):
+    """The `test_data` specification for the Python tester."""
 
-    pass
-
-
-class UnittestPyTestData(BasePyTestData, kw_only=True):
-    """Unittest-based Python test data."""
-
-    output_verbosity: Annotated[Literal[0, 1, 2], Meta(title="Unittest output verbosity")] = 2
-
-
-class PytestPyTestData(BasePyTestData, kw_only=True):
-    """Pytest-based Python test data."""
-
+    tester: Annotated[Literal["unittest", "pytest"], Meta(title="Test runner")] = "pytest"
     output_verbosity: Annotated[
-        Literal["short", "auto", "long", "no", "line", "native"], Meta(title="Pytest output verbosity")
-    ] = "short"
+        Literal["", "0", "1", "2", "short", "auto", "long", "no", "line", "native"], Meta(title="Output verbosity")
+    ] = ""

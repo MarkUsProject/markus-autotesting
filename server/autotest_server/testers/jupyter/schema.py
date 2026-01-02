@@ -1,7 +1,7 @@
 from __future__ import annotations
 from enum import Enum
 import shutil
-from typing import Annotated, Optional
+from typing import Annotated
 
 from msgspec import Meta, Struct
 from markus_autotesting_core.types import AutotestFile, BaseTestData, BaseTesterSettings
@@ -37,5 +37,5 @@ class JupyterEnvData(Struct, kw_only=True):
     """The settings for the Python environment."""
 
     python_version: Annotated[PythonVersion, Meta(title="Python version")] = PYTHON_VERSIONS[-1]
-    pip_requirements: Optional[Annotated[str, Meta(title="Package requirements")]] = None
-    pip_requirements_file: Optional[Annotated[str, Meta(title="Package requirements file")]] = None
+    pip_requirements: Annotated[str, Meta(title="Package requirements")] = ""
+    pip_requirements_file: Annotated[str, Meta(title="Package requirements file")] = ""

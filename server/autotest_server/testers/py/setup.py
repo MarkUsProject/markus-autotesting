@@ -25,13 +25,28 @@ def create_environment(settings_, env_dir, _default_env_dir):
 def settings():
     json_schema, components = generate_schema(PyTesterSettings)
 
-    # Need to remove "mapping" property from "discriminator" field for test_data items;
-    # ajv (the MarkUs front-end JSON Schema validator) does not support "mapping".
-    del json_schema["properties"]["test_data"]["items"]["discriminator"]["mapping"]
-
-    # Need to rename "anyOf" key into "oneOf" for our validation in autotest_client/form_management.py
-    json_schema["properties"]["test_data"]["items"]["oneOf"] = json_schema["properties"]["test_data"]["items"]["anyOf"]
-    del json_schema["properties"]["test_data"]["items"]["anyOf"]
+    # Inject dependencies for output_verbosity for JSON Schema form
+    json_schema["properties"]["test_data"]["items"]["dependencies"] = {
+        "tester": {
+            "oneOf": [
+                {
+                    "properties": {
+                        "tester": {"enum": ["pytest"]},
+                        "output_verbosity": {
+                            "enum": ["short", "auto", "long", "no", "line", "native"],
+                            "default": "short",
+                        },
+                    }
+                },
+                {
+                    "properties": {
+                        "tester": {"enum": ["unittest"]},
+                        "output_verbosity": {"enum": ["2", "1", "0"], "default": "2"},
+                    }
+                },
+            ]
+        }
+    }
 
     return json_schema, components
 
