@@ -25,6 +25,21 @@ def create_environment(settings_, env_dir, _default_env_dir):
 def settings():
     json_schema, components = generate_schema(PyTesterSettings)
 
+    # Modify output_verbosity enum manually. msgspec does not support JSON schema generation for
+    # Literal type annotations that contain multiple types.
+    components["PyTestData"]["properties"]["output_verbosity"]["enum"] = [
+        "",
+        0,
+        1,
+        2,
+        "auto",
+        "line",
+        "long",
+        "native",
+        "no",
+        "short",
+    ]
+
     # Inject dependencies for output_verbosity for JSON Schema form
     json_schema["properties"]["test_data"]["items"]["dependencies"] = {
         "tester": {
@@ -41,7 +56,7 @@ def settings():
                 {
                     "properties": {
                         "tester": {"enum": ["unittest"]},
-                        "output_verbosity": {"enum": ["2", "1", "0"], "default": "2"},
+                        "output_verbosity": {"enum": [0, 1, 2], "default": 2},
                     }
                 },
             ]
