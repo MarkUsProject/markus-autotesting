@@ -1,0 +1,19 @@
+{
+    "tester_type": "custom",
+    "test_data": [
+        {
+            "script_files": [
+                "autotest_01.sh"
+            ],
+            "category": [
+                "instructor"
+            ],
+            "timeout": 30,
+            "extra_info": {
+                "criterion": "criterion",
+                "display_output": "instructors",
+                "name": "Custom Test Group"
+            }
+        }
+    ]
+}

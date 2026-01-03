@@ -1,12 +1,13 @@
+from __future__ import annotations
+
+import importlib
 import os
 
 _TESTERS = ("ai", "custom", "haskell", "java", "jupyter", "py", "pyta", "r", "racket")
 
 
-def install(testers=_TESTERS):
-    import importlib
-
-    settings = {}
+def install(testers: list[str] = _TESTERS) -> tuple[dict, dict]:
+    installed_testers = []
     for tester in testers:
         mod = importlib.import_module(f".{tester}.setup", package="autotest_server.testers")
         try:
@@ -20,5 +21,25 @@ def install(testers=_TESTERS):
                 " and then rerunning this function."
             )
             raise Exception(msg) from e
-        settings[tester] = mod.settings()
-    return settings
+        installed_testers.append(tester)
+    return get_settings(installed_testers)
+
+
+def get_settings(testers: list[str] = _TESTERS) -> tuple[dict, dict]:
+    """Return JSON schemas for the settings for the given testers.
+
+    The return values are:
+    1. A dictionary mapping tester name to JSON schema
+    2. A dictionary of JSON schema definitions used by the tester schemas
+    """
+    schemas = {}
+    definitions = {}
+    for tester in testers:
+        mod = importlib.import_module(f".{tester}.setup", package="autotest_server.testers")
+        tester_schema, tester_definitions = mod.settings()
+        if "title" in tester_schema and f"{tester_schema['title']}TesterSettings" in tester_definitions:
+            tester_definitions.pop(f"{tester_schema['title']}TesterSettings")
+        schemas[tester] = tester_schema
+        definitions.update(tester_definitions)
+
+    return schemas, definitions

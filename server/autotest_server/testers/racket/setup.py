@@ -1,6 +1,8 @@
 import os
-import json
 import subprocess
+
+from ..schema import generate_schema
+from .schema import RacketTesterSettings
 
 
 def create_environment(_settings, _env_dir, default_env_dir):
@@ -8,8 +10,7 @@ def create_environment(_settings, _env_dir, default_env_dir):
 
 
 def settings():
-    with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "settings_schema.json")) as f:
-        return json.load(f)
+    return generate_schema(RacketTesterSettings)
 
 
 def install():

@@ -1,0 +1,22 @@
+{
+    "tester_type": "haskell",
+    "test_data": [
+        {
+            "script_files": [
+                "Test.hs"
+            ],
+            "category": [
+                "instructor"
+            ],
+            "timeout": 30,
+            "test_timeout": 10,
+            "test_cases": 100,
+            "extra_info": {
+                "criterion": "criterion",
+                "display_output": "instructors",
+                "name": "Haskell Test Group"
+            }
+        }
+    ],
+    "env_data": {}
+}

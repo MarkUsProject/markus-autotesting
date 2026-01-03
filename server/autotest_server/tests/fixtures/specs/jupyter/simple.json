@@ -1,0 +1,27 @@
+{
+    "tester_type": "jupyter",
+    "env_data": {
+        "python_version": "3.13",
+        "pip_requirements": "matplotlib numpy"
+    },
+    "test_data": [
+        {
+            "script_files": [
+                {
+                    "student_file": "submission.ipynb",
+                    "test_file": "test.ipynb",
+                    "test_merge": true
+                }
+            ],
+            "timeout": 30,
+            "category": [
+                "instructor"
+            ],
+            "extra_info": {
+                "criterion": "criterion",
+                "display_output": "instructors",
+                "name": "Jupyter Test Group"
+            }
+        }
+    ]
+}

@@ -1,0 +1,41 @@
+{
+    "tester_type": "py",
+    "env_data": {
+        "python_version": "3.13",
+        "pip_requirements": "hypothesis pytest-timeout"
+    },
+    "test_data": [
+        {
+            "script_files": [
+                "test.py"
+            ],
+            "category": [
+                "instructor"
+            ],
+            "timeout": 30,
+            "tester": "unittest",
+            "output_verbosity": 2,
+            "extra_info": {
+                "criterion": "criterion",
+                "display_output": "instructors",
+                "name": "Python Test Group 1"
+            }
+        },
+        {
+            "script_files": [
+                "test2.py"
+            ],
+            "category": [
+                "instructor"
+            ],
+            "timeout": 30,
+            "tester": "pytest",
+            "output_verbosity": "short",
+            "extra_info": {
+                "criterion": "criterion",
+                "display_output": "instructors",
+                "name": "Python Test Group 2"
+            }
+        }
+    ]
+}

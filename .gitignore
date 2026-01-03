@@ -8,6 +8,7 @@ __pycache__
 .eggs
 venv
 venv2
+.venv
 build
 docker-compose.override.yml
 /workspace

@@ -76,13 +76,15 @@ def create_worker_log_dir():
 
 
 def install_all_testers():
-    settings = install_testers()
+    settings, definitions = install_testers()
     skeleton_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), "autotest_server", "schema_skeleton.json")
     with open(skeleton_file) as f:
         skeleton = json.load(f)
-        skeleton["definitions"]["installed_testers"]["enum"] = list(settings.keys())
-        skeleton["definitions"]["tester_schemas"]["oneOf"] = list(settings.values())
-        REDIS_CONNECTION.set("autotest:schema", json.dumps(skeleton))
+
+    skeleton["definitions"]["installed_testers"]["enum"] = list(settings.keys())
+    skeleton["definitions"]["tester_schemas"]["oneOf"] = list(settings.values())
+    skeleton["$defs"] = definitions
+    REDIS_CONNECTION.set("autotest:schema", json.dumps(skeleton))
 
 
 def install():

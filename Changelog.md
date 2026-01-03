@@ -6,6 +6,7 @@ All notable changes to this project will be documented here.
 - Improved robustness of tester installation scripts and Docker configuration (#688)
 - Moved tidyverse installation steps from server Dockerfile into R tester requirements.system (#688)
 - Fixed Haskell tester installation using ghcup to install stack system-wide (#688)
+- Updated tester schema generation to use msgspec datatypes (#689)
 
 ## [v2.9.0]
 - Install stack with GHCup (#626)
@@ -45,13 +46,13 @@ All notable changes to this project will be documented here.
 - Update R tester to allow a renv.lock file (#581)
 - Improve display of Python package installation errors when creating environment (#585)
 - Update "setting up test environment" message with http response of status code 503 (#589)
-- Change rlimit resource settings to apply each worker individually (#587) 
+- Change rlimit resource settings to apply each worker individually (#587)
 - Drop support for Python 3.8 (#590)
 - Use Python 3.13 in development (#590)
 - Update Docker configuration to install dependencies in a separate service (#590)
 - Improve error reporting with handled assertion errors (#591)
 - Add custom pytest markers to Python tester to record MarkUs metadata (#592)
-- Stop the autotester from running tests if there are errors in test settings (#593) 
+- Stop the autotester from running tests if there are errors in test settings (#593)
 - Implement Redis backoff strategy (#594)
 
 ## [v2.6.0]
@@ -125,7 +126,7 @@ All notable changes to this project will be documented here.
 - Add ability to clean up test scripts that haven't been used for X days (#379)
 
 ## [v2.1.2]
-- Support dependencies on specific package versions and non-CRAN sources for R tester (#323) 
+- Support dependencies on specific package versions and non-CRAN sources for R tester (#323)
 
 ## [v2.1.1]
 - Remove the requirement for clients to send unique user name (#318)
@@ -146,7 +147,7 @@ All notable changes to this project will be documented here.
 - Add Jupyter tester (#284)
 
 ## [v1.10.3]
-- Fix bug where zip archive was unpacked two levels deep instead of just one (#271) 
+- Fix bug where zip archive was unpacked two levels deep instead of just one (#271)
 - Pass PGHOST and PGINFO environment variables to tests (#272)
 - Update to new version of markus-api that supports uploading binary files (#273)
 - Fix bug where environment variables were not string types (#274)
