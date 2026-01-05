@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.7-labs
 ARG UBUNTU_VERSION=24.04
 
 FROM ubuntu:$UBUNTU_VERSION AS base
