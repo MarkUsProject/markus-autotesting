@@ -301,7 +301,7 @@ class PyTester(Tester):
         test_suite = self._load_unittest_tests(test_file)
         with open(os.devnull, "w") as nullstream:
             test_runner = unittest.TextTestRunner(
-                verbosity=self.specs["test_data", "output_verbosity"],
+                verbosity=self.specs["test_data", "output_verbosity"] or "2",
                 stream=nullstream,
                 resultclass=TextTestResults,
             )
@@ -317,7 +317,7 @@ class PyTester(Tester):
         with open(os.devnull, "w") as null_out:
             try:
                 sys.stdout = null_out
-                verbosity = self.specs["test_data", "output_verbosity"]
+                verbosity = self.specs["test_data", "output_verbosity"] or "short"
                 plugin = PytestPlugin()
                 pytest.main([test_file, f"--tb={verbosity}"], plugins=[plugin])
                 results.extend(plugin.results.values())
