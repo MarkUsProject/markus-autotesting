@@ -55,6 +55,32 @@ class AiTester(Tester):
         self.overall_comments = []
         self.tags = []
 
+    def _load_whitelisted_models(self, whitelist_file: str = "whitelist_models.txt") -> list[str]:
+        """
+        Load whitelisted model names from a file.
+
+        Args:
+            whitelist_file: Path to the whitelist file (relative to working directory)
+
+        Returns:
+            List of whitelisted model names (stripped and non-empty)
+
+        Raises:
+            FileNotFoundError: If the whitelist file doesn't exist
+        """
+        if not os.path.exists(whitelist_file):
+            raise FileNotFoundError(
+                f"Model whitelist file '{whitelist_file}' not found in test directory. "
+                f"Expected location: {os.path.join(os.getcwd(), whitelist_file)}"
+            )
+
+        models = []
+        with open(whitelist_file, "r", encoding="utf-8") as f:
+            # Read lines, strip whitespace, and filter out empty lines
+            models = [line.strip() for line in f]
+
+        return models
+
     def call_ai_feedback(self) -> dict:
         """
         Call ai_feedback CLI using subprocess and arguments from self.specs.
@@ -72,12 +98,24 @@ class AiTester(Tester):
         output_mode = test_group.get("output")
         cmd = [sys.executable, "-m", "ai_feedback"]
 
-        # Temporarily disable non-local models
-        if config.get("model", "") != "remote":
+        # Check if model is whitelisted
+        try:
+            whitelisted_models = self._load_whitelisted_models()
+        except FileNotFoundError as e:
             results[test_label] = {
                 "title": test_label,
                 "status": "error",
-                "message": f"Unsupported model type: \"{config.get('model', '')}\"",
+                "message": str(e),
+            }
+            return results
+
+        model_used = config.get("model", "")
+        if model_used not in whitelisted_models:
+            supported_models = ", ".join(f'"{m}"' for m in whitelisted_models)
+            results[test_label] = {
+                "title": test_label,
+                "status": "error",
+                "message": f"Unsupported model type: \"{model_used}\". Supported models: {supported_models}",
             }
             return results
 
