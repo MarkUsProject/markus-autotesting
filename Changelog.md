@@ -7,6 +7,7 @@ All notable changes to this project will be documented here.
 - Moved tidyverse installation steps from server Dockerfile into R tester requirements.system (#688)
 - Fixed Haskell tester installation using ghcup to install stack system-wide (#688)
 - Updated tester schema generation to use msgspec datatypes (#689)
+- Specify dockerfile frontend version (#691)
 
 ## [v2.9.0]
 - Install stack with GHCup (#626)
