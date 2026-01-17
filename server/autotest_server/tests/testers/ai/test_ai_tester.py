@@ -20,6 +20,17 @@ def set_required_env(tmp_path_factory):
     os.makedirs(os.environ["WORKER_LOG_DIR"], exist_ok=True)
 
 
+@pytest.fixture(autouse=True)
+def setup_whitelist():
+    """Create whitelist_models.txt in the current directory for tests."""
+    whitelist_path = Path("whitelist_models.txt")
+    whitelist_path.write_text("remote\n")
+    yield
+    # Cleanup after test
+    if whitelist_path.exists():
+        whitelist_path.unlink()
+
+
 def create_ai_tester():
     # test_data is an ARRAY; output must be one of the enum values
     parent_dir = str(Path(__file__).resolve().parent)
