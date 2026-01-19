@@ -6,7 +6,6 @@ from typing import Annotated
 from msgspec import Meta, Struct
 from markus_autotesting_core.types import AutotestFile, BaseTestData, BaseTesterSettings
 
-
 PYTHON_VERSIONS = [f"3.{x}" for x in range(11, 14) if shutil.which(f"python3.{x}")]
 PythonVersion = Enum("PythonVersion", {v.replace(".", "_"): v for v in PYTHON_VERSIONS})
 

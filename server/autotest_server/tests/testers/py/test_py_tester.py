@@ -6,9 +6,7 @@ import re
 def test_success(request, monkeypatch) -> None:
     """Test that when a test succeeds, it is added to the results."""
     monkeypatch.chdir(request.fspath.dirname)
-    tester = PyTester(
-        specs=TestSpecs.from_json(
-            """
+    tester = PyTester(specs=TestSpecs.from_json("""
         {
           "test_data": {
             "script_files": ["fixtures/sample_tests_success.py"],
@@ -22,9 +20,7 @@ def test_success(request, monkeypatch) -> None:
             }
           }
         }
-    """
-        )
-    )
+    """))
     results = tester.run_python_tests()
     assert len(results) == 1
     assert "fixtures/sample_tests_success.py" in results
@@ -41,9 +37,7 @@ def test_success(request, monkeypatch) -> None:
 def test_skip(request, monkeypatch) -> None:
     """Test that when a test is skipped, it is omitted from the results."""
     monkeypatch.chdir(request.fspath.dirname)
-    tester = PyTester(
-        specs=TestSpecs.from_json(
-            """
+    tester = PyTester(specs=TestSpecs.from_json("""
         {
           "test_data": {
             "script_files": ["fixtures/sample_tests_skip.py"],
@@ -57,8 +51,6 @@ def test_skip(request, monkeypatch) -> None:
             }
           }
         }
-    """
-        )
-    )
+    """))
     results = tester.run_python_tests()
     assert results == {"fixtures/sample_tests_skip.py": []}
