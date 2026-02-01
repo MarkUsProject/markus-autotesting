@@ -9,6 +9,7 @@ All notable changes to this project will be documented here.
 - Updated tester schema generation to use msgspec datatypes (#689)
 - Specify dockerfile frontend version (#691)
 - Increased default settings job timeout from 600s to 1200s (#707)
+- Add remote URL whitelist for AI tester to restrict allowed endpoints (#693)
 
 ## [v2.9.0]
 - Install stack with GHCup (#626)
