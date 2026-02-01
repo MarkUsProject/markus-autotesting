@@ -55,6 +55,31 @@ class AiTester(Tester):
         self.overall_comments = []
         self.tags = []
 
+    # Default remote URL used by RemoteModel when none is specified
+    DEFAULT_REMOTE_URL = "https://polymouth.teach.cs.toronto.edu:443/chat"
+
+    def _load_whitelisted_urls(self, whitelist_file: str = "whitelist_urls.txt") -> list[str]:
+        """
+        Load whitelisted remote URLs from a file.
+
+        Args:
+            whitelist_file: Path to the whitelist file (relative to working directory)
+
+        Returns:
+            List of whitelisted URLs (stripped and non-empty)
+
+        Raises:
+            FileNotFoundError: If the whitelist file doesn't exist
+        """
+        if not os.path.exists(whitelist_file):
+            raise FileNotFoundError(
+                f"Remote URL whitelist file '{whitelist_file}' not found. "
+                f"Expected location: {os.path.join(os.getcwd(), whitelist_file)}"
+            )
+
+        with open(whitelist_file, "r", encoding="utf-8") as f:
+            return [line.strip() for line in f if line.strip()]
+
     def call_ai_feedback(self) -> dict:
         """
         Call ai_feedback CLI using subprocess and arguments from self.specs.
@@ -72,14 +97,29 @@ class AiTester(Tester):
         output_mode = test_group.get("output")
         cmd = [sys.executable, "-m", "ai_feedback"]
 
-        # Temporarily disable non-local models
-        if config.get("model", "") != "remote":
+        # Validate remote_url against whitelist
+        remote_url = config.get("remote_url", self.DEFAULT_REMOTE_URL)
+        try:
+            whitelisted_urls = self._load_whitelisted_urls()
+        except FileNotFoundError as e:
             results[test_label] = {
                 "title": test_label,
                 "status": "error",
-                "message": f"Unsupported model type: \"{config.get('model', '')}\"",
+                "message": str(e),
             }
             return results
+
+        if remote_url not in whitelisted_urls:
+            allowed = ", ".join(f'"{u}"' for u in whitelisted_urls)
+            results[test_label] = {
+                "title": test_label,
+                "status": "error",
+                "message": f'Remote URL "{remote_url}" is not whitelisted. Allowed URLs: {allowed}',
+            }
+            return results
+
+        # Ensure validated remote_url is in config so it flows as --remote_url CLI arg
+        config["remote_url"] = remote_url
 
         submission_file = config.get("submission")
         try:
