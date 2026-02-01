@@ -61,6 +61,7 @@
               },
               "submission": { "type": "string" },
               "model": { "type": "string" },
+              "remote_url": { "type": "string" },
               "json_schema": { "type": "string" },
               "llama_mode": {
                 "type": "string",
