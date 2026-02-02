@@ -85,6 +85,15 @@ class AiTester(Tester):
         output_mode = test_group.get("output")
         cmd = [sys.executable, "-m", "ai_feedback"]
 
+        # Restrict to remote model only — prevent access to cloud AIs
+        if config.get("model", "") != "remote":
+            results[test_label] = {
+                "title": test_label,
+                "status": "error",
+                "message": f"Unsupported model type: \"{config.get('model', '')}\". Only 'remote' model is allowed.",
+            }
+            return results
+
         # Validate remote_url against whitelist
         remote_url = config.get("remote_url", self.DEFAULT_REMOTE_URL)
         whitelisted_urls = self._load_whitelisted_urls()
