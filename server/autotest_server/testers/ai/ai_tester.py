@@ -4,6 +4,7 @@ import sys
 
 from ..tester import Test, Tester
 from ..specs import TestSpecs
+from ...config import config as server_config
 import subprocess
 from typing import Type
 from dotenv import load_dotenv
@@ -58,27 +59,14 @@ class AiTester(Tester):
     # Default remote URL used by RemoteModel when none is specified
     DEFAULT_REMOTE_URL = "https://polymouth.teach.cs.toronto.edu:443/chat"
 
-    def _load_whitelisted_urls(self, whitelist_file: str = "whitelist_urls.txt") -> list[str]:
+    def _load_whitelisted_urls(self) -> list[str]:
         """
-        Load whitelisted remote URLs from a file.
-
-        Args:
-            whitelist_file: Path to the whitelist file (relative to working directory)
+        Load whitelisted remote URLs from the server settings configuration.
 
         Returns:
-            List of whitelisted URLs (stripped and non-empty)
-
-        Raises:
-            FileNotFoundError: If the whitelist file doesn't exist
+            List of whitelisted URLs from settings.yml (or settings.local.yml override)
         """
-        if not os.path.exists(whitelist_file):
-            raise FileNotFoundError(
-                f"Remote URL whitelist file '{whitelist_file}' not found. "
-                f"Expected location: {os.path.join(os.getcwd(), whitelist_file)}"
-            )
-
-        with open(whitelist_file, "r", encoding="utf-8") as f:
-            return [line.strip() for line in f if line.strip()]
+        return server_config.get("remote_url_whitelist", [])
 
     def call_ai_feedback(self) -> dict:
         """
@@ -99,15 +87,7 @@ class AiTester(Tester):
 
         # Validate remote_url against whitelist
         remote_url = config.get("remote_url", self.DEFAULT_REMOTE_URL)
-        try:
-            whitelisted_urls = self._load_whitelisted_urls()
-        except FileNotFoundError as e:
-            results[test_label] = {
-                "title": test_label,
-                "status": "error",
-                "message": str(e),
-            }
-            return results
+        whitelisted_urls = self._load_whitelisted_urls()
 
         if remote_url not in whitelisted_urls:
             allowed = ", ".join(f'"{u}"' for u in whitelisted_urls)
