@@ -19,6 +19,14 @@
       "type": "string",
       "minLength": 1
     },
+    "remote_url_whitelist": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
     "rlimit_settings": {
       "type": "object"
     },
