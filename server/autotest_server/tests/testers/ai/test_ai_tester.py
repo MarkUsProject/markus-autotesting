@@ -1,11 +1,14 @@
 import json
 import os
 from pathlib import Path
+from unittest.mock import patch
 
 import subprocess
 import pytest
 from ....testers.ai.ai_tester import AiTester, AiTest
 from ....testers.specs import TestSpecs
+
+WHITELISTED_URL = "https://polymouth.teach.cs.toronto.edu:443/chat"
 
 
 @pytest.fixture(autouse=True, scope="session")
@@ -21,13 +24,13 @@ def set_required_env(tmp_path_factory):
 
 
 @pytest.fixture(autouse=True)
-def setup_whitelist_file():
-    """Create whitelist_urls.txt in the current directory for tests."""
-    whitelist_path = Path("whitelist_urls.txt")
-    whitelist_path.write_text("https://polymouth.teach.cs.toronto.edu:443/chat\n")
-    yield
-    if whitelist_path.exists():
-        whitelist_path.unlink()
+def mock_whitelist_config():
+    """Mock server_config to return the whitelist from settings."""
+    with patch("autotest_server.testers.ai.ai_tester.server_config") as mock_config:
+        mock_config.get.side_effect = lambda key, default=None: (
+            [WHITELISTED_URL] if key == "remote_url_whitelist" else default
+        )
+        yield mock_config
 
 
 def create_ai_tester(remote_url=None):
@@ -130,7 +133,7 @@ def test_call_ai_feedback_rejects_non_whitelisted_url():
 
 
 def test_call_ai_feedback_accepts_whitelisted_url(monkeypatch):
-    tester = create_ai_tester(remote_url="https://polymouth.teach.cs.toronto.edu:443/chat")
+    tester = create_ai_tester(remote_url=WHITELISTED_URL)
     mocked = subprocess.CompletedProcess(
         args=["python", "-m", "ai_feedback"], returncode=0, stdout="Feedback", stderr=""
     )
@@ -139,15 +142,12 @@ def test_call_ai_feedback_accepts_whitelisted_url(monkeypatch):
     assert results["Test A"]["status"] == "success"
 
 
-def test_call_ai_feedback_missing_whitelist_file():
-    # Remove the whitelist file to simulate missing config
-    whitelist_path = Path("whitelist_urls.txt")
-    whitelist_path.unlink(missing_ok=True)
-
+def test_call_ai_feedback_empty_whitelist(mock_whitelist_config):
+    """When no URLs are configured in settings, all remote URLs should be rejected."""
+    mock_whitelist_config.get.side_effect = lambda key, default=None: (
+        [] if key == "remote_url_whitelist" else default
+    )
     tester = create_ai_tester()
     results = tester.call_ai_feedback()
     assert results["Test A"]["status"] == "error"
-    assert "whitelist" in results["Test A"]["message"].lower()
-
-    # Restore for other tests
-    whitelist_path.write_text("https://polymouth.teach.cs.toronto.edu:443/chat\n")
+    assert "not whitelisted" in results["Test A"]["message"]
