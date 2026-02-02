@@ -142,6 +142,41 @@ def test_call_ai_feedback_accepts_whitelisted_url(monkeypatch):
     assert results["Test A"]["status"] == "success"
 
 
+def test_call_ai_feedback_rejects_non_remote_model():
+    """Non-remote models (e.g., cloud AIs) should be blocked."""
+    parent_dir = str(Path(__file__).resolve().parent)
+    spec = {
+        "tester_type": "ai",
+        "env_data": {"ai_feedback_version": "main"},
+        "test_data": {
+            "category": ["instructor"],
+            "config": {
+                "model": "openai",
+                "prompt": "code_table",
+                "scope": "code",
+                "submission": parent_dir + "/fixtures/sample_submission.py",
+                "submission_type": "python",
+            },
+            "extra_info": {
+                "name": "AI FEEDBACK COMMENTS",
+                "display_output": "instructors",
+                "test_group_id": 17,
+                "criterion": None,
+            },
+            "output": "overall_comment",
+            "timeout": 30,
+            "test_label": "Test A",
+        },
+        "_env": {"PYTHON": "/home/docker/.autotesting/scripts/128/ai_1/bin/python3"},
+    }
+    import json as _json
+    tester = AiTester(specs=TestSpecs.from_json(_json.dumps(spec)))
+    results = tester.call_ai_feedback()
+    assert results["Test A"]["status"] == "error"
+    assert "Unsupported model type" in results["Test A"]["message"]
+    assert "openai" in results["Test A"]["message"]
+
+
 def test_call_ai_feedback_empty_whitelist(mock_whitelist_config):
     """When no URLs are configured in settings, all remote URLs should be rejected."""
     mock_whitelist_config.get.side_effect = lambda key, default=None: (
