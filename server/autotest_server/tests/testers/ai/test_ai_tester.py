@@ -170,6 +170,7 @@ def test_call_ai_feedback_rejects_non_remote_model():
         "_env": {"PYTHON": "/home/docker/.autotesting/scripts/128/ai_1/bin/python3"},
     }
     import json as _json
+
     tester = AiTester(specs=TestSpecs.from_json(_json.dumps(spec)))
     results = tester.call_ai_feedback()
     assert results["Test A"]["status"] == "error"
@@ -179,9 +180,7 @@ def test_call_ai_feedback_rejects_non_remote_model():
 
 def test_call_ai_feedback_empty_whitelist(mock_whitelist_config):
     """When no URLs are configured in settings, all remote URLs should be rejected."""
-    mock_whitelist_config.get.side_effect = lambda key, default=None: (
-        [] if key == "remote_url_whitelist" else default
-    )
+    mock_whitelist_config.get.side_effect = lambda key, default=None: ([] if key == "remote_url_whitelist" else default)
     tester = create_ai_tester()
     results = tester.call_ai_feedback()
     assert results["Test A"]["status"] == "error"
