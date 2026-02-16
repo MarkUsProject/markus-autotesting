@@ -235,7 +235,11 @@ def _run_test_specs(
                         executable="/bin/bash",
                     )
                     try:
-                        settings_json = json.dumps({**settings, "test_data": test_data})
+                        settings_json = json.dumps({
+                            **settings,
+                            "test_data": test_data,
+                            "_remote_url_whitelist": config.get("remote_url_whitelist", []),
+                        })
                         out, err = proc.communicate(input=settings_json, timeout=timeout)
                     except subprocess.TimeoutExpired:
                         if test_username == getpass.getuser():
