@@ -4,7 +4,6 @@ import sys
 
 from ..tester import Test, Tester
 from ..specs import TestSpecs
-from ...config import config as server_config
 import subprocess
 from typing import Type
 from dotenv import load_dotenv
@@ -61,12 +60,16 @@ class AiTester(Tester):
 
     def _load_whitelisted_urls(self) -> list[str]:
         """
-        Load whitelisted remote URLs from the server settings configuration.
+        Load whitelisted remote URLs from the settings passed via the test specs.
+
+        The server injects ``_remote_url_whitelist`` (sourced from settings.yml)
+        into the JSON piped to the tester subprocess, so no direct import of the
+        server config module is needed.
 
         Returns:
             List of whitelisted URLs from settings.yml (or settings.local.yml override)
         """
-        return server_config.get("remote_url_whitelist", [])
+        return self.specs.get("_remote_url_whitelist", default=[])
 
     def call_ai_feedback(self) -> dict:
         """

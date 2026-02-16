@@ -1,7 +1,6 @@
 import json
 import os
 from pathlib import Path
-from unittest.mock import patch
 
 import subprocess
 import pytest
@@ -23,18 +22,10 @@ def set_required_env(tmp_path_factory):
     os.makedirs(os.environ["WORKER_LOG_DIR"], exist_ok=True)
 
 
-@pytest.fixture(autouse=True)
-def mock_whitelist_config():
-    """Mock server_config to return the whitelist from settings."""
-    with patch("autotest_server.testers.ai.ai_tester.server_config") as mock_config:
-        mock_config.get.side_effect = lambda key, default=None: (
-            [WHITELISTED_URL] if key == "remote_url_whitelist" else default
-        )
-        yield mock_config
-
-
-def create_ai_tester(remote_url=None):
-    # test_data is an ARRAY; output must be one of the enum values
+def create_ai_tester(remote_url=None, whitelist=None):
+    """Create an AiTester with the whitelist injected via specs (mirrors production data flow)."""
+    if whitelist is None:
+        whitelist = [WHITELISTED_URL]
     parent_dir = str(Path(__file__).resolve().parent)
     config = {
         "model": "remote",
@@ -48,6 +39,7 @@ def create_ai_tester(remote_url=None):
     spec = {
         "tester_type": "ai",
         "env_data": {"ai_feedback_version": "main"},
+        "_remote_url_whitelist": whitelist,
         "test_data": {
             "category": ["instructor"],
             "config": config,
@@ -148,6 +140,7 @@ def test_call_ai_feedback_rejects_non_remote_model():
     spec = {
         "tester_type": "ai",
         "env_data": {"ai_feedback_version": "main"},
+        "_remote_url_whitelist": [WHITELISTED_URL],
         "test_data": {
             "category": ["instructor"],
             "config": {
@@ -169,19 +162,16 @@ def test_call_ai_feedback_rejects_non_remote_model():
         },
         "_env": {"PYTHON": "/home/docker/.autotesting/scripts/128/ai_1/bin/python3"},
     }
-    import json as _json
-
-    tester = AiTester(specs=TestSpecs.from_json(_json.dumps(spec)))
+    tester = AiTester(specs=TestSpecs.from_json(json.dumps(spec)))
     results = tester.call_ai_feedback()
     assert results["Test A"]["status"] == "error"
     assert "Unsupported model type" in results["Test A"]["message"]
     assert "openai" in results["Test A"]["message"]
 
 
-def test_call_ai_feedback_empty_whitelist(mock_whitelist_config):
+def test_call_ai_feedback_empty_whitelist():
     """When no URLs are configured in settings, all remote URLs should be rejected."""
-    mock_whitelist_config.get.side_effect = lambda key, default=None: ([] if key == "remote_url_whitelist" else default)
-    tester = create_ai_tester()
+    tester = create_ai_tester(whitelist=[])
     results = tester.call_ai_feedback()
     assert results["Test A"]["status"] == "error"
     assert "not whitelisted" in results["Test A"]["message"]
