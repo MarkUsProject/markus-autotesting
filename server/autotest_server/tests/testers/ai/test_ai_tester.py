@@ -7,6 +7,8 @@ import pytest
 from ....testers.ai.ai_tester import AiTester, AiTest
 from ....testers.specs import TestSpecs
 
+WHITELISTED_URL = "https://polymouth.teach.cs.toronto.edu:443/chat"
+
 
 @pytest.fixture(autouse=True, scope="session")
 def set_required_env(tmp_path_factory):
@@ -20,21 +22,26 @@ def set_required_env(tmp_path_factory):
     os.makedirs(os.environ["WORKER_LOG_DIR"], exist_ok=True)
 
 
-def create_ai_tester():
-    # test_data is an ARRAY; output must be one of the enum values
+def create_ai_tester(remote_url=None, whitelist=None):
+    """Create an AiTester with the whitelist injected via specs (mirrors production data flow)."""
+    if whitelist is None:
+        whitelist = [WHITELISTED_URL]
     parent_dir = str(Path(__file__).resolve().parent)
+    config = {
+        "model": "remote",
+        "prompt": "code_table",
+        "scope": "code",
+        "submission": parent_dir + "/fixtures/sample_submission.py",
+        "submission_type": "python",
+    }
+    config["remote_url"] = remote_url if remote_url is not None else WHITELISTED_URL
     spec = {
         "tester_type": "ai",
         "env_data": {"ai_feedback_version": "main"},
+        "_remote_url_whitelist": whitelist,
         "test_data": {
             "category": ["instructor"],
-            "config": {
-                "model": "remote",
-                "prompt": "code_table",
-                "scope": "code",
-                "submission": parent_dir + "/fixtures/sample_submission.py",
-                "submission_type": "python",
-            },
+            "config": config,
             "extra_info": {
                 "name": "AI FEEDBACK COMMENTS",
                 "display_output": "instructors",
@@ -106,3 +113,98 @@ def test_run_prints_test_results(monkeypatch, capsys):
     tester.run()
     captured = capsys.readouterr()
     assert "Test Passed" in captured.out
+
+
+def test_call_ai_feedback_rejects_non_whitelisted_url():
+    tester = create_ai_tester(remote_url="https://evil-server.com/steal-data")
+    results = tester.call_ai_feedback()
+    assert results["Test A"]["status"] == "error"
+    assert "not whitelisted" in results["Test A"]["message"]
+    assert "evil-server.com" in results["Test A"]["message"]
+
+
+def test_call_ai_feedback_accepts_whitelisted_url(monkeypatch):
+    tester = create_ai_tester(remote_url=WHITELISTED_URL)
+    mocked = subprocess.CompletedProcess(
+        args=["python", "-m", "ai_feedback"], returncode=0, stdout="Feedback", stderr=""
+    )
+    monkeypatch.setattr(subprocess, "run", lambda *a, **kw: mocked)
+    results = tester.call_ai_feedback()
+    assert results["Test A"]["status"] == "success"
+
+
+def test_call_ai_feedback_rejects_non_remote_model():
+    """Non-remote models (e.g., cloud AIs) should be blocked."""
+    parent_dir = str(Path(__file__).resolve().parent)
+    spec = {
+        "tester_type": "ai",
+        "env_data": {"ai_feedback_version": "main"},
+        "_remote_url_whitelist": [WHITELISTED_URL],
+        "test_data": {
+            "category": ["instructor"],
+            "config": {
+                "model": "openai",
+                "prompt": "code_table",
+                "scope": "code",
+                "submission": parent_dir + "/fixtures/sample_submission.py",
+                "submission_type": "python",
+            },
+            "extra_info": {
+                "name": "AI FEEDBACK COMMENTS",
+                "display_output": "instructors",
+                "test_group_id": 17,
+                "criterion": None,
+            },
+            "output": "overall_comment",
+            "timeout": 30,
+            "test_label": "Test A",
+        },
+        "_env": {"PYTHON": "/home/docker/.autotesting/scripts/128/ai_1/bin/python3"},
+    }
+    tester = AiTester(specs=TestSpecs.from_json(json.dumps(spec)))
+    results = tester.call_ai_feedback()
+    assert results["Test A"]["status"] == "error"
+    assert "Unsupported model type" in results["Test A"]["message"]
+    assert "openai" in results["Test A"]["message"]
+
+
+def test_call_ai_feedback_empty_whitelist():
+    """When no URLs are configured in settings, all remote URLs should be rejected."""
+    tester = create_ai_tester(whitelist=[])
+    results = tester.call_ai_feedback()
+    assert results["Test A"]["status"] == "error"
+    assert "not whitelisted" in results["Test A"]["message"]
+
+
+def test_call_ai_feedback_no_remote_url_configured():
+    """When no remote_url is in config and no default is set, give a clear error."""
+    parent_dir = str(Path(__file__).resolve().parent)
+    spec = {
+        "tester_type": "ai",
+        "env_data": {"ai_feedback_version": "main"},
+        "_remote_url_whitelist": [WHITELISTED_URL],
+        "test_data": {
+            "category": ["instructor"],
+            "config": {
+                "model": "remote",
+                "prompt": "code_table",
+                "scope": "code",
+                "submission": parent_dir + "/fixtures/sample_submission.py",
+                "submission_type": "python",
+            },
+            "extra_info": {
+                "name": "AI FEEDBACK COMMENTS",
+                "display_output": "instructors",
+                "test_group_id": 17,
+                "criterion": None,
+            },
+            "output": "overall_comment",
+            "timeout": 30,
+            "test_label": "Test A",
+        },
+        "_env": {"PYTHON": "/home/docker/.autotesting/scripts/128/ai_1/bin/python3"},
+    }
+    tester = AiTester(specs=TestSpecs.from_json(json.dumps(spec)))
+    results = tester.call_ai_feedback()
+    assert results["Test A"]["status"] == "error"
+    assert "No remote URL configured" in results["Test A"]["message"]

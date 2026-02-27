@@ -55,6 +55,10 @@ class AiTester(Tester):
         self.overall_comments = []
         self.tags = []
 
+    def _load_whitelisted_urls(self) -> list[str]:
+        """Load whitelisted remote URLs from settings, injected via specs."""
+        return self.specs.get("_remote_url_whitelist", default=[])
+
     def call_ai_feedback(self) -> dict:
         """
         Call ai_feedback CLI using subprocess and arguments from self.specs.
@@ -72,14 +76,39 @@ class AiTester(Tester):
         output_mode = test_group.get("output")
         cmd = [sys.executable, "-m", "ai_feedback"]
 
-        # Temporarily disable non-local models
+        # Restrict to remote model only — prevent access to cloud AIs
         if config.get("model", "") != "remote":
             results[test_label] = {
                 "title": test_label,
                 "status": "error",
-                "message": f"Unsupported model type: \"{config.get('model', '')}\"",
+                "message": f"Unsupported model type: \"{config.get('model', '')}\". Only 'remote' model is allowed.",
             }
             return results
+
+        # Validate remote_url against whitelist
+        remote_url = config.get("remote_url", "")
+
+        if not remote_url:
+            results[test_label] = {
+                "title": test_label,
+                "status": "error",
+                "message": "No remote URL configured. Set 'default_remote_url' in settings.yml or specify 'remote_url' in the test config.",
+            }
+            return results
+
+        whitelisted_urls = self._load_whitelisted_urls()
+
+        if remote_url not in whitelisted_urls:
+            allowed = ", ".join(f'"{u}"' for u in whitelisted_urls)
+            results[test_label] = {
+                "title": test_label,
+                "status": "error",
+                "message": f'Remote URL "{remote_url}" is not whitelisted. Allowed URLs: {allowed}',
+            }
+            return results
+
+        # Ensure validated remote_url is in config so it flows as --remote_url CLI arg
+        config["remote_url"] = remote_url
 
         submission_file = config.get("submission")
         try:
