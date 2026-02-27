@@ -34,8 +34,7 @@ def create_ai_tester(remote_url=None, whitelist=None):
         "submission": parent_dir + "/fixtures/sample_submission.py",
         "submission_type": "python",
     }
-    if remote_url is not None:
-        config["remote_url"] = remote_url
+    config["remote_url"] = remote_url if remote_url is not None else WHITELISTED_URL
     spec = {
         "tester_type": "ai",
         "env_data": {"ai_feedback_version": "main"},
@@ -175,3 +174,37 @@ def test_call_ai_feedback_empty_whitelist():
     results = tester.call_ai_feedback()
     assert results["Test A"]["status"] == "error"
     assert "not whitelisted" in results["Test A"]["message"]
+
+
+def test_call_ai_feedback_no_remote_url_configured():
+    """When no remote_url is in config and no default is set, give a clear error."""
+    parent_dir = str(Path(__file__).resolve().parent)
+    spec = {
+        "tester_type": "ai",
+        "env_data": {"ai_feedback_version": "main"},
+        "_remote_url_whitelist": [WHITELISTED_URL],
+        "test_data": {
+            "category": ["instructor"],
+            "config": {
+                "model": "remote",
+                "prompt": "code_table",
+                "scope": "code",
+                "submission": parent_dir + "/fixtures/sample_submission.py",
+                "submission_type": "python",
+            },
+            "extra_info": {
+                "name": "AI FEEDBACK COMMENTS",
+                "display_output": "instructors",
+                "test_group_id": 17,
+                "criterion": None,
+            },
+            "output": "overall_comment",
+            "timeout": 30,
+            "test_label": "Test A",
+        },
+        "_env": {"PYTHON": "/home/docker/.autotesting/scripts/128/ai_1/bin/python3"},
+    }
+    tester = AiTester(specs=TestSpecs.from_json(json.dumps(spec)))
+    results = tester.call_ai_feedback()
+    assert results["Test A"]["status"] == "error"
+    assert "No remote URL configured" in results["Test A"]["message"]
