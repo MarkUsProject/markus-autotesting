@@ -55,20 +55,8 @@ class AiTester(Tester):
         self.overall_comments = []
         self.tags = []
 
-    # Default remote URL used by RemoteModel when none is specified
-    DEFAULT_REMOTE_URL = "https://polymouth.teach.cs.toronto.edu:443/chat"
-
     def _load_whitelisted_urls(self) -> list[str]:
-        """
-        Load whitelisted remote URLs from the settings passed via the test specs.
-
-        The server injects ``_remote_url_whitelist`` (sourced from settings.yml)
-        into the JSON piped to the tester subprocess, so no direct import of the
-        server config module is needed.
-
-        Returns:
-            List of whitelisted URLs from settings.yml (or settings.local.yml override)
-        """
+        """Load whitelisted remote URLs from settings, injected via specs."""
         return self.specs.get("_remote_url_whitelist", default=[])
 
     def call_ai_feedback(self) -> dict:
@@ -98,7 +86,19 @@ class AiTester(Tester):
             return results
 
         # Validate remote_url against whitelist
-        remote_url = config.get("remote_url", self.DEFAULT_REMOTE_URL)
+        remote_url = config.get("remote_url", "")
+
+        if not remote_url:
+            results[test_label] = {
+                "title": test_label,
+                "status": "error",
+                "message": (
+                    "No remote URL configured. Set 'default_remote_url' in settings.yml"
+                    " or specify 'remote_url' in the test config."
+                ),
+            }
+            return results
+
         whitelisted_urls = self._load_whitelisted_urls()
 
         if remote_url not in whitelisted_urls:
