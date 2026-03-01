@@ -1,4 +1,4 @@
-rq==2.6.1
+rq==2.7.0
 redis==7.1.0
 pyyaml==6.0.3
 jsonschema==4.26.0
