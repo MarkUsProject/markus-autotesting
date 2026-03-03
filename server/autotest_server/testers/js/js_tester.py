@@ -7,6 +7,7 @@ from ..tester import Tester, Test
 # Reference: java_tester.py + py_tester.py for the pattern
 # general flow: run test runner -> parse output -> print JSON per test
 
+
 class JsTest(Test):
     # Reference: JavaTest
     # Notes: jest result fieldsm are fullName, status ("passed"/"failed"/"pending"), failureMessages
