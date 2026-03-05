@@ -1,16 +1,21 @@
-from __future__ import annotations
-from typing import Annotated, Literal
-from msgspec import Meta, Struct
-from markus_autotesting_core.types import BaseTestData, BaseTesterSettings
+import subprocess
+from ..schema import generate_schema
+from .schema import JsTesterSettings
 
 
-class JsTesterSettings(BaseTesterSettings):
-    """The settings for the JavaScript tester."""
+def create_environment(settings_, env_dir, _default_env_dir):
+    """
+    Node/npm are system-installed, verify node is available.
+    """
+    result = subprocess.run(["node", "--version"], check=True, text=True, capture_output=True)
+    node_version = result.stdout.strip()
+    return {"NODE_VERSION": node_version}
 
-    test_data: Annotated[list[JsTestData], Meta(title="Test Groups", min_length=1)]
+
+def settings():
+    json_schema, components = generate_schema(JsTesterSettings)
+    return json_schema, components
 
 
-class JsTestData(BaseTestData, kw_only=True):
-    """The `test_data` specification for the JavaScript tester."""
-
-    test_timeout: Annotated[int, Meta(title="Test timeout (ms)", ge=0)] = 5000
+def install():
+    """No op — Node/npm should be installed at the system level."""
