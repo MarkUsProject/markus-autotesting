@@ -2,19 +2,15 @@ import subprocess
 import json
 import os
 
-from ..tester import Tester, Test
+from ..tester import Tester, Test, TestError
+from ..specs import TestSpecs
 
-# Reference: java_tester.py + py_tester.py for the pattern
-# general flow: run test runner -> parse output -> print JSON per test
 
 class JsTest(Test):
-    # Reference: JavaTest
-    # Notes: jest result fieldsm are fullName, status ("passed"/"failed"/"pending"), failureMessages
-
     def __init__(self, tester, result):
         self.test_name_ = result.get("fullName", "unknown")
         self.status = result.get("status")
-
+        self.message = "\n".join(result.get("failureMessages", []))
         super().__init__(tester)
 
     @property
@@ -25,18 +21,19 @@ class JsTest(Test):
     def run(self):
         if self.status == "passed":
             return self.passed()
-        elif self.status == "failed":
-            return self.failed(self.message)
         else:
-            # TODO: jest can return "pending" (skipped tests), not sure how to this handle yet
-            return self.error("undetermined")
+            return self.failed(self.message)
 
 
 class JsTester(Tester):
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # java_tester sets up classpaths + temp dirs here. Not too too sure what we need equivalent of for js yet
+    def __init__(
+        self,
+        specs: TestSpecs,
+        test_class=JsTest,
+        resource_settings: list[tuple[int, tuple[int, int]]] | None = None,
+    ) -> None:
+        super().__init__(specs, test_class, resource_settings=resource_settings)
 
     def _run_npm_install(self, dir_path):
         result = subprocess.run(
@@ -47,11 +44,14 @@ class JsTester(Tester):
         )
         return result
 
-    def _run_jest(self, dir_path):
+    def _run_jest(self, dir_path, test_files=None):
         # `--json` -> output JSON to stdout
-        # `--forceExit` -> "prevents jest from hanging if tests open connections"
+        # `--forceExit` -> prevents jest from hanging if tests open connections
+        cmd = ["npx", "jest", "--json", "--forceExit"]
+        if test_files:
+            cmd.extend(test_files)
         result = subprocess.run(
-            ["npx", "jest", "--json", "--forceExit"],
+            cmd,
             capture_output=True,
             text=True,
             cwd=dir_path,
@@ -59,28 +59,9 @@ class JsTester(Tester):
         return result.stdout, result.returncode
 
     def _parse_jest_output(self, raw_json):
-        # json struct:
-        # {
-        #   "testResults": [
-        #     {
-        #       "testResults": [
-        #         {
-        #           "fullName": ...,
-        #           "status": ...,
-        #           "failureMessages": ["..."],
-        #           "duration": ...
-        #         }
-        #       ]
-        #     }
-        #   ],
-        #   "success": ...,
-        #   "numPassedTests": ...,
-        #   ...
-        # }
         try:
             data = json.loads(raw_json)
         except json.JSONDecodeError as e:
-            # TODO: error handling for when jest crashes before outputing json
             return None, e
 
         results = []
@@ -92,29 +73,24 @@ class JsTester(Tester):
 
     @Tester.run_decorator
     def run(self):
-        # Need to figure out the spec format yet
         dir_path = os.getcwd()
 
-        # Do `npm install`
         npm_result = self._run_npm_install(dir_path)
         if npm_result.returncode != 0:
-            self.error_all(f"Failed to install npm: {npm_result.stderr}")
-            return
+            raise TestError(f"npm install failed:\n{npm_result.stderr}")
 
-        # run jest
-        jest_json_output, jest_exit_code = self._run_jest(dir_path)
+        script_files = self.specs.get("test_data", "script_files", default=[])
+        jest_json_output, _ = self._run_jest(dir_path, test_files=script_files)
 
         if not jest_json_output:
-            self.error_all("No output produced")
-            return
+            raise TestError("Jest produced no output")
 
-        # parse output
         test_results, err = self._parse_jest_output(jest_json_output)
         if err:
-            self.error_all(err)
-            return
+            raise TestError(str(err))
 
-        # print each test result as JSON just like java_tester
         for result in test_results:
-            test = JsTest(self, result)
-            print(test.run())
+            if result.get("status") == "pending":
+                continue
+            test = self.test_class(self, result)
+            print(test.run(), flush=True)
