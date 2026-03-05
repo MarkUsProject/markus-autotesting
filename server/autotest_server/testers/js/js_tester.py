@@ -6,7 +6,6 @@ from ..tester import Tester, Test, TestError
 from ..specs import TestSpecs
 
 
-
 class JsTest(Test):
     def __init__(self, tester, result):
         self.test_name_ = result.get("fullName", "unknown")
