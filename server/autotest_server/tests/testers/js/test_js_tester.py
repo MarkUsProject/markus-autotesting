@@ -24,11 +24,7 @@ def test_parse_jest_output_returns_assertion_results():
             }
         ]
     }
-    tester = JsTester(
-        specs=TestSpecs.from_json(
-            '{"test_data": {"script_files": ["test.js"]}}'
-        )
-    )
+    tester = JsTester(specs=TestSpecs.from_json('{"test_data": {"script_files": ["test.js"]}}'))
     results, err = tester._parse_jest_output(json.dumps(jest_json))
     assert err is None
     assert len(results) == 2
@@ -41,9 +37,7 @@ def test_parse_jest_output_returns_assertion_results():
 
 def test_js_test_passed_output_format():
     """JsTest with status passed produces framework JSON with status pass."""
-    specs = TestSpecs.from_json(
-        '{"test_data": {"script_files": ["test.js"]}, "points": {}}'
-    )
+    specs = TestSpecs.from_json('{"test_data": {"script_files": ["test.js"]}, "points": {}}')
     tester = JsTester(specs=specs)
     result = {
         "fullName": "my test",
@@ -61,9 +55,7 @@ def test_js_test_passed_output_format():
 
 def test_js_test_failed_output_format():
     """JsTest with status failed produces framework JSON with status fail."""
-    specs = TestSpecs.from_json(
-        '{"test_data": {"script_files": ["test.js"]}, "points": {}}'
-    )
+    specs = TestSpecs.from_json('{"test_data": {"script_files": ["test.js"]}, "points": {}}')
     tester = JsTester(specs=specs)
     result = {
         "fullName": "failing test",
