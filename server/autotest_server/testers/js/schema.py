@@ -1,6 +1,6 @@
 from __future__ import annotations
-from typing import Annotated, Literal
-from msgspec import Meta, Struct
+from typing import Annotated
+from msgspec import Meta
 from markus_autotesting_core.types import BaseTestData, BaseTesterSettings
 
 
