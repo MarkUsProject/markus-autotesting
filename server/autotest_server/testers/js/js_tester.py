@@ -46,12 +46,10 @@ class JsTester(Tester):
         )
         return result
 
-    def _run_jest(self, dir_path, test_files=None, test_timeout_ms=None):
+    def _run_jest(self, dir_path, test_files=None):
         # `--json` -> output JSON to stdout
         # `--forceExit` -> prevents jest from hanging if tests open connections
         cmd = ["npx", "jest", "--json", "--forceExit"]
-        if test_timeout_ms is not None:
-            cmd.append(f"--testTimeout={test_timeout_ms}")
         if test_files:
             cmd.extend(test_files)
         result = subprocess.run(
@@ -84,10 +82,7 @@ class JsTester(Tester):
             raise TestError(f"npm install failed:\n{npm_result.stderr}")
 
         script_files = self.specs.get("test_data", "script_files", default=[])
-        test_timeout = self.specs.get("test_data", "test_timeout", default=None)
-        jest_json_output, _ = self._run_jest(
-            dir_path, test_files=script_files, test_timeout_ms=test_timeout
-        )
+        jest_json_output, _ = self._run_jest(dir_path, test_files=script_files)
 
         if not jest_json_output:
             raise TestError("Jest produced no output")
