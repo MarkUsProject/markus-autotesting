@@ -18,6 +18,7 @@ def create_environment(_settings, _env_dir, default_env_dir):
 
 
 def install():
+    """Run the requirements.system shell script to install Node.js if not already present."""
     path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "requirements.system")
     print(f"[AUTOTESTER] Running {path}", flush=True)
     subprocess.run(path, check=True)
