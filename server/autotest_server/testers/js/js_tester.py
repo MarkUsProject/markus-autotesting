@@ -21,8 +21,10 @@ class JsTest(Test):
     def run(self):
         if self.status == "passed":
             return self.passed()
-        else:
+        elif self.status == "failed":
             return self.failed(self.message)
+        else:
+            return self.error(message=self.message or f"Unexpected status: {self.status}")
 
 
 class JsTester(Tester):
@@ -66,7 +68,7 @@ class JsTester(Tester):
 
         results = []
         for test_suite in data.get("testResults", []):
-            for test in test_suite.get("testResults", []):
+            for test in test_suite.get("assertionResults", []):
                 results.append(test)
 
         return results, None
