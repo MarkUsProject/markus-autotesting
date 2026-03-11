@@ -37,9 +37,9 @@ class JsTester(Tester):
     ) -> None:
         super().__init__(specs, test_class, resource_settings=resource_settings)
 
-    def _run_npm_install(self, dir_path):
+    def _run_pnpm_install(self, dir_path):
         result = subprocess.run(
-            ["npm", "install"],
+            ["pnpm", "install"],
             capture_output=True,
             text=True,
             cwd=dir_path,
@@ -49,7 +49,8 @@ class JsTester(Tester):
     def _run_jest(self, dir_path, test_files=None):
         # `--json` -> output JSON to stdout
         # `--forceExit` -> prevents jest from hanging if tests open connections
-        cmd = ["npx", "jest", "--json", "--forceExit"]
+        # `--runInBand` -> run all tests serially in the current process
+        cmd = ["jest", "--json", "--forceExit", "--runInBand"]
         if test_files:
             cmd.extend(test_files)
         result = subprocess.run(
@@ -77,9 +78,9 @@ class JsTester(Tester):
     def run(self):
         dir_path = os.getcwd()
 
-        npm_result = self._run_npm_install(dir_path)
-        if npm_result.returncode != 0:
-            raise TestError(f"npm install failed:\n{npm_result.stderr}")
+        pnpm_result = self._run_pnpm_install(dir_path)
+        if pnpm_result.returncode != 0:
+            raise TestError(f"pnpm install failed:\n{pnpm_result.stderr}")
 
         script_files = self.specs.get("test_data", "script_files", default=[])
         jest_json_output, _ = self._run_jest(dir_path, test_files=script_files)
