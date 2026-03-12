@@ -7,3 +7,11 @@ if ! command -v node &> /dev/null; then
   curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
   DEBIAN_FRONTEND=noninteractive apt-get install -y -o 'Dpkg::Options::=--force-confdef' -o 'Dpkg::Options::=--force-confold' nodejs
 fi
+
+if ! command -v pnpm &> /dev/null; then
+  npm install -g pnpm
+fi
+
+if ! command -v jest &> /dev/null; then
+  pnpm add -g jest
+fi
