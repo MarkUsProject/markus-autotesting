@@ -8,6 +8,7 @@ from ..specs import TestSpecs
 
 class JsTest(Test):
     DEFAULT_TIMEOUT = 30
+
     def __init__(self, tester, result):
         self.test_name_ = result.get("fullName", "unknown")
         self.status = result.get("status")
@@ -54,13 +55,7 @@ class JsTester(Tester):
         cmd = ["jest", "--json", "--forceExit", "--runInBand"]
         if test_files:
             cmd.extend(test_files)
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            cwd=dir_path,
-            timeout=timeout
-        )
+        result = subprocess.run(cmd, capture_output=True, text=True, cwd=dir_path, timeout=timeout)
         return result.stdout, result.returncode
 
     def _parse_jest_output(self, raw_json):
@@ -84,7 +79,6 @@ class JsTester(Tester):
         pnpm_result = self._run_pnpm_install(dir_path)
         if pnpm_result.returncode != 0:
             raise TestError(f"pnpm install failed:\n{pnpm_result.stderr}")
-
 
         script_files = self.specs.get("test_data", "script_files", default=[])
         try:
