@@ -46,6 +46,7 @@ def create_refs(files_list: list[str]):
         ("custom", ["autotest_01.sh"]),
         ("haskell", ["Test.hs"]),
         ("java", ["Test1.java", "Test2.java"]),
+        ("js", ["test.js"]),
         ("jupyter", ["test.ipynb"]),
         ("py", ["test.py", "test2.py"]),
         ("r", ["test.R", "test_rmd.R"]),

@@ -1,7 +1,18 @@
 import json
+import subprocess
+from unittest.mock import MagicMock
 
 from ....testers.specs import TestSpecs
 from ....testers.js.js_tester import JsTester, JsTest
+
+
+def make_tester():
+    return JsTester(specs=TestSpecs.from_json('{"test_data": {"script_files": ["test.js"]}}'))
+
+
+def make_jest_output(*test_dicts):
+    """Build a minimal Jest JSON output containing the given assertion results."""
+    return json.dumps({"testResults": [{"assertionResults": list(test_dicts)}]})
 
 
 def test_parse_jest_output_returns_assertion_results():
@@ -24,7 +35,7 @@ def test_parse_jest_output_returns_assertion_results():
             }
         ]
     }
-    tester = JsTester(specs=TestSpecs.from_json('{"test_data": {"script_files": ["test.js"]}}'))
+    tester = make_tester()
     results, err = tester._parse_jest_output(json.dumps(jest_json))
     assert err is None
     assert len(results) == 2
@@ -69,3 +80,63 @@ def test_js_test_failed_output_format():
     assert data["status"] == "fail"
     assert data["marks_earned"] == 0
     assert "expected true" in data["output"]
+
+
+def test_parse_jest_output_invalid_json():
+    """_parse_jest_output returns an error when given invalid JSON."""
+    tester = make_tester()
+    results, err = tester._parse_jest_output("not valid json")
+    assert results is None
+    assert err is not None
+
+
+def test_pending_tests_are_skipped(monkeypatch, capsys):
+    """JsTester.run() silently skips tests with status pending."""
+    mock_pnpm = MagicMock()
+    mock_pnpm.returncode = 0
+
+    jest_output = make_jest_output(
+        {"fullName": "skipped test", "status": "pending", "failureMessages": []},
+    )
+    mock_jest = MagicMock()
+    mock_jest.stdout = jest_output
+    mock_jest.returncode = 0
+
+    def fake_run(cmd, **kwargs):
+        if "pnpm" in cmd:
+            return mock_pnpm
+        return mock_jest
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    tester = make_tester()
+    tester.run()
+    captured = capsys.readouterr()
+    assert captured.out == ""
+
+
+def test_run_prints_passed_and_failed_results(monkeypatch, capsys):
+    """JsTester.run() prints output for each non-pending test."""
+    mock_pnpm = MagicMock()
+    mock_pnpm.returncode = 0
+
+    jest_output = make_jest_output(
+        {"fullName": "passing test", "status": "passed", "failureMessages": []},
+        {"fullName": "failing test", "status": "failed", "failureMessages": ["oops"]},
+    )
+    mock_jest = MagicMock()
+    mock_jest.stdout = jest_output
+    mock_jest.returncode = 0
+
+    def fake_run(cmd, **kwargs):
+        if "pnpm" in cmd:
+            return mock_pnpm
+        return mock_jest
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    tester = make_tester()
+    tester.run()
+    captured = capsys.readouterr()
+    lines = [l for l in captured.out.strip().splitlines() if l]
+    assert len(lines) == 2
+    assert json.loads(lines[0])["status"] == "pass"
+    assert json.loads(lines[1])["status"] == "fail"
