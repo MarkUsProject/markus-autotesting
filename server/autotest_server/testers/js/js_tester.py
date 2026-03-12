@@ -7,6 +7,7 @@ from ..specs import TestSpecs
 
 
 class JsTest(Test):
+    DEFAULT_TIMEOUT = 30
     def __init__(self, tester, result):
         self.test_name_ = result.get("fullName", "unknown")
         self.status = result.get("status")
@@ -46,7 +47,7 @@ class JsTester(Tester):
         )
         return result
 
-    def _run_jest(self, dir_path, test_files=None):
+    def _run_jest(self, dir_path, timeout, test_files=None):
         # `--json` -> output JSON to stdout
         # `--forceExit` -> prevents jest from hanging if tests open connections
         # `--runInBand` -> run all tests serially in the current process
@@ -58,6 +59,7 @@ class JsTester(Tester):
             capture_output=True,
             text=True,
             cwd=dir_path,
+            timeout=timeout
         )
         return result.stdout, result.returncode
 
@@ -78,12 +80,17 @@ class JsTester(Tester):
     def run(self):
         dir_path = os.getcwd()
 
+        timeout = self.specs.get("test_data", "timeout", default=self.DEFAULT_TIMEOUT)
         pnpm_result = self._run_pnpm_install(dir_path)
         if pnpm_result.returncode != 0:
             raise TestError(f"pnpm install failed:\n{pnpm_result.stderr}")
 
+
         script_files = self.specs.get("test_data", "script_files", default=[])
-        jest_json_output, _ = self._run_jest(dir_path, test_files=script_files)
+        try:
+            jest_json_output, _ = self._run_jest(dir_path, timeout, test_files=script_files)
+        except subprocess.TimeoutExpired:
+            raise TestError("Jest timed out")
 
         if not jest_json_output:
             raise TestError("Jest produced no output")
