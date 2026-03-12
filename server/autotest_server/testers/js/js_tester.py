@@ -15,10 +15,12 @@ class JsTest(Test):
 
     @property
     def test_name(self):
+        """Return the full name of this test."""
         return self.test_name_
 
     @Test.run_decorator
     def run(self):
+        """Return the result of this test based on its Jest status."""
         if self.status == "passed":
             return self.passed()
         elif self.status == "failed":
@@ -35,9 +37,17 @@ class JsTester(Tester):
         test_class=JsTest,
         resource_settings: list[tuple[int, tuple[int, int]]] | None = None,
     ) -> None:
+        """
+        Initialize a JavaScript tester using the specifications in specs.
+
+        This tester will create tests of type test_class.
+        """
         super().__init__(specs, test_class, resource_settings=resource_settings)
 
     def _run_pnpm_install(self, dir_path):
+        """
+        Run pnpm install in dir_path to install dependencies from package.json.
+        """
         result = subprocess.run(
             ["pnpm", "install"],
             capture_output=True,
@@ -47,9 +57,13 @@ class JsTester(Tester):
         return result
 
     def _run_jest(self, dir_path, timeout, test_files=None):
-        # `--json` -> output JSON to stdout
-        # `--forceExit` -> prevents jest from hanging if tests open connections
-        # `--runInBand` -> run all tests serially in the current process
+        """
+        Run Jest in dir_path and return its stdout and return code.
+
+        --json: output results as JSON to stdout
+        --forceExit: prevents jest from hanging if tests leave open connections
+        --runInBand: run all tests serially in the current process
+        """
         cmd = ["jest", "--json", "--forceExit", "--runInBand"]
         if test_files:
             cmd.extend(test_files)
@@ -57,6 +71,11 @@ class JsTester(Tester):
         return result.stdout, result.returncode
 
     def _parse_jest_output(self, raw_json):
+        """
+        Parse Jest's JSON output and return a list of individual test results.
+
+        Returns a tuple (results, error) where error is set if JSON parsing fails.
+        """
         try:
             data = json.loads(raw_json)
         except json.JSONDecodeError as e:
@@ -71,6 +90,9 @@ class JsTester(Tester):
 
     @Tester.run_decorator
     def run(self):
+        """
+        Run pnpm install and then Jest, parsing the results and printing each test outcome.
+        """
         dir_path = os.getcwd()
 
         timeout = self.specs.get("test_data", "timeout")
