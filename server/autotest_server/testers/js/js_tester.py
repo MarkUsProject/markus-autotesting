@@ -7,6 +7,7 @@ from ..specs import TestSpecs
 
 
 class JsTest(Test):
+    DEFAULT_TIMEOUT = 30
     def __init__(self, tester, result):
         self.test_name_ = result.get("fullName", "unknown")
         self.status = result.get("status")
@@ -78,7 +79,7 @@ class JsTester(Tester):
     def run(self):
         dir_path = os.getcwd()
 
-        timeout = self.specs.get("test_data", "timeout", default=30)
+        timeout = self.specs.get("test_data", "timeout", default=self.DEFAULT_TIMEOUT)
         npm_result = self._run_npm_install(dir_path)
         if npm_result.returncode != 0:
             raise TestError(f"npm install failed:\n{npm_result.stderr}")
