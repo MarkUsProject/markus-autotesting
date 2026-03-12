@@ -7,8 +7,6 @@ from ..specs import TestSpecs
 
 
 class JsTest(Test):
-    DEFAULT_TIMEOUT = 30
-
     def __init__(self, tester, result):
         self.test_name_ = result.get("fullName", "unknown")
         self.status = result.get("status")
@@ -75,7 +73,7 @@ class JsTester(Tester):
     def run(self):
         dir_path = os.getcwd()
 
-        timeout = self.specs.get("test_data", "timeout", default=self.DEFAULT_TIMEOUT)
+        timeout = self.specs.get("test_data", "timeout")
         pnpm_result = self._run_pnpm_install(dir_path)
         if pnpm_result.returncode != 0:
             raise TestError(f"pnpm install failed:\n{pnpm_result.stderr}")

@@ -13,4 +13,4 @@ class JsTesterSettings(BaseTesterSettings):
 class JsTestData(BaseTestData, kw_only=True):
     """The `test_data` specification for the JavaScript tester."""
 
-    pass
+    timeout: Annotated[int, Meta(title="Test group timeout (seconds)")] = 30
