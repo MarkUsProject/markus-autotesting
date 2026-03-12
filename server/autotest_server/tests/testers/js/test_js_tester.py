@@ -136,7 +136,7 @@ def test_run_prints_passed_and_failed_results(monkeypatch, capsys):
     tester = make_tester()
     tester.run()
     captured = capsys.readouterr()
-    lines = [l for l in captured.out.strip().splitlines() if l]
+    lines = [line for line in captured.out.strip().splitlines() if line]
     assert len(lines) == 2
     assert json.loads(lines[0])["status"] == "pass"
     assert json.loads(lines[1])["status"] == "fail"
