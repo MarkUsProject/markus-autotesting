@@ -13,5 +13,5 @@ if ! command -v pnpm &> /dev/null; then
 fi
 
 if ! command -v jest &> /dev/null; then
-  pnpm add -g jest
+  npm install -g jest
 fi
