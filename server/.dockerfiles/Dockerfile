@@ -52,7 +52,7 @@ COPY --parents \
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     --mount=type=cache,target=$WORKSPACE/.stack,sharing=locked \
-    find /app/autotest_server/testers -name requirements.system -exec bash {} \;
+    find /app/autotest_server/testers -name requirements.system -exec {} \;
 
 COPY . /app
 
