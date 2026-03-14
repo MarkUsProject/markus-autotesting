@@ -44,6 +44,7 @@ RUN mkdir -p ${WORKSPACE} && chown ${LOGIN_USER} ${WORKSPACE} && \
 # in markus-autotesting/server.
 COPY --parents \
     ./autotest_server/testers/java/requirements.system \
+    ./autotest_server/testers/js/requirements.system \
     ./autotest_server/testers/haskell/requirements.system \
     ./autotest_server/testers/r/requirements.system \
     ./autotest_server/testers/racket/requirements.system \
@@ -51,7 +52,7 @@ COPY --parents \
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     --mount=type=cache,target=$WORKSPACE/.stack,sharing=locked \
-    find /app/autotest_server/testers -name requirements.system -exec {} \;
+    find /app/autotest_server/testers -name requirements.system -exec bash {} \;
 
 COPY . /app
 
