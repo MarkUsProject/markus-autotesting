@@ -121,7 +121,7 @@ class JsTester(Tester):
         test_data = self.specs.get("test_data", default={}) or {}
 
         self._ensure_package_json(dir_path)
-        timeout = test_data.get("timeout", 60) or 60
+        timeout = test_data.get("timeout", 60)
         pnpm_result = self._run_pnpm_install(dir_path)
         if pnpm_result.returncode != 0:
             err = pnpm_result.stderr or pnpm_result.stdout or "(no output)"
