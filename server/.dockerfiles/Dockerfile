@@ -44,6 +44,7 @@ RUN mkdir -p ${WORKSPACE} && chown ${LOGIN_USER} ${WORKSPACE} && \
 # in markus-autotesting/server.
 COPY --parents \
     ./autotest_server/testers/java/requirements.system \
+    ./autotest_server/testers/js/requirements.system \
     ./autotest_server/testers/haskell/requirements.system \
     ./autotest_server/testers/r/requirements.system \
     ./autotest_server/testers/racket/requirements.system \
