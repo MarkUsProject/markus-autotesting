@@ -4,14 +4,15 @@ set -euxo pipefail
 if ! command -v node &> /dev/null; then
   apt-get -y update
   DEBIAN_FRONTEND=noninteractive apt-get install -y -o 'Dpkg::Options::=--force-confdef' -o 'Dpkg::Options::=--force-confold' curl ca-certificates
-  curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
+  curl -fsSL https://deb.nodesource.com/setup_24.x | bash -
   DEBIAN_FRONTEND=noninteractive apt-get install -y -o 'Dpkg::Options::=--force-confdef' -o 'Dpkg::Options::=--force-confold' nodejs
 fi
 
 if ! command -v pnpm &> /dev/null; then
-  npm install -g pnpm
+  corepack enable
+  corepack prepare pnpm@latest --activate
 fi
 
 if ! command -v jest &> /dev/null; then
-  npm install -g jest
+  pnpm add -g jest
 fi

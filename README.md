@@ -158,7 +158,7 @@ Installing each tester will also install the following additional packages (syst
 - `java`
     - openjdk-8-jdk
 - `js` (JavaScript)
-    - Node.js 
+    - none
 - `py` (python3)
     - none
 - `pyta`
