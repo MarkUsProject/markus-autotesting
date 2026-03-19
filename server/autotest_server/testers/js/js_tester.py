@@ -78,10 +78,15 @@ class JsTester(Tester):
         _js_dir = os.path.dirname(os.path.realpath(__file__))
         config_path = os.path.join(_js_dir, "jest.config.json")
         cmd = [
-            "npx", "jest",
-            "--config", config_path,
-            "--rootDir", dir_path,
-            "--json", "--forceExit", "--runInBand",
+            "npx",
+            "jest",
+            "--config",
+            config_path,
+            "--rootDir",
+            dir_path,
+            "--json",
+            "--forceExit",
+            "--runInBand",
         ]
         if test_files:
             cmd.extend(test_files)
