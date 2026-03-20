@@ -48,11 +48,17 @@ class JsTester(Tester):
         """
         Run pnpm install in dir_path to install dependencies from package.json.
         """
+        corepack_home = os.path.join(dir_path, ".corepack")
+        xdg_cache_home = os.path.join(dir_path, ".cache")
+        os.makedirs(corepack_home, exist_ok=True)
+        os.makedirs(xdg_cache_home, exist_ok=True)
+        env = {**os.environ, "COREPACK_HOME": corepack_home, "XDG_CACHE_HOME": xdg_cache_home}
         result = subprocess.run(
             ["pnpm", "install"],
             capture_output=True,
             text=True,
             cwd=dir_path,
+            env=env,
         )
         return result
 

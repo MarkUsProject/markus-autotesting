@@ -17,5 +17,6 @@ if ! command -v jest &> /dev/null; then
   export PNPM_HOME="/usr/local/share/pnpm"
   export PATH="${PNPM_HOME}:${PATH}"
   pnpm config set global-bin-dir /usr/local/bin
+  pnpm config set global-dir /usr/local/share/pnpm-global
   pnpm add -g jest
 fi
