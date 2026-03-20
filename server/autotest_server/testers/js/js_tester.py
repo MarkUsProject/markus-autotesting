@@ -65,13 +65,8 @@ class JsTester(Tester):
         --runInBand: run all tests serially in the current process
         """
         local_jest = os.path.join(dir_path, "node_modules", ".bin", "jest")
-        cmd = (["npx", "jest"] if os.path.isfile(local_jest) else ["jest"]) + [
-            "--rootDir",
-            dir_path,
-            "--json",
-            "--forceExit",
-            "--runInBand",
-        ]
+        jest_cmd = local_jest if os.path.isfile(local_jest) else "jest"
+        cmd = [jest_cmd, "--rootDir", dir_path, "--json", "--forceExit", "--runInBand"]
         if test_files:
             cmd.extend(test_files)
         result = subprocess.run(
