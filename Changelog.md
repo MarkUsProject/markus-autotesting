@@ -8,6 +8,7 @@ All notable changes to this project will be documented here.
 - Fixed Haskell tester installation using ghcup to install stack system-wide (#688)
 - Updated tester schema generation to use msgspec datatypes (#689)
 - Specify dockerfile frontend version (#691)
+- Increased default settings job timeout from 600s to 1200s (#707)
 
 ## [v2.9.0]
 - Install stack with GHCup (#626)
