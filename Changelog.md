@@ -8,6 +8,7 @@ All notable changes to this project will be documented here.
 - Fixed Haskell tester installation using ghcup to install stack system-wide (#688)
 - Updated tester schema generation to use msgspec datatypes (#689)
 - Specify dockerfile frontend version (#691)
+- Add a new JavaScript (Jest) tester to support JavaScript autotesting (#698)
 
 ## [v2.9.0]
 - Install stack with GHCup (#626)
