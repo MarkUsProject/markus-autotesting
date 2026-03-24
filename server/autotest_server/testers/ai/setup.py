@@ -53,7 +53,9 @@ def settings():
     from autotest_server.config import config
 
     try:
-        remote_url_prop = settings_["properties"]["test_data"]["items"]["properties"]["config"]["properties"]["remote_url"]
+        remote_url_prop = settings_["properties"]["test_data"]["items"]["properties"]["config"]["properties"][
+            "remote_url"
+        ]
     except KeyError as e:
         raise RuntimeError(f"AI tester settings_schema.json missing expected 'remote_url' field: {e}")
     whitelist = config.get("remote_url_whitelist", [])

@@ -63,10 +63,13 @@ def _mock_subprocess(monkeypatch, *, stdout="OK", stderr=""):
     monkeypatch.setattr(subprocess, "run", lambda *a, **kw: mocked)
 
 
-@pytest.mark.parametrize("status,expected_status,message", [
-    ("success", "pass", "Looks good"),
-    ("error", "error", "Syntax error"),
-])
+@pytest.mark.parametrize(
+    "status,expected_status,message",
+    [
+        ("success", "pass", "Looks good"),
+        ("error", "error", "Syntax error"),
+    ],
+)
 def test_ai_test_result_formatting(status, expected_status, message):
     result = {"title": "Test A", "message": message, "status": status}
     test = AiTest(tester=_make_tester(), result=result)
