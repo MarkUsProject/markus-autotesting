@@ -140,3 +140,48 @@ def test_run_prints_passed_and_failed_results(monkeypatch, capsys):
     assert len(lines) == 2
     assert json.loads(lines[0])["status"] == "pass"
     assert json.loads(lines[1])["status"] == "fail"
+
+
+def test_run_reports_failure_from_student_bug(monkeypatch, capsys):
+    """JsTester.run() reports a failed test caused by student submission bug."""
+    mock_pnpm = MagicMock()
+    mock_pnpm.returncode = 0
+
+    bug_message = "TypeError: Cannot read properties of undefined (reading 'length')"
+    jest_output = make_jest_output(
+        {"fullName": "student bug test", "status": "failed", "failureMessages": [bug_message]},
+    )
+    mock_jest = MagicMock()
+    mock_jest.stdout = jest_output
+    mock_jest.returncode = 0
+
+    def fake_run(cmd, **kwargs):
+        if "pnpm" in cmd:
+            return mock_pnpm
+        return mock_jest
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    tester = make_tester()
+    tester.run()
+    out_line = capsys.readouterr().out.strip()
+    data = json.loads(out_line)
+    assert data["name"] == "student bug test"
+    assert data["status"] == "fail"
+    assert bug_message in data["output"]
+
+
+def test_js_test_unexpected_status_returns_error_output():
+    """JsTest returns an error result when Jest status is unexpected."""
+    specs = TestSpecs.from_json('{"test_data": {"script_files": ["test.js"]}, "points": {}}')
+    tester = JsTester(specs=specs)
+    result = {
+        "fullName": "runtime error test",
+        "status": "error",
+        "failureMessages": ["ReferenceError: x is not defined"],
+    }
+    test = JsTest(tester, result)
+    out = test.run()
+    data = json.loads(out)
+    assert data["name"] == "runtime error test"
+    assert data["status"] == "error"
+    assert "ReferenceError" in data["output"]
