@@ -1,5 +1,5 @@
-rq==2.6.1
-redis==7.1.0
+rq==2.7.0
+redis==7.2.1
 pyyaml==6.0.3
 jsonschema==4.26.0
 markus-autotesting-core==0.1.0

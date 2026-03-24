@@ -9,6 +9,7 @@ All notable changes to this project will be documented here.
 - Updated tester schema generation to use msgspec datatypes (#689)
 - Specify dockerfile frontend version (#691)
 - Add a new JavaScript (Jest) tester to support JavaScript autotesting (#698)
+- Increased default settings job timeout from 600s to 1200s (#707)
 
 ## [v2.9.0]
 - Install stack with GHCup (#626)
