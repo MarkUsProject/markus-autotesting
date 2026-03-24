@@ -55,10 +55,6 @@ class AiTester(Tester):
         self.overall_comments = []
         self.tags = []
 
-    def _load_whitelisted_urls(self) -> list[str]:
-        """Load whitelisted remote URLs from settings, injected via specs."""
-        return self.specs.get("_remote_url_whitelist", default=[])
-
     def call_ai_feedback(self) -> dict:
         """
         Call ai_feedback CLI using subprocess and arguments from self.specs.
@@ -85,34 +81,6 @@ class AiTester(Tester):
             }
             return results
 
-        # Validate remote_url against whitelist
-        remote_url = config.get("remote_url", "")
-
-        if not remote_url:
-            results[test_label] = {
-                "title": test_label,
-                "status": "error",
-                "message": (
-                    "No remote URL configured. Set 'default_remote_url' in settings.yml"
-                    " or specify 'remote_url' in the test config."
-                ),
-            }
-            return results
-
-        whitelisted_urls = self._load_whitelisted_urls()
-
-        if remote_url not in whitelisted_urls:
-            allowed = ", ".join(f'"{u}"' for u in whitelisted_urls)
-            results[test_label] = {
-                "title": test_label,
-                "status": "error",
-                "message": f'Remote URL "{remote_url}" is not whitelisted. Allowed URLs: {allowed}',
-            }
-            return results
-
-        # Ensure validated remote_url is in config so it flows as --remote_url CLI arg
-        config["remote_url"] = remote_url
-
         submission_file = config.get("submission")
         try:
             disallowed_term_in_file = self._term_in_file(submission_file)
@@ -120,7 +88,7 @@ class AiTester(Tester):
             results[test_label] = {
                 "title": test_label,
                 "status": "error",
-                "message": f'Could not file submission file "{submission_file}"',
+                "message": f'Could not find submission file "{submission_file}"',
             }
             return results
 

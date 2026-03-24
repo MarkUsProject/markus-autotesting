@@ -7,14 +7,12 @@ import pytest
 from ....testers.ai.ai_tester import AiTester, AiTest
 from ....testers.specs import TestSpecs
 
-WHITELISTED_URL = "https://polymouth.teach.cs.toronto.edu:443/chat"
+DEFAULT_REMOTE_URL = "https://polymouth.teach.cs.toronto.edu:443/chat"
+FIXTURES_DIR = str(Path(__file__).resolve().parent / "fixtures")
 
 
 @pytest.fixture(autouse=True, scope="session")
-def set_required_env(tmp_path_factory):
-    root = tmp_path_factory.mktemp("autotest")
-    logs = root / "logs"
-    logs.mkdir(exist_ok=True)
+def set_required_env():
     os.environ.setdefault("WORKSPACE", "./")
     os.environ.setdefault("WORKER_LOG_DIR", "./")
     os.environ.setdefault("REDIS_URL", "redis://localhost:6379/0")
@@ -22,23 +20,21 @@ def set_required_env(tmp_path_factory):
     os.makedirs(os.environ["WORKER_LOG_DIR"], exist_ok=True)
 
 
-def create_ai_tester(remote_url=None, whitelist=None):
-    """Create an AiTester with the whitelist injected via specs (mirrors production data flow)."""
-    if whitelist is None:
-        whitelist = [WHITELISTED_URL]
-    parent_dir = str(Path(__file__).resolve().parent)
+def _make_spec(output="overall_comment", config_overrides=None):
+    """Build a test spec with sensible defaults. Override only what varies."""
     config = {
         "model": "remote",
         "prompt": "code_table",
         "scope": "code",
-        "submission": parent_dir + "/fixtures/sample_submission.py",
+        "submission": FIXTURES_DIR + "/sample_submission.py",
         "submission_type": "python",
+        "remote_url": DEFAULT_REMOTE_URL,
     }
-    config["remote_url"] = remote_url if remote_url is not None else WHITELISTED_URL
-    spec = {
+    if config_overrides:
+        config.update(config_overrides)
+    return {
         "tester_type": "ai",
         "env_data": {"ai_feedback_version": "main"},
-        "_remote_url_whitelist": whitelist,
         "test_data": {
             "category": ["instructor"],
             "config": config,
@@ -48,163 +44,104 @@ def create_ai_tester(remote_url=None, whitelist=None):
                 "test_group_id": 17,
                 "criterion": None,
             },
-            "output": "overall_comment",
+            "output": output,
             "timeout": 30,
             "test_label": "Test A",
         },
         "_env": {"PYTHON": "/home/docker/.autotesting/scripts/128/ai_1/bin/python3"},
     }
-    raw_spec = json.dumps(spec)
-    return AiTester(specs=TestSpecs.from_json(raw_spec))
 
 
-def test_ai_test_success_runs_properly():
-    result = {"title": "Test A", "message": "Looks good", "status": "success"}
-    test = AiTest(tester=create_ai_tester(), result=result)
-    output = test.run()
-    assert '"status": "pass"' in output
-    assert "Looks good" in output
+def _make_tester(**kwargs):
+    return AiTester(specs=TestSpecs.from_json(json.dumps(_make_spec(**kwargs))))
 
 
-def test_ai_test_error_runs_properly():
-    result = {"title": "Test A", "message": "Syntax error", "status": "error"}
-    test = AiTest(tester=create_ai_tester(), result=result)
-    output = test.run()
-    assert '"status": "error"' in output
-    assert "Syntax error" in output
-
-
-def test_call_ai_feedback_success(monkeypatch):
-    tester = create_ai_tester()
+def _mock_subprocess(monkeypatch, *, stdout="OK", stderr=""):
     mocked = subprocess.CompletedProcess(
-        args=["python", "-m", "ai_feedback"], returncode=0, stdout="Great job!", stderr=""
+        args=["python", "-m", "ai_feedback"], returncode=0, stdout=stdout, stderr=stderr
     )
     monkeypatch.setattr(subprocess, "run", lambda *a, **kw: mocked)
+
+
+@pytest.mark.parametrize("status,expected_status,message", [
+    ("success", "pass", "Looks good"),
+    ("error", "error", "Syntax error"),
+])
+def test_ai_test_result_formatting(status, expected_status, message):
+    result = {"title": "Test A", "message": message, "status": status}
+    test = AiTest(tester=_make_tester(), result=result)
+    output = test.run()
+    assert f'"status": "{expected_status}"' in output
+    assert message in output
+
+
+def test_overall_comment_output(monkeypatch):
+    tester = _make_tester()
+    _mock_subprocess(monkeypatch, stdout="Great job!")
     results = tester.call_ai_feedback()
-    print(results)
-    assert "Test A" in results
     assert results["Test A"]["status"] == "success"
     assert tester.overall_comments == ["Great job!"]
     assert tester.annotations == []
 
 
-def test_call_ai_feedback_error(monkeypatch):
-    tester = create_ai_tester()
+def test_annotations_output(monkeypatch):
+    annotation_data = {"annotations": [{"line": 1, "text": "Good variable name"}]}
+    tester = _make_tester(output="annotations")
+    _mock_subprocess(monkeypatch, stdout=json.dumps(annotation_data))
+    results = tester.call_ai_feedback()
+    assert results["Test A"]["status"] == "success"
+    assert len(tester.annotations) == 1
+    assert tester.annotations[0]["text"] == "Good variable name"
+
+
+def test_message_output(monkeypatch):
+    tester = _make_tester(output="message")
+    _mock_subprocess(monkeypatch, stdout="Score: 8/10")
+    results = tester.call_ai_feedback()
+    assert results["Test A"]["status"] == "success"
+    assert results["Test A"]["message"] == "Score: 8/10"
+
+
+def test_subprocess_error(monkeypatch):
+    tester = _make_tester()
 
     def raise_err(*args, **kwargs):
-        raise subprocess.CalledProcessError(1, args, stderr="Runtime error")
+        raise subprocess.CalledProcessError(1, "cmd", stderr="Runtime error")
 
     monkeypatch.setattr(subprocess, "run", raise_err)
     results = tester.call_ai_feedback()
     assert results["Test A"]["status"] == "error"
     assert "Runtime error" in results["Test A"]["message"]
-    assert tester.overall_comments == []
-    assert tester.annotations == []
 
 
-def test_run_prints_test_results(monkeypatch, capsys):
-    tester = create_ai_tester()
-    monkeypatch.setattr(
-        subprocess,
-        "run",
-        lambda *a, **kw: subprocess.CompletedProcess(args=a, returncode=0, stdout="Nice work", stderr=""),
-    )
-    monkeypatch.setattr(AiTest, "run", lambda self: '{"status": "success", "message": "Test Passed"}')
-    tester.run()
-    captured = capsys.readouterr()
-    assert "Test Passed" in captured.out
-
-
-def test_call_ai_feedback_rejects_non_whitelisted_url():
-    tester = create_ai_tester(remote_url="https://evil-server.com/steal-data")
-    results = tester.call_ai_feedback()
-    assert results["Test A"]["status"] == "error"
-    assert "not whitelisted" in results["Test A"]["message"]
-    assert "evil-server.com" in results["Test A"]["message"]
-
-
-def test_call_ai_feedback_accepts_whitelisted_url(monkeypatch):
-    tester = create_ai_tester(remote_url=WHITELISTED_URL)
-    mocked = subprocess.CompletedProcess(
-        args=["python", "-m", "ai_feedback"], returncode=0, stdout="Feedback", stderr=""
-    )
-    monkeypatch.setattr(subprocess, "run", lambda *a, **kw: mocked)
-    results = tester.call_ai_feedback()
-    assert results["Test A"]["status"] == "success"
-
-
-def test_call_ai_feedback_rejects_non_remote_model():
-    """Non-remote models (e.g., cloud AIs) should be blocked."""
-    parent_dir = str(Path(__file__).resolve().parent)
-    spec = {
-        "tester_type": "ai",
-        "env_data": {"ai_feedback_version": "main"},
-        "_remote_url_whitelist": [WHITELISTED_URL],
-        "test_data": {
-            "category": ["instructor"],
-            "config": {
-                "model": "openai",
-                "prompt": "code_table",
-                "scope": "code",
-                "submission": parent_dir + "/fixtures/sample_submission.py",
-                "submission_type": "python",
-            },
-            "extra_info": {
-                "name": "AI FEEDBACK COMMENTS",
-                "display_output": "instructors",
-                "test_group_id": 17,
-                "criterion": None,
-            },
-            "output": "overall_comment",
-            "timeout": 30,
-            "test_label": "Test A",
-        },
-        "_env": {"PYTHON": "/home/docker/.autotesting/scripts/128/ai_1/bin/python3"},
-    }
-    tester = AiTester(specs=TestSpecs.from_json(json.dumps(spec)))
+def test_rejects_non_remote_model():
+    tester = _make_tester(config_overrides={"model": "openai"})
     results = tester.call_ai_feedback()
     assert results["Test A"]["status"] == "error"
     assert "Unsupported model type" in results["Test A"]["message"]
     assert "openai" in results["Test A"]["message"]
 
 
-def test_call_ai_feedback_empty_whitelist():
-    """When no URLs are configured in settings, all remote URLs should be rejected."""
-    tester = create_ai_tester(whitelist=[])
+def test_missing_submission_file():
+    tester = _make_tester(config_overrides={"submission": FIXTURES_DIR + "/nonexistent.py"})
     results = tester.call_ai_feedback()
     assert results["Test A"]["status"] == "error"
-    assert "not whitelisted" in results["Test A"]["message"]
+    assert "Could not find submission file" in results["Test A"]["message"]
 
 
-def test_call_ai_feedback_no_remote_url_configured():
-    """When no remote_url is in config and no default is set, give a clear error."""
-    parent_dir = str(Path(__file__).resolve().parent)
-    spec = {
-        "tester_type": "ai",
-        "env_data": {"ai_feedback_version": "main"},
-        "_remote_url_whitelist": [WHITELISTED_URL],
-        "test_data": {
-            "category": ["instructor"],
-            "config": {
-                "model": "remote",
-                "prompt": "code_table",
-                "scope": "code",
-                "submission": parent_dir + "/fixtures/sample_submission.py",
-                "submission_type": "python",
-            },
-            "extra_info": {
-                "name": "AI FEEDBACK COMMENTS",
-                "display_output": "instructors",
-                "test_group_id": 17,
-                "criterion": None,
-            },
-            "output": "overall_comment",
-            "timeout": 30,
-            "test_label": "Test A",
-        },
-        "_env": {"PYTHON": "/home/docker/.autotesting/scripts/128/ai_1/bin/python3"},
-    }
-    tester = AiTester(specs=TestSpecs.from_json(json.dumps(spec)))
+def test_opt_out_skips_feedback(tmp_path):
+    opt_out_file = tmp_path / "opt_out.py"
+    opt_out_file.write_text("# NO_EXTERNAL_AI_FEEDBACK\ndef foo(): pass\n")
+    tester = _make_tester(config_overrides={"submission": str(opt_out_file)})
     results = tester.call_ai_feedback()
-    assert results["Test A"]["status"] == "error"
-    assert "No remote URL configured" in results["Test A"]["message"]
+    assert results["Test A"]["status"] == "success"
+    assert "NO_EXTERNAL_AI_FEEDBACK" in results["Test A"]["message"]
+
+
+def test_run_prints_output(monkeypatch, capsys):
+    tester = _make_tester()
+    _mock_subprocess(monkeypatch, stdout="Nice work")
+    monkeypatch.setattr(AiTest, "run", lambda self: '{"status": "success", "message": "Test Passed"}')
+    tester.run()
+    captured = capsys.readouterr()
+    assert "Test Passed" in captured.out

@@ -235,20 +235,7 @@ def _run_test_specs(
                         executable="/bin/bash",
                     )
                     try:
-                        # Inject default remote_url into test config if not specified
-                        test_config = test_data.get("config", {})
-                        if "remote_url" not in test_config:
-                            default_url = config.get("default_remote_url", "")
-                            if default_url:
-                                test_config["remote_url"] = default_url
-
-                        settings_json = json.dumps(
-                            {
-                                **settings,
-                                "test_data": test_data,
-                                "_remote_url_whitelist": config.get("remote_url_whitelist", []),
-                            }
-                        )
+                        settings_json = json.dumps({**settings, "test_data": test_data})
                         out, err = proc.communicate(input=settings_json, timeout=timeout)
                     except subprocess.TimeoutExpired:
                         if test_username == getpass.getuser():
