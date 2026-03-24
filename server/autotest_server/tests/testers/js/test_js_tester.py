@@ -103,7 +103,7 @@ def test_pending_tests_are_skipped(monkeypatch, capsys):
     mock_jest.returncode = 0
 
     def fake_run(cmd, **kwargs):
-        if "pnpm" in cmd:
+        if cmd[:2] == ["pnpm", "install"]:
             return mock_pnpm
         return mock_jest
 
@@ -128,7 +128,7 @@ def test_run_prints_passed_and_failed_results(monkeypatch, capsys):
     mock_jest.returncode = 0
 
     def fake_run(cmd, **kwargs):
-        if "pnpm" in cmd:
+        if cmd[:2] == ["pnpm", "install"]:
             return mock_pnpm
         return mock_jest
 
