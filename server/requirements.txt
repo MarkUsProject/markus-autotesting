@@ -4,6 +4,6 @@ pyyaml==6.0.3
 jsonschema==4.26.0
 markus-autotesting-core==0.1.0
 msgspec==0.20.0
-requests==2.32.5
+requests==2.33.0
 psycopg2-binary==2.9.11
 supervisor==4.3.0
