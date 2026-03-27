@@ -3,7 +3,7 @@ from __future__ import annotations
 import importlib
 import os
 
-_TESTERS = ("ai", "custom", "haskell", "java", "jupyter", "py", "pyta", "r", "racket")
+_TESTERS = ("ai", "custom", "haskell", "java", "js", "jupyter", "py", "pyta", "r", "racket")
 
 
 def install(testers: list[str] = _TESTERS) -> tuple[dict, dict]:

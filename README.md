@@ -128,6 +128,8 @@ The autotester currently supports testers for the following languages and testin
     - [`tasty-quickcheck`](https://hackage.haskell.org/package/tasty-quickcheck)
 - `java`
     - [JUnit](https://junit.org/junit4/)
+- `js` (JavaScript)
+    - [Jest](https://jestjs.io/)
 - `py` (python3)
     - [Unittest](https://docs.python.org/3/library/unittest.html)
     - [Pytest](https://docs.pytest.org/en/latest/)
@@ -155,6 +157,8 @@ Installing each tester will also install the following additional packages (syst
     - tasty-quickcheck (cabal package)
 - `java`
     - openjdk-8-jdk
+- `js` (JavaScript)
+    - none
 - `py` (python3)
     - none
 - `pyta`
