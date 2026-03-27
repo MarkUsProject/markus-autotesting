@@ -10,6 +10,7 @@ All notable changes to this project will be documented here.
 - Specify dockerfile frontend version (#691)
 - Add remote URL whitelist for AI tester to restrict allowed endpoints (#693)
 - Increased default settings job timeout from 600s to 1200s (#707)
+- Disable pytest cacheprovider to avoid creating .pytest_cache in isolated runs (#709)
 
 ## [v2.9.0]
 - Install stack with GHCup (#626)
