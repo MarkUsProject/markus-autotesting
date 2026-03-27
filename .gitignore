@@ -12,3 +12,4 @@ venv2
 build
 docker-compose.override.yml
 /workspace
+.vscode

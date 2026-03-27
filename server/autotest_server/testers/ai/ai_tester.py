@@ -72,12 +72,12 @@ class AiTester(Tester):
         output_mode = test_group.get("output")
         cmd = [sys.executable, "-m", "ai_feedback"]
 
-        # Temporarily disable non-local models
+        # Restrict to remote model only — prevent access to cloud AIs
         if config.get("model", "") != "remote":
             results[test_label] = {
                 "title": test_label,
                 "status": "error",
-                "message": f"Unsupported model type: \"{config.get('model', '')}\"",
+                "message": f"Unsupported model type: \"{config.get('model', '')}\". Only 'remote' model is allowed.",
             }
             return results
 
@@ -88,7 +88,7 @@ class AiTester(Tester):
             results[test_label] = {
                 "title": test_label,
                 "status": "error",
-                "message": f'Could not file submission file "{submission_file}"',
+                "message": f'Could not find submission file "{submission_file}"',
             }
             return results
 
