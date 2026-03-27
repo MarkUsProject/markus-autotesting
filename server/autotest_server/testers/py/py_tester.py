@@ -319,7 +319,7 @@ class PyTester(Tester):
                 sys.stdout = null_out
                 verbosity = self.specs["test_data", "output_verbosity"] or "short"
                 plugin = PytestPlugin()
-                pytest.main([test_file, f"--tb={verbosity}"], plugins=[plugin])
+                pytest.main([test_file, f"--tb={verbosity}", "-p", "no:cacheprovider"], plugins=[plugin])
                 results.extend(plugin.results.values())
                 self.annotations = plugin.annotations
                 self.overall_comments = plugin.overall_comments
