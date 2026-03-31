@@ -34,6 +34,10 @@
     "rlimit_settings": {
       "type": "object"
     },
+    "max_test_timeout": {
+      "type": "integer",
+      "minimum": 1
+    },
     "workers": {
       "type": "array",
       "minItems": 1,

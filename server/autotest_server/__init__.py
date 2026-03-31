@@ -5,7 +5,6 @@ import shutil
 import time
 import json
 import subprocess
-import signal
 import socket
 import getpass
 import requests
@@ -218,13 +217,18 @@ def _run_test_specs(
                 out, err = "", ""
                 timeout_expired = None
                 timeout = test_data.get("timeout")
+                max_timeout = config.get("max_test_timeout")
+                if max_timeout is not None:
+                    if timeout is None:
+                        timeout = max_timeout
+                    else:
+                        timeout = min(timeout, max_timeout)
                 try:
                     env = settings.get("_env", {})
                     env_vars = {**os.environ, **_get_env_vars(test_username), **env}
                     env_vars = _update_env_vars(env_vars, test_env_vars)
                     proc = subprocess.Popen(
                         args,
-                        start_new_session=True,
                         cwd=tests_path,
                         shell=True,
                         stdout=subprocess.PIPE,
@@ -238,11 +242,11 @@ def _run_test_specs(
                         settings_json = json.dumps({**settings, "test_data": test_data})
                         out, err = proc.communicate(input=settings_json, timeout=timeout)
                     except subprocess.TimeoutExpired:
-                        if test_username == getpass.getuser():
-                            pgrp = os.getpgid(proc.pid)
-                            os.killpg(pgrp, signal.SIGKILL)
-                        else:
+                        if test_username != getpass.getuser():
                             _kill_user_processes(test_username)
+                        else:
+                            proc.kill()
+                            proc.wait()
                         out, err = proc.communicate()
                         if err == "Killed\n":  # Default message from shell
                             test_group_name = test_data.get("extra_info", {}).get("name", "").strip()
