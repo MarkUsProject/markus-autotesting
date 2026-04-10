@@ -251,17 +251,13 @@ class PyTest(Test):
         """
         Return a json string containing all test result information.
         """
-        if self.points_earned is not None and 0 < self.points_earned < self.points_total:
-            return self.partially_passed(points_earned=self.points_earned, message=self.message)
-        elif self.points_earned is not None and self.points_earned > self.points_total:
-            bonus = self.points_earned - self.points_total
-            return self.passed_with_bonus(points_bonus=bonus, message=self.message)
-        elif self.status == "success":
+        if self.points_earned is not None:
+            return self.done(points_earned=self.points_earned, message=self.message)
+        if self.status == "success":
             return self.passed(message=self.message)
-        elif self.status == "failure":
+        if self.status == "failure":
             return self.failed(message=self.message)
-        else:
-            return self.error(message=self.message)
+        return self.error(message=self.message)
 
 
 class PyTester(Tester):
