@@ -129,3 +129,36 @@ class TestTimeoutKillHandler(unittest.TestCase):
         mock_proc.wait.assert_called_once()
         mock_kill_user.assert_not_called()
         mock_killpg.assert_not_called()
+
+    def test_detects_silent_crash_via_returncode(self):
+        """SIGKILL/OOM kill: err is empty but proc.returncode is non-zero."""
+        mock_proc = MagicMock()
+        mock_proc.communicate.side_effect = [
+            subprocess.TimeoutExpired(cmd="test", timeout=30),
+            ("", ""),
+        ]
+        mock_proc.returncode = -9  # SIGKILL
+
+        with patch("autotest_server._create_test_script_command", return_value="echo test"), patch(
+            "autotest_server._get_env_vars", return_value={}
+        ), patch("autotest_server._update_env_vars", side_effect=lambda b, t: {**b, **t}), patch(
+            "autotest_server.subprocess.Popen", return_value=mock_proc
+        ), patch(
+            "autotest_server._get_feedback", return_value=([], [])
+        ), patch(
+            "autotest_server.getpass.getuser", return_value="autotest"
+        ), patch(
+            "autotest_server._kill_user_processes"
+        ), patch.object(
+            autotest_server, "config", {"max_test_timeout": 30}
+        ):
+            results = autotest_server._run_test_specs(
+                cmd="echo {}",
+                test_settings=self._make_settings(),
+                categories=["unit"],
+                tests_path="/tmp/test",
+                test_username="autotest",
+                test_id=1,
+                test_env_vars={},
+            )
+        self.assertIn("did not complete within time limit", results[0]["stderr"])

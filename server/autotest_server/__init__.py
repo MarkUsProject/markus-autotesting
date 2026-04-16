@@ -248,8 +248,10 @@ def _run_test_specs(
                             proc.kill()
                             proc.wait()
                         out, err = proc.communicate()
-                        if err == "Killed\n":  # Default message from shell
-                            test_group_name = test_data.get("extra_info", {}).get("name", "").strip()
+                        test_group_name = test_data.get("extra_info", {}).get("name", "").strip()
+                        if err == "Killed\n" or (not err and proc.returncode is not None and proc.returncode != 0):
+                            # err can be "Killed\n" (shell default) or empty (SIGKILL/OOM silent crash).
+                            # Check proc.returncode to reliably detect both cases.
                             if test_group_name:
                                 err = f"Tests for {test_group_name} did not complete within time limit ({timeout}s)\n"
                             else:
