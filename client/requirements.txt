@@ -3,4 +3,4 @@ python-dotenv==1.2.2
 rq==2.7.0
 redis==7.2.1
 jsonschema==4.26.0
-Werkzeug==3.1.6
+Werkzeug==3.1.7
