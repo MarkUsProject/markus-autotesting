@@ -253,11 +253,12 @@ class PyTest(Test):
         """
         if self.points_earned is not None:
             return self.done(points_earned=self.points_earned, message=self.message)
-        if self.status == "success":
+        elif self.status == "success":
             return self.passed(message=self.message)
-        if self.status == "failure":
+        elif self.status == "failure":
             return self.failed(message=self.message)
-        return self.error(message=self.message)
+        else:
+            return self.error(message=self.message)
 
 
 class PyTester(Tester):
