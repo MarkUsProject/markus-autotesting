@@ -4,6 +4,7 @@ import sys
 import shutil
 import time
 import json
+import signal
 import subprocess
 import socket
 import getpass
@@ -98,6 +99,31 @@ def _kill_user_processes(test_username: str) -> None:
     """
     kill_cmd = f"sudo -u {test_username} -- bash -c 'kill -KILL -1'"
     subprocess.run(kill_cmd, shell=True)
+
+
+def _kill_pgid_children(proc: subprocess.Popen) -> None:
+    """
+    Kill all processes in our process group except the current (worker) process.
+    Tests may spawn subprocesses (e.g. CSC209) that share our group;
+    proc.kill() alone would leave those running.
+    Falls back to proc.kill() when /proc is unavailable (non-Linux).
+    """
+    worker_pid = os.getpid()
+    worker_pgid = os.getpgid(worker_pid)
+    try:
+        for entry in os.scandir("/proc"):
+            if not entry.name.isdigit():
+                continue
+            pid = int(entry.name)
+            if pid == worker_pid:
+                continue
+            try:
+                if os.getpgid(pid) == worker_pgid:
+                    os.kill(pid, signal.SIGKILL)
+            except (ProcessLookupError, PermissionError, OSError):
+                pass
+    except FileNotFoundError:
+        proc.kill()
 
 
 def _create_test_script_command(tester_type: str) -> str:
@@ -245,7 +271,7 @@ def _run_test_specs(
                         if test_username != getpass.getuser():
                             _kill_user_processes(test_username)
                         else:
-                            proc.kill()
+                            _kill_pgid_children(proc)
                             proc.wait()
                         out, err = proc.communicate()
                         test_group_name = test_data.get("extra_info", {}).get("name", "").strip()
