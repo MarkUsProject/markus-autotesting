@@ -93,14 +93,19 @@ class TestTimeoutKillHandler(unittest.TestCase):
             ("", "Killed\n"),
         ]
 
-        with patch("autotest_server._create_test_script_command", return_value="echo test"), \
-             patch("autotest_server._get_env_vars", return_value={}), \
-             patch("autotest_server._update_env_vars", side_effect=lambda b, t: {**b, **t}), \
-             patch("autotest_server.subprocess.Popen", return_value=mock_proc), \
-             patch("autotest_server._get_feedback", return_value=([], [])), \
-             patch("autotest_server.getpass.getuser", return_value=current_user), \
-             patch("autotest_server._kill_user_processes") as mock_kill_user, \
-             patch.object(autotest_server, "config", {"max_test_timeout": 30}):
+        with patch("autotest_server._create_test_script_command", return_value="echo test"), patch(
+            "autotest_server._get_env_vars", return_value={}
+        ), patch("autotest_server._update_env_vars", side_effect=lambda b, t: {**b, **t}), patch(
+            "autotest_server.subprocess.Popen", return_value=mock_proc
+        ), patch(
+            "autotest_server._get_feedback", return_value=([], [])
+        ), patch(
+            "autotest_server.getpass.getuser", return_value=current_user
+        ), patch(
+            "autotest_server._kill_user_processes"
+        ) as mock_kill_user, patch.object(
+            autotest_server, "config", {"max_test_timeout": 30}
+        ):
             results = autotest_server._run_test_specs(
                 cmd="echo {}",
                 test_settings=self._make_settings(),
@@ -140,27 +145,40 @@ class TestTimeoutKillHandler(unittest.TestCase):
             e.name = name
             return e
 
-        mock_entries = [make_entry(str(child_pid)), make_entry(str(grandchild_pid)),
-                        make_entry(str(unrelated_pid)), make_entry(str(worker_pid)),
-                        make_entry("self")]
+        mock_entries = [
+            make_entry(str(child_pid)),
+            make_entry(str(grandchild_pid)),
+            make_entry(str(unrelated_pid)),
+            make_entry(str(worker_pid)),
+            make_entry("self"),
+        ]
 
         def mock_getpgid(pid):
             if pid in (worker_pid, child_pid, grandchild_pid):
                 return worker_pgid
             return 999  # different group
 
-        with patch("autotest_server._create_test_script_command", return_value="echo test"), \
-             patch("autotest_server._get_env_vars", return_value={}), \
-             patch("autotest_server._update_env_vars", side_effect=lambda b, t: {**b, **t}), \
-             patch("autotest_server.subprocess.Popen", return_value=mock_proc), \
-             patch("autotest_server._get_feedback", return_value=([], [])), \
-             patch("autotest_server.getpass.getuser", return_value="autotest"), \
-             patch("autotest_server._kill_user_processes") as mock_kill_user, \
-             patch("autotest_server.os.getpid", return_value=worker_pid), \
-             patch("autotest_server.os.getpgid", side_effect=mock_getpgid), \
-             patch("autotest_server.os.scandir", return_value=mock_entries), \
-             patch("autotest_server.os.kill") as mock_kill, \
-             patch.object(autotest_server, "config", {"max_test_timeout": 30}):
+        with patch("autotest_server._create_test_script_command", return_value="echo test"), patch(
+            "autotest_server._get_env_vars", return_value={}
+        ), patch("autotest_server._update_env_vars", side_effect=lambda b, t: {**b, **t}), patch(
+            "autotest_server.subprocess.Popen", return_value=mock_proc
+        ), patch(
+            "autotest_server._get_feedback", return_value=([], [])
+        ), patch(
+            "autotest_server.getpass.getuser", return_value="autotest"
+        ), patch(
+            "autotest_server._kill_user_processes"
+        ) as mock_kill_user, patch(
+            "autotest_server.os.getpid", return_value=worker_pid
+        ), patch(
+            "autotest_server.os.getpgid", side_effect=mock_getpgid
+        ), patch(
+            "autotest_server.os.scandir", return_value=mock_entries
+        ), patch(
+            "autotest_server.os.kill"
+        ) as mock_kill, patch.object(
+            autotest_server, "config", {"max_test_timeout": 30}
+        ):
             results = autotest_server._run_test_specs(
                 cmd="echo {}",
                 test_settings=self._make_settings(),
@@ -187,15 +205,21 @@ class TestTimeoutKillHandler(unittest.TestCase):
             ("", "Killed\n"),
         ]
 
-        with patch("autotest_server._create_test_script_command", return_value="echo test"), \
-             patch("autotest_server._get_env_vars", return_value={}), \
-             patch("autotest_server._update_env_vars", side_effect=lambda b, t: {**b, **t}), \
-             patch("autotest_server.subprocess.Popen", return_value=mock_proc), \
-             patch("autotest_server._get_feedback", return_value=([], [])), \
-             patch("autotest_server.getpass.getuser", return_value="autotest"), \
-             patch("autotest_server._kill_user_processes") as mock_kill_user, \
-             patch("autotest_server.os.scandir", side_effect=FileNotFoundError), \
-             patch.object(autotest_server, "config", {"max_test_timeout": 30}):
+        with patch("autotest_server._create_test_script_command", return_value="echo test"), patch(
+            "autotest_server._get_env_vars", return_value={}
+        ), patch("autotest_server._update_env_vars", side_effect=lambda b, t: {**b, **t}), patch(
+            "autotest_server.subprocess.Popen", return_value=mock_proc
+        ), patch(
+            "autotest_server._get_feedback", return_value=([], [])
+        ), patch(
+            "autotest_server.getpass.getuser", return_value="autotest"
+        ), patch(
+            "autotest_server._kill_user_processes"
+        ) as mock_kill_user, patch(
+            "autotest_server.os.scandir", side_effect=FileNotFoundError
+        ), patch.object(
+            autotest_server, "config", {"max_test_timeout": 30}
+        ):
             results = autotest_server._run_test_specs(
                 cmd="echo {}",
                 test_settings=self._make_settings(),
@@ -220,15 +244,21 @@ class TestTimeoutKillHandler(unittest.TestCase):
         ]
         mock_proc.returncode = -9  # SIGKILL
 
-        with patch("autotest_server._create_test_script_command", return_value="echo test"), \
-             patch("autotest_server._get_env_vars", return_value={}), \
-             patch("autotest_server._update_env_vars", side_effect=lambda b, t: {**b, **t}), \
-             patch("autotest_server.subprocess.Popen", return_value=mock_proc), \
-             patch("autotest_server._get_feedback", return_value=([], [])), \
-             patch("autotest_server.getpass.getuser", return_value="autotest"), \
-             patch("autotest_server._kill_user_processes"), \
-             patch("autotest_server.os.scandir", side_effect=FileNotFoundError), \
-             patch.object(autotest_server, "config", {"max_test_timeout": 30}):
+        with patch("autotest_server._create_test_script_command", return_value="echo test"), patch(
+            "autotest_server._get_env_vars", return_value={}
+        ), patch("autotest_server._update_env_vars", side_effect=lambda b, t: {**b, **t}), patch(
+            "autotest_server.subprocess.Popen", return_value=mock_proc
+        ), patch(
+            "autotest_server._get_feedback", return_value=([], [])
+        ), patch(
+            "autotest_server.getpass.getuser", return_value="autotest"
+        ), patch(
+            "autotest_server._kill_user_processes"
+        ), patch(
+            "autotest_server.os.scandir", side_effect=FileNotFoundError
+        ), patch.object(
+            autotest_server, "config", {"max_test_timeout": 30}
+        ):
             results = autotest_server._run_test_specs(
                 cmd="echo {}",
                 test_settings=self._make_settings(),
