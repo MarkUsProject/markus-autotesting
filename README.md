@@ -206,6 +206,10 @@ supervisor_url: # url used by the supervisor process. default is: '127.0.0.1:900
 
 worker_log_dir: # an absolute path to a directory containing the worker's stdout and stderr logs.
 
+max_test_timeout: # maximum number of seconds a single test is allowed to run before being killed.
+                  # When set, any per-test timeout exceeding this value is capped to it, and tests
+                  # with no timeout default to this value. default is: 3600
+
 rlimit_settings: # RLIMIT settings (see details below)
   nproc: # for example, this setting sets the hard and soft limits for the number of processes available to 300
     - 300

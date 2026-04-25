@@ -5,6 +5,7 @@ worker_log_dir: !ENV ${WORKER_LOG_DIR}
 default_remote_url: https://polymouth.teach.cs.toronto.edu:443/chat
 remote_url_whitelist:
   - https://polymouth.teach.cs.toronto.edu:443/chat
+max_test_timeout: 3600
 workers:
   - user: !ENV ${USER}
     queues:
