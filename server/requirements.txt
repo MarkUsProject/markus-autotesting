@@ -5,5 +5,5 @@ jsonschema==4.26.0
 markus-autotesting-core==0.1.0
 msgspec==0.20.0
 requests==2.33.1
-psycopg2-binary==2.9.11
+psycopg2-binary==2.9.12
 supervisor==4.3.0
