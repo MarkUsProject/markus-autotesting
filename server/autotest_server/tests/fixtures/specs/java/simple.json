@@ -1,0 +1,33 @@
+{
+    "tester_type": "java",
+    "test_data": [
+        {
+            "script_files": [
+                "Test1.java"
+            ],
+            "category": [
+                "instructor"
+            ],
+            "timeout": 30,
+            "extra_info": {
+                "criterion": "criterion",
+                "display_output": "instructors",
+                "name": "Java Test Group 1"
+            }
+        },
+        {
+            "script_files": [
+                "Test2.java"
+            ],
+            "category": [
+                "instructor"
+            ],
+            "timeout": 30,
+            "extra_info": {
+                "criterion": "criterion",
+                "display_output": "instructors",
+                "name": "Java Test Group 2"
+            }
+        }
+    ]
+}

@@ -4,8 +4,8 @@ import sys
 import shutil
 import time
 import json
-import subprocess
 import signal
+import subprocess
 import socket
 import getpass
 import requests
@@ -99,6 +99,31 @@ def _kill_user_processes(test_username: str) -> None:
     """
     kill_cmd = f"sudo -u {test_username} -- bash -c 'kill -KILL -1'"
     subprocess.run(kill_cmd, shell=True)
+
+
+def _kill_pgid_children(proc: subprocess.Popen) -> None:
+    """
+    Kill all processes in our process group except the current (worker) process.
+    Tests may spawn subprocesses (e.g. CSC209) that share our group;
+    proc.kill() alone would leave those running.
+    Falls back to proc.kill() when /proc is unavailable (non-Linux).
+    """
+    worker_pid = os.getpid()
+    worker_pgid = os.getpgid(worker_pid)
+    try:
+        for entry in os.scandir("/proc"):
+            if not entry.name.isdigit():
+                continue
+            pid = int(entry.name)
+            if pid == worker_pid:
+                continue
+            try:
+                if os.getpgid(pid) == worker_pgid:
+                    os.kill(pid, signal.SIGKILL)
+            except (ProcessLookupError, PermissionError, OSError):
+                pass
+    except FileNotFoundError:
+        proc.kill()
 
 
 def _create_test_script_command(tester_type: str) -> str:
@@ -218,13 +243,18 @@ def _run_test_specs(
                 out, err = "", ""
                 timeout_expired = None
                 timeout = test_data.get("timeout")
+                max_timeout = config.get("max_test_timeout")
+                if max_timeout is not None:
+                    if timeout is None:
+                        timeout = max_timeout
+                    else:
+                        timeout = min(timeout, max_timeout)
                 try:
                     env = settings.get("_env", {})
                     env_vars = {**os.environ, **_get_env_vars(test_username), **env}
                     env_vars = _update_env_vars(env_vars, test_env_vars)
                     proc = subprocess.Popen(
                         args,
-                        start_new_session=True,
                         cwd=tests_path,
                         shell=True,
                         stdout=subprocess.PIPE,
@@ -238,14 +268,16 @@ def _run_test_specs(
                         settings_json = json.dumps({**settings, "test_data": test_data})
                         out, err = proc.communicate(input=settings_json, timeout=timeout)
                     except subprocess.TimeoutExpired:
-                        if test_username == getpass.getuser():
-                            pgrp = os.getpgid(proc.pid)
-                            os.killpg(pgrp, signal.SIGKILL)
-                        else:
+                        if test_username != getpass.getuser():
                             _kill_user_processes(test_username)
+                        else:
+                            _kill_pgid_children(proc)
+                            proc.wait()
                         out, err = proc.communicate()
-                        if err == "Killed\n":  # Default message from shell
-                            test_group_name = test_data.get("extra_info", {}).get("name", "").strip()
+                        test_group_name = test_data.get("extra_info", {}).get("name", "").strip()
+                        if err == "Killed\n" or (not err and proc.returncode is not None and proc.returncode != 0):
+                            # err can be "Killed\n" (shell default) or empty (SIGKILL/OOM silent crash).
+                            # Check proc.returncode to reliably detect both cases.
                             if test_group_name:
                                 err = f"Tests for {test_group_name} did not complete within time limit ({timeout}s)\n"
                             else:

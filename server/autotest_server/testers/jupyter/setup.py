@@ -1,7 +1,8 @@
 import os
-import shutil
-import json
 import subprocess
+
+from ..schema import generate_schema
+from .schema import JupyterTesterSettings
 
 
 def create_environment(settings_, env_dir, _default_env_dir):
@@ -22,13 +23,7 @@ def create_environment(settings_, env_dir, _default_env_dir):
 
 
 def settings():
-    with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "settings_schema.json")) as f:
-        settings_ = json.load(f)
-    py_versions = [f"3.{x}" for x in range(11, 14) if shutil.which(f"python3.{x}")]
-    python_versions = settings_["properties"]["env_data"]["properties"]["python_version"]
-    python_versions["enum"] = py_versions
-    python_versions["default"] = py_versions[-1]
-    return settings_
+    return generate_schema(JupyterTesterSettings)
 
 
 def install():

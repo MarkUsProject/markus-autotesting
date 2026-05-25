@@ -12,4 +12,4 @@ RUN apt-get update -y && \
 
 WORKDIR /app
 
-CMD /markus_venv/bin/python run.py
+CMD ["/markus_venv/bin/python", "run.py"]
