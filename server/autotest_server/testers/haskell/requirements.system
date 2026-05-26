@@ -21,5 +21,13 @@ if [ ! -x "/usr/local/bin/stack" ]; then
     libgmp10 \
     libncurses-dev
   curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | BOOTSTRAP_HASKELL_NONINTERACTIVE=1 BOOTSTRAP_HASKELL_MINIMAL=1 sh
-  $HOME/.ghcup/bin/ghcup install stack recommended --isolate /usr/local/bin
+
+  # Create a dedicated, empty folder to satisfy ghcup's isolation requirements
+  mkdir -p /usr/local/bin/stack-isolated
+
+  # Install stack cleanly into the isolated subfolder
+  ~/.ghcup/bin/ghcup install stack recommended --isolate /usr/local/bin/stack-isolated
+
+  # Link the executable back into the global PATH
+  ln -sf /usr/local/bin/stack-isolated/stack /usr/local/bin/stack
 fi
