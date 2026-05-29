@@ -1,7 +1,9 @@
 import os
-import json
 import subprocess
 import requests
+
+from ..schema import generate_schema
+from .schema import JavaTesterSettings
 
 
 def create_environment(_settings, _env_dir, default_env_dir):
@@ -10,7 +12,9 @@ def create_environment(_settings, _env_dir, default_env_dir):
 
 def install():
     this_dir = os.path.dirname(os.path.realpath(__file__))
-    subprocess.run(os.path.join(this_dir, "requirements.system"), check=True)
+    path = os.path.join(this_dir, "requirements.system")
+    print(f"[AUTOTESTER] Running {path}", flush=True)
+    subprocess.run(path, check=True)
     url = (
         "https://repo1.maven.org/maven2/org/junit/platform/junit-platform-console-standalone/1.7.0/junit-platform"
         "-console-standalone-1.7.0.jar"
@@ -21,5 +25,4 @@ def install():
 
 
 def settings():
-    with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "settings_schema.json")) as f:
-        return json.load(f)
+    return generate_schema(JavaTesterSettings)

@@ -76,7 +76,11 @@
               "submission_image": { "type": "string" },
               "submission_type": { "type": "string" },
               "system_prompt": { "type": "string" },
-              "test_output": { "type": "string" }
+              "test_output": { "type": "string" },
+              "remote_url": {
+                "title": "Remote URL",
+                "type": "string"
+              }
             }
           },
           "extra_info": {

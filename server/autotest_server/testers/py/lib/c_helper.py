@@ -9,7 +9,6 @@ import subprocess
 from typing import Optional, List
 import unittest
 
-
 DEFAULT_LTRACE_LOG_FILE = "ltrace_log.txt"
 DEFAULT_GCC_FLAGS = ["-std=gnu99", "-Wall", "-g"]
 DEFAULT_LTRACE_FLAGS = ["-f", "-n", "2", "-o", DEFAULT_LTRACE_LOG_FILE]

@@ -36,7 +36,7 @@ def settings():
     python_versions["default"] = py_versions[-1]
     pyta_version = settings_["properties"]["env_data"]["properties"]["pyta_version"]
     pyta_version["default"] = PYTA_VERSION
-    return settings_
+    return settings_, {}
 
 
 def install():

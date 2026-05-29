@@ -251,11 +251,8 @@ class PyTest(Test):
         """
         Return a json string containing all test result information.
         """
-        if self.points_earned is not None and 0 < self.points_earned < self.points_total:
-            return self.partially_passed(points_earned=self.points_earned, message=self.message)
-        elif self.points_earned is not None and self.points_earned > self.points_total:
-            bonus = self.points_earned - self.points_total
-            return self.passed_with_bonus(points_bonus=bonus, message=self.message)
+        if self.points_earned is not None:
+            return self.done(points_earned=self.points_earned, message=self.message)
         elif self.status == "success":
             return self.passed(message=self.message)
         elif self.status == "failure":
@@ -301,7 +298,7 @@ class PyTester(Tester):
         test_suite = self._load_unittest_tests(test_file)
         with open(os.devnull, "w") as nullstream:
             test_runner = unittest.TextTestRunner(
-                verbosity=self.specs["test_data", "output_verbosity"],
+                verbosity=self.specs["test_data", "output_verbosity"] or "2",
                 stream=nullstream,
                 resultclass=TextTestResults,
             )
@@ -317,9 +314,9 @@ class PyTester(Tester):
         with open(os.devnull, "w") as null_out:
             try:
                 sys.stdout = null_out
-                verbosity = self.specs["test_data", "output_verbosity"]
+                verbosity = self.specs["test_data", "output_verbosity"] or "short"
                 plugin = PytestPlugin()
-                pytest.main([test_file, f"--tb={verbosity}"], plugins=[plugin])
+                pytest.main([test_file, f"--tb={verbosity}", "-p", "no:cacheprovider"], plugins=[plugin])
                 results.extend(plugin.results.values())
                 self.annotations = plugin.annotations
                 self.overall_comments = plugin.overall_comments

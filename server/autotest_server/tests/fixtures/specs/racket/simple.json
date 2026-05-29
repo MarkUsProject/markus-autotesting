@@ -1,0 +1,22 @@
+{
+    "tester_type": "racket",
+    "test_data": [
+        {
+            "script_files": [
+                {
+                    "test_suite_name": "all-tests",
+                    "script_file": "test.rkt"
+                }
+            ],
+            "category": [
+                "instructor"
+            ],
+            "timeout": 30,
+            "extra_info": {
+                "criterion": "criterion",
+                "display_output": "instructors",
+                "name": "Racket Test Group"
+            }
+        }
+    ]
+}

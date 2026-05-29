@@ -26,9 +26,7 @@ def test_success_with_context(request, monkeypatch):
     mock_process.stderr = ""
 
     with patch("subprocess.run", return_value=mock_process):
-        tester = RTester(
-            specs=TestSpecs.from_json(
-                """
+        tester = RTester(specs=TestSpecs.from_json("""
             {
               "test_data": {
                 "script_files": ["fixtures/sample_tests_success.R"],
@@ -40,9 +38,7 @@ def test_success_with_context(request, monkeypatch):
                 }
               }
             }
-        """
-            )
-        )
+        """))
 
         results = tester.run_r_tests()
 

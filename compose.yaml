@@ -7,7 +7,7 @@ services:
         UBUNTU_VERSION: '24.04'
         LOGIN_USER: 'docker'
         WORKSPACE: '/home/docker/.autotesting'
-    image: markus-autotest-server-dev:1.4.0
+    image: markus-autotest-server-dev:1.5.0
     volumes:
       - ./server:/app:cached
       - venv_server:/home/docker/markus_venv
@@ -29,7 +29,7 @@ services:
       dockerfile: ./.dockerfiles/Dockerfile
       args:
         UBUNTU_VERSION: '24.04'
-    image: markus-autotest-client-dev:1.4.0
+    image: markus-autotest-client-dev:1.5.0
     container_name: 'autotest-client'
     volumes:
       - ./client:/app:cached

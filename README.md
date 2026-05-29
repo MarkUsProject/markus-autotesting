@@ -128,6 +128,8 @@ The autotester currently supports testers for the following languages and testin
     - [`tasty-quickcheck`](https://hackage.haskell.org/package/tasty-quickcheck)
 - `java`
     - [JUnit](https://junit.org/junit4/)
+- `js` (JavaScript)
+    - [Jest](https://jestjs.io/)
 - `py` (python3)
     - [Unittest](https://docs.python.org/3/library/unittest.html)
     - [Pytest](https://docs.pytest.org/en/latest/)
@@ -155,6 +157,8 @@ Installing each tester will also install the following additional packages (syst
     - tasty-quickcheck (cabal package)
 - `java`
     - openjdk-8-jdk
+- `js` (JavaScript)
+    - none
 - `py` (python3)
     - none
 - `pyta`
@@ -201,6 +205,10 @@ supervisor_url: # url used by the supervisor process. default is: '127.0.0.1:900
                 # This can also be set with the SUPERVISOR_URL environment variable.
 
 worker_log_dir: # an absolute path to a directory containing the worker's stdout and stderr logs.
+
+max_test_timeout: # maximum number of seconds a single test is allowed to run before being killed.
+                  # When set, any per-test timeout exceeding this value is capped to it, and tests
+                  # with no timeout default to this value. default is: 3600
 
 rlimit_settings: # RLIMIT settings (see details below)
   nproc: # for example, this setting sets the hard and soft limits for the number of processes available to 300
