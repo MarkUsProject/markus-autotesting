@@ -271,9 +271,7 @@ def _run_test_specs(
                         # The tester parses files_url into the spec fields; other
                         # testers ignore this key.
                         attribution = {"files_url": files_url, "categories": categories, "batch_id": batch_id}
-                        settings_json = json.dumps(
-                            {**settings, "test_data": test_data, "_attribution": attribution}
-                        )
+                        settings_json = json.dumps({**settings, "test_data": test_data, "_attribution": attribution})
                         out, err = proc.communicate(input=settings_json, timeout=timeout)
                     except subprocess.TimeoutExpired:
                         if test_username != getpass.getuser():

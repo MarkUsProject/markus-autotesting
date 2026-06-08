@@ -133,7 +133,7 @@ class AiTester(Tester):
             results[test_label] = {
                 "title": test_label,
                 "status": "error",
-                "message": f"Unsupported model type: \"{model}\". Allowed models: {allowed}.",
+                "message": f'Unsupported model type: "{model}". Allowed models: {allowed}.',
             }
             return results
 

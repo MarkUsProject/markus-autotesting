@@ -20,9 +20,7 @@ def set_required_env():
     os.makedirs(os.environ["WORKER_LOG_DIR"], exist_ok=True)
 
 
-GATEWAY_FILE_URL = (
-    "https://markus.example.edu/api/courses/12/assignments/34/groups/56/submission_files?collected=true"
-)
+GATEWAY_FILE_URL = "https://markus.example.edu/api/courses/12/assignments/34/groups/56/submission_files?collected=true"
 
 
 def _make_spec(output="overall_comment", config_overrides=None, attribution=None):
