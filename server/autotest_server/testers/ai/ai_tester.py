@@ -1,14 +1,68 @@
 import json
 import os
+import re
 import sys
 
 from ..tester import Test, Tester
 from ..specs import TestSpecs
 import subprocess
-from typing import Type
+from typing import Optional, Type
+from urllib.parse import urlsplit
 from dotenv import load_dotenv
 from pathlib import Path
 import PyPDF2
+
+# Models the AI tester is allowed to invoke. "remote" routes to the
+# markus-ai-server proxy (local models); "openai-remote" routes to the
+# self-hosted LiteLLM gateway (cloud OpenAI, telemetry + budget enforced).
+# Any other model would reach a cloud provider untracked, so it is rejected.
+ALLOWED_MODELS = ("remote", "openai-remote")
+
+# Categories ordered most-privileged first. A job's categories array collapses
+# to a single role for telemetry; when more than one is present the most
+# privileged wins (see ai-telemetry-gateway decision-record §4).
+_ROLE_PRIORITY = ("instructor", "student")
+
+# The four spec attribution fields live inside the MarkUs file_url, shaped
+# <instance>/api/courses/<course_id>/assignments/<assignment_id>/groups/<group_id>/submission_files
+_FILE_URL_RE = re.compile(
+    r"/api/courses/(?P<course_id>\d+)"
+    r"/assignments/(?P<assignment_id>\d+)"
+    r"/groups/(?P<group_id>\d+)/submission_files"
+)
+
+
+def _resolve_category(categories: list) -> Optional[str]:
+    """Collapse the categories array to one role; most-privileged wins."""
+    for role in _ROLE_PRIORITY:
+        if role in categories:
+            return role
+    return categories[0] if categories else None
+
+
+def build_spend_metadata(files_url: Optional[str], categories: Optional[list], batch_id) -> dict:
+    """Extract the six attribution fields the gateway records on every call.
+
+    Raises ValueError when ``files_url`` does not match the expected MarkUs
+    shape. A malformed URL is a programming error in MarkUs, not a recoverable
+    runtime condition, so we fail loud rather than emit a ledger row with
+    nonsense identifiers.
+    """
+    parts = urlsplit(files_url or "")
+    match = _FILE_URL_RE.search(parts.path)
+    if not parts.netloc or match is None:
+        raise ValueError(
+            f"Cannot extract attribution from file_url {files_url!r}: expected "
+            ".../api/courses/<id>/assignments/<id>/groups/<id>/submission_files"
+        )
+    return {
+        "instance": parts.netloc,
+        "course_id": int(match["course_id"]),
+        "assignment_id": int(match["assignment_id"]),
+        "group_id": int(match["group_id"]),
+        "batch_id": batch_id,
+        "category": _resolve_category(categories or []),
+    }
 
 
 class AiTest(Test):
@@ -72,12 +126,14 @@ class AiTester(Tester):
         output_mode = test_group.get("output")
         cmd = [sys.executable, "-m", "ai_feedback"]
 
-        # Restrict to remote model only — prevent access to cloud AIs
-        if config.get("model", "") != "remote":
+        # Restrict to the gateway-fronted models — prevent untracked cloud access.
+        model = config.get("model", "")
+        if model not in ALLOWED_MODELS:
+            allowed = ", ".join(f"'{m}'" for m in ALLOWED_MODELS)
             results[test_label] = {
                 "title": test_label,
                 "status": "error",
-                "message": f"Unsupported model type: \"{config.get('model', '')}\". Only 'remote' model is allowed.",
+                "message": f"Unsupported model type: \"{model}\". Allowed models: {allowed}.",
             }
             return results
 
@@ -100,6 +156,23 @@ class AiTester(Tester):
                 "feedback generated.",
             }
             return results
+
+        # Gateway-bound calls carry MarkUs attribution so the ledger can record
+        # per-course spend and the gatekeeper can enforce budgets. The worker
+        # injects the raw pieces under "_attribution"; we parse them here, at
+        # the point the AI feedback library is about to be invoked.
+        if model == "openai-remote":
+            attribution = self.specs.get("_attribution", default={})
+            try:
+                metadata = build_spend_metadata(
+                    attribution.get("files_url"),
+                    attribution.get("categories"),
+                    attribution.get("batch_id"),
+                )
+            except ValueError as ve:
+                results[test_label] = {"title": test_label, "status": "error", "message": str(ve)}
+                return results
+            env["LITELLM_SPEND_METADATA"] = json.dumps(metadata)
 
         for key, value in config.items():
             cmd.extend(["--" + key, str(value)])
