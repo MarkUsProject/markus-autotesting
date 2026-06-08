@@ -242,6 +242,7 @@ def run_tests(settings_id, user):
 
     test_data = request.json["test_data"]
     categories = request.json["categories"]
+    batch_id = request.json.get("batch_id")
     high_priority = request.json.get("request_high_priority")
     queue_name = "batch" if len(test_data) > 1 else ("high" if high_priority else "low")
     queue = rq.Queue(queue_name, connection=REDIS_CONNECTION)
@@ -264,6 +265,7 @@ def run_tests(settings_id, user):
             "test_id": id_,
             "files_url": url,
             "categories": categories,
+            "batch_id": batch_id,
             "user": user,
             "test_env_vars": test_env_vars,
         }

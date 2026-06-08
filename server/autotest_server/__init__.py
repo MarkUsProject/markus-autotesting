@@ -223,6 +223,8 @@ def _run_test_specs(
     test_username: str,
     test_id: Union[int, str],
     test_env_vars: Dict[str, str],
+    files_url: Optional[str] = None,
+    batch_id: Optional[int] = None,
 ) -> List[ResultData]:
     """
     Run each test script in test_scripts in the tests_path directory using the
@@ -265,7 +267,13 @@ def _run_test_specs(
                         executable="/bin/bash",
                     )
                     try:
-                        settings_json = json.dumps({**settings, "test_data": test_data})
+                        # Raw attribution for telemetry-aware testers (e.g. AI).
+                        # The tester parses files_url into the spec fields; other
+                        # testers ignore this key.
+                        attribution = {"files_url": files_url, "categories": categories, "batch_id": batch_id}
+                        settings_json = json.dumps(
+                            {**settings, "test_data": test_data, "_attribution": attribution}
+                        )
                         out, err = proc.communicate(input=settings_json, timeout=timeout)
                     except subprocess.TimeoutExpired:
                         if test_username != getpass.getuser():
@@ -388,7 +396,7 @@ def tester_user() -> Tuple[str, str]:
     return user_name, user_workspace
 
 
-def run_test(settings_id, test_id, files_url, categories, user, test_env_vars):
+def run_test(settings_id, test_id, files_url, categories, user, test_env_vars, batch_id=None):
     results = []
     error = None
     try:
@@ -405,7 +413,9 @@ def run_test(settings_id, test_id, files_url, categories, user, test_env_vars):
             _clear_working_directory(tests_path, test_username)
             _setup_files(settings_id, user, files_url, tests_path, test_username)
             cmd = run_test_command(test_username=test_username)
-            results = _run_test_specs(cmd, settings, categories, tests_path, test_username, test_id, test_env_vars)
+            results = _run_test_specs(
+                cmd, settings, categories, tests_path, test_username, test_id, test_env_vars, files_url, batch_id
+            )
         finally:
             _stop_tester_processes(test_username)
             _clear_working_directory(tests_path, test_username)
