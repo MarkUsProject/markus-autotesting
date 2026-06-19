@@ -15,6 +15,7 @@ All notable changes to this project will be documented here.
 - Fixed Python tester to correctly report marks when `markus_marks_earned` equals total or zero (#716)
 - Fix worker orphan processes and add server-side max test timeout cap (#710)
 - Resolve ghcup isolation installation failure in Haskell autotester (#725)
+- Add libuv1-dev system dependency required by fs 2.x (#732)
 
 ## [v2.9.0]
 - Install stack with GHCup (#626)
