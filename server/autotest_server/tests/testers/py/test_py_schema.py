@@ -1,4 +1,5 @@
 import msgspec
+import pytest
 
 from ....testers.py.schema import PyTesterSettings
 
@@ -49,3 +50,45 @@ def test_output_verbosity_accepts_string_for_pytest() -> None:
     verbosity = settings.test_data[0].output_verbosity
     assert verbosity == "short"
     assert type(verbosity) is str
+
+
+def test_output_verbosity_rejects_unknown_int() -> None:
+    """Integer values outside the allowed set must be rejected, not silently accepted."""
+    with pytest.raises(msgspec.ValidationError):
+        msgspec.json.decode(
+            b"""
+            {
+              "env_data": {},
+              "test_data": [
+                {
+                  "script_files": ["test.py"],
+                  "category": ["instructor"],
+                  "tester": "unittest",
+                  "output_verbosity": 5
+                }
+              ]
+            }
+            """,
+            type=PyTesterSettings,
+        )
+
+
+def test_output_verbosity_rejects_unknown_string() -> None:
+    """String values outside the allowed set must be rejected, not silently accepted."""
+    with pytest.raises(msgspec.ValidationError):
+        msgspec.json.decode(
+            b"""
+            {
+              "env_data": {},
+              "test_data": [
+                {
+                  "script_files": ["test.py"],
+                  "category": ["instructor"],
+                  "tester": "pytest",
+                  "output_verbosity": "verbose"
+                }
+              ]
+            }
+            """,
+            type=PyTesterSettings,
+        )
