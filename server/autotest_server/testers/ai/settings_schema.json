@@ -60,7 +60,16 @@
                 "enum": ["code", "text", "image"]
               },
               "submission": { "type": "string" },
-              "model": { "type": "string" },
+              "model": {
+                "title": "Model Location",
+                "type": "string",
+                "enum": ["remote"],
+                "default": "remote"
+              },
+              "model_name": {
+                "title": "Model Name",
+                "type": "string"
+              },
               "json_schema": { "type": "string" },
               "llama_mode": {
                 "type": "string",
