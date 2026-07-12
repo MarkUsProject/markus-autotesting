@@ -24,7 +24,8 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
                        postgresql-client \
                        libpq-dev \
                        sudo \
-                       git
+                       git \
+                       socat
 
 RUN useradd -ms /bin/bash $LOGIN_USER && \
     usermod -aG sudo $LOGIN_USER && \
