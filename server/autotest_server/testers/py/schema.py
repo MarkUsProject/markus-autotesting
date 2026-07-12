@@ -30,5 +30,6 @@ class PyTestData(BaseTestData, kw_only=True):
 
     tester: Annotated[Literal["unittest", "pytest"], Meta(title="Test runner")] = "pytest"
     output_verbosity: Annotated[
-        Literal["", "0", "1", "2", "short", "auto", "long", "no", "line", "native"], Meta(title="Output verbosity")
+        Literal["", "short", "auto", "long", "no", "line", "native"] | Literal[0, 1, 2],
+        Meta(title="Output verbosity"),
     ] = ""
