@@ -22,6 +22,9 @@ services:
     depends_on:
       - postgres
       - redis
+    networks:
+      - default
+      - markus_dev
 
   client: &client
     build:

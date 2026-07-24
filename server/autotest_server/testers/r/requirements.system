@@ -8,7 +8,8 @@ if ! dpkg -l r-base &> /dev/null; then
   # Set global R timezone
   echo "TZ=$( cat /etc/timezone )" >> /etc/R/Renviron.site
 
-  # Install system requirements for tidyverse. Obtained by running `pak::pkg_system_requirements("tidyverse")`.
+  # Install system requirements for tidyverse and fs. Obtained by running `pak::pkg_system_requirements("tidyverse")`
+  # and adding libuv1-dev for the fs package (required since fs 2.x dropped its vendored libuv).
   DEBIAN_FRONTEND=noninteractive apt-get install -y -o 'Dpkg::Options::=--force-confdef' -o 'Dpkg::Options::=--force-confold' \
     libx11-dev \
     libcurl4-openssl-dev \
@@ -25,5 +26,6 @@ if ! dpkg -l r-base &> /dev/null; then
     libfontconfig1-dev \
     libfribidi-dev \
     libharfbuzz-dev \
-    libxml2-dev
+    libxml2-dev \
+    libuv1-dev
 fi
