@@ -206,9 +206,11 @@ supervisor_url: # url used by the supervisor process. default is: '127.0.0.1:900
 
 worker_log_dir: # an absolute path to a directory containing the worker's stdout and stderr logs.
 
-max_test_timeout: # maximum number of seconds a single test is allowed to run before being killed.
-                  # When set, any per-test timeout exceeding this value is capped to it, and tests
-                  # with no timeout default to this value. default is: 3600
+max_test_timeout: # maximum number of seconds a test group is allowed to run before being killed.
+                  # When set, any per-test-group timeout exceeding this value is capped to it, and
+                  # groups with no timeout default to this value. default is: 3600
+                  # See docs/TIMEOUT-OVERVIEW.md for the full picture of how this interacts with the
+                  # instructor-configured per-test-group timeout and the infrastructure-level job timeout.
 
 rlimit_settings: # RLIMIT settings (see details below)
   nproc: # for example, this setting sets the hard and soft limits for the number of processes available to 300
@@ -271,7 +273,7 @@ Please see below for a description of all options and defaults:
 REDIS_URL=  # url of the redis database (this should be the same url set for the autotester or else the two cannot communicate)
 ACCESS_LOG= # file to write access log information to (default is stdout)
 ERROR_LOG= # file to write error log informatoin to (default is stderr)
-SETTINGS_JOB_TIMEOUT= # the maximum runtime (in seconds) of a job that updates settings before it is interrupted (default is 60) 
+SETTINGS_JOB_TIMEOUT= # the maximum runtime (in seconds) of a job that updates settings before it is interrupted (default is 1200) 
 ```
 
 ## Stack configuration
