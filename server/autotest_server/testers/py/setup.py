@@ -31,6 +31,10 @@ def settings():
     prop = components["PyTestData"]["properties"]["output_verbosity"]
     if "anyOf" in prop:
         prop["enum"] = [v for sub in prop.pop("anyOf") for v in sub["enum"]]
+    # The runtime default "" is a fall-back sentinel that is not a valid choice in
+    # either tester branch of the dependencies block; dropping it lets the form
+    # apply the branch default instead.
+    prop.pop("default", None)
 
     # Inject dependencies for output_verbosity for JSON Schema form
     json_schema["properties"]["test_data"]["items"]["dependencies"] = {

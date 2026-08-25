@@ -68,3 +68,17 @@ def test_valid_simple_schema(tester, files_list):
         instance = json.load(f)
 
     jsonschema.validate(instance, schema)
+
+
+def test_py_output_verbosity_defaults_match_tester_branches():
+    """A base default that no dependencies branch accepts leaves new test groups
+    invalid in the settings form (MarkUsProject/Markus#8129)."""
+    schemas, definitions = get_settings()
+    prop = definitions["PyTestData"]["properties"]["output_verbosity"]
+    branches = schemas["py"]["properties"]["test_data"]["items"]["dependencies"]["tester"]["oneOf"]
+    branch_enums = [branch["properties"]["output_verbosity"]["enum"] for branch in branches]
+    if "default" in prop:
+        assert any(prop["default"] in enum for enum in branch_enums)
+    for branch in branches:
+        verbosity = branch["properties"]["output_verbosity"]
+        assert verbosity["default"] in verbosity["enum"]
