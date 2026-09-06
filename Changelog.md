@@ -18,6 +18,7 @@ All notable changes to this project will be documented here.
 - Add libuv1-dev system dependency required by fs 2.x (#732)
 - Fix output_verbosity Literal to accept int values for unittest tester (#733)
 - Added `localhost:3000` forwarding to `server` Docker container (#740)
+- Locked AI tester `model` field to `"remote"` and added `model_name` field (#739)
 
 ## [v2.9.0]
 - Install stack with GHCup (#626)
