@@ -196,3 +196,33 @@ class TestRunTest(unittest.TestCase):
         self.assertIsNotNone(result_dict["error"])
         self.assertIn("Traceback", result_dict["error"])
         self.assertIn("Unexpected error", result_dict["error"])
+
+
+def _run_specs_capturing_stdin(monkeypatch, tmp_path, **kwargs):
+    """Run _run_test_specs with a fake tester process; return the JSON it received on stdin."""
+    captured = {}
+
+    class FakeProc:
+        returncode = 0
+
+        def communicate(self, input=None, timeout=None):
+            captured["stdin"] = json.loads(input)
+            return "{}", ""
+
+    monkeypatch.setattr(autotest_server.subprocess, "Popen", lambda *a, **kw: FakeProc())
+    monkeypatch.setattr(autotest_server, "_get_env_vars", lambda _user: {})
+    monkeypatch.setattr(autotest_server, "_get_feedback", lambda *a: ([], []))
+    settings = {"testers": [{"tester_type": "ai", "test_data": [{"category": ["student"], "timeout": 1}]}]}
+    autotest_server._run_test_specs("{}", settings, ["student"], str(tmp_path), "tester", 1, {}, **kwargs)
+    return captured["stdin"]
+
+
+def test_run_test_specs_injects_attribution(monkeypatch, tmp_path):
+    url = "https://m.edu/api/courses/1/assignments/2/groups/3/submission_files"
+    received = _run_specs_capturing_stdin(monkeypatch, tmp_path, files_url=url, batch_id=7)
+    assert received["_attribution"] == {"files_url": url, "categories": ["student"], "batch_id": 7}
+
+
+def test_run_test_specs_attribution_defaults_to_none(monkeypatch, tmp_path):
+    received = _run_specs_capturing_stdin(monkeypatch, tmp_path)
+    assert received["_attribution"] == {"files_url": None, "categories": ["student"], "batch_id": None}

@@ -19,6 +19,7 @@ All notable changes to this project will be documented here.
 - Fix output_verbosity Literal to accept int values for unittest tester (#733)
 - Added `localhost:3000` forwarding to `server` Docker container (#740)
 - Locked AI tester `model` field to `"remote"` and added `model_name` field (#739)
+- Add `openai-remote` model to the AI tester to route calls through the ai-telemetry-gateway with MarkUs attribution (#731)
 
 ## [v2.9.0]
 - Install stack with GHCup (#626)
