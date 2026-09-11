@@ -412,7 +412,15 @@ def run_test(settings_id, test_id, files_url, categories, user, test_env_vars, b
             _setup_files(settings_id, user, files_url, tests_path, test_username)
             cmd = run_test_command(test_username=test_username)
             results = _run_test_specs(
-                cmd, settings, categories, tests_path, test_username, test_id, test_env_vars, files_url, batch_id
+                cmd,
+                settings,
+                categories,
+                tests_path,
+                test_username,
+                test_id,
+                test_env_vars,
+                files_url=files_url,
+                batch_id=batch_id,
             )
         finally:
             _stop_tester_processes(test_username)

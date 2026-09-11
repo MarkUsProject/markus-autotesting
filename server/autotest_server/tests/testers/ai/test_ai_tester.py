@@ -4,7 +4,7 @@ from pathlib import Path
 
 import subprocess
 import pytest
-from ....testers.ai.ai_tester import AiTester, AiTest, build_spend_metadata
+from ....testers.ai.ai_tester import SPEND_METADATA_ENV, AiTester, AiTest, build_spend_metadata
 from ....testers.specs import TestSpecs
 
 DEFAULT_REMOTE_URL = "https://polymouth.teach.cs.toronto.edu:443/chat"
@@ -201,7 +201,7 @@ def test_openai_remote_threads_metadata_env(monkeypatch):
     )
     captured = _capture_subprocess(monkeypatch, stdout="Great job!")
     tester.call_ai_feedback()
-    metadata = json.loads(captured["env"]["LITELLM_SPEND_METADATA"])
+    metadata = json.loads(captured["env"][SPEND_METADATA_ENV])
     assert metadata == {
         "instance": "markus.example.edu",
         "course_id": 12,
@@ -226,7 +226,7 @@ def test_remote_model_does_not_set_metadata_env(monkeypatch):
     tester = _make_tester()  # default model "remote"
     captured = _capture_subprocess(monkeypatch, stdout="ok")
     tester.call_ai_feedback()
-    assert "LITELLM_SPEND_METADATA" not in (captured["env"] or {})
+    assert SPEND_METADATA_ENV not in (captured["env"] or {})
 
 
 def test_missing_submission_file():

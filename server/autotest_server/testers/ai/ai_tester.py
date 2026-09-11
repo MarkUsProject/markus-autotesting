@@ -20,8 +20,12 @@ ALLOWED_MODELS = ("remote", "openai-remote")
 
 # Categories ordered most-privileged first. A job's categories array collapses
 # to a single role for telemetry; when more than one is present the most
-# privileged wins (see ai-telemetry-gateway decision-record §4).
+# privileged wins.
 _ROLE_PRIORITY = ("instructor", "student")
+
+# Environment variable the AI feedback library reads for gateway attribution
+# (must match OpenAIRemoteModel.SPEND_METADATA_ENV in ai-autograding-feedback).
+SPEND_METADATA_ENV = "GATEWAY_SPEND_METADATA"
 
 # The four spec attribution fields live inside the MarkUs file_url, shaped
 # <instance>/api/courses/<course_id>/assignments/<assignment_id>/groups/<group_id>/submission_files
@@ -32,7 +36,7 @@ _FILE_URL_RE = re.compile(
 )
 
 
-def _resolve_category(categories: list) -> Optional[str]:
+def _resolve_category(categories: list[str]) -> Optional[str]:
     """Collapse the categories array to one role; most-privileged wins."""
     for role in _ROLE_PRIORITY:
         if role in categories:
@@ -40,7 +44,7 @@ def _resolve_category(categories: list) -> Optional[str]:
     return categories[0] if categories else None
 
 
-def build_spend_metadata(files_url: Optional[str], categories: Optional[list], batch_id) -> dict:
+def build_spend_metadata(files_url: Optional[str], categories: Optional[list[str]], batch_id: Optional[int]) -> dict:
     """Extract the six attribution fields the gateway records on every call.
 
     Raises ValueError when ``files_url`` does not match the expected MarkUs
@@ -172,7 +176,7 @@ class AiTester(Tester):
             except ValueError as ve:
                 results[test_label] = {"title": test_label, "status": "error", "message": str(ve)}
                 return results
-            env["LITELLM_SPEND_METADATA"] = json.dumps(metadata)
+            env[SPEND_METADATA_ENV] = json.dumps(metadata)
 
         for key, value in config.items():
             cmd.extend(["--" + key, str(value)])
