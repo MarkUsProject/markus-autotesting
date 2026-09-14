@@ -63,7 +63,7 @@
               "model": {
                 "title": "Model Location",
                 "type": "string",
-                "enum": ["remote"],
+                "enum": ["remote", "openai-remote"],
                 "default": "remote"
               },
               "model_name": {
