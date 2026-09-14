@@ -1,6 +1,9 @@
 # CHANGELOG
 All notable changes to this project will be documented here.
 
+## [v2.10.3]
+- Fixed unselected output verbosity default in Python tester test groups (#748)
+
 ## [v2.10.0]
 - Fixed Haskell test results to only include the function name (#687)
 - Improved robustness of tester installation scripts and Docker configuration (#688)
