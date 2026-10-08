@@ -175,6 +175,19 @@ def _get_env_vars(test_username: str) -> Dict[str, str]:
     return env_vars
 
 
+def _get_tester_secret_env(tester_type: str) -> Dict[str, str]:
+    """
+    Return the server-held environment variables for tester_type.
+
+    Only the AI tester gets any: its API keys from the ai_tester_env setting, and
+    PYTHONSAFEPATH so that uploaded files (e.g. a json.py) cannot shadow the modules
+    it imports while those keys are in its environment.
+    """
+    if tester_type != "ai":
+        return {}
+    return {**config.get("ai_tester_env", {}), "PYTHONSAFEPATH": "1"}
+
+
 def _get_feedback(test_data, tests_path, test_id) -> tuple[dict, str]:
     feedback_files = test_data.get("feedback_file_names", [])
     feedback, feedback_errors = [], []
@@ -237,6 +250,10 @@ def _run_test_specs(
 
         cmd_str = _create_test_script_command(tester_type)
         args = cmd.format(cmd_str)
+        secret_env = _get_tester_secret_env(tester_type)
+        if secret_env:
+            # A process left behind by an earlier tester could read this tester's environment.
+            _stop_tester_processes(test_username)
 
         for test_data in settings["test_data"]:
             test_category = test_data.get("category", [])
@@ -253,7 +270,7 @@ def _run_test_specs(
                         timeout = min(timeout, max_timeout)
                 try:
                     env = settings.get("_env", {})
-                    env_vars = {**os.environ, **_get_env_vars(test_username), **env}
+                    env_vars = {**os.environ, **_get_env_vars(test_username), **env, **secret_env}
                     env_vars = _update_env_vars(env_vars, test_env_vars)
                     proc = subprocess.Popen(
                         args,

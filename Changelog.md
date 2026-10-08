@@ -20,6 +20,7 @@ All notable changes to this project will be documented here.
 - Added `localhost:3000` forwarding to `server` Docker container (#740)
 - Locked AI tester `model` field to `"remote"` and added `model_name` field (#739)
 - Add `openai-remote` model to the AI tester to route calls through the ai-telemetry-gateway with MarkUs attribution (#731)
+- Moved AI tester API keys from an uploaded `.env` file to the `ai_tester_env` server setting (#761)
 
 ## [v2.9.0]
 - Install stack with GHCup (#626)

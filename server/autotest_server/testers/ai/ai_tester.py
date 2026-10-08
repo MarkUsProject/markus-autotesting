@@ -8,7 +8,6 @@ from ..specs import TestSpecs
 import subprocess
 from typing import Optional, Type
 from urllib.parse import urlsplit
-from dotenv import load_dotenv
 from pathlib import Path
 import PyPDF2
 
@@ -22,6 +21,10 @@ ALLOWED_MODELS = ("remote", "openai-remote")
 # to a single role for telemetry; when more than one is present the most
 # privileged wins.
 _ROLE_PRIORITY = ("instructor", "student")
+
+# Environment variable each allowed model reads its API key from. The autotester
+# server sets these from its ai_tester_env setting.
+API_KEY_ENV = {"remote": "REMOTE_API_KEY", "openai-remote": "GATEWAY_API_KEY"}
 
 # Environment variable the AI feedback library reads for gateway attribution
 # (must match OpenAIRemoteModel.SPEND_METADATA_ENV in ai-autograding-feedback).
@@ -119,7 +122,6 @@ class AiTester(Tester):
         Supports all standard arguments from ai_feedback.
         """
         results = {}
-        load_dotenv()
         env = os.environ.copy()
 
         test_group = self.specs["test_data"]
@@ -138,6 +140,16 @@ class AiTester(Tester):
                 "title": test_label,
                 "status": "error",
                 "message": f'Unsupported model type: "{model}". Allowed models: {allowed}.',
+            }
+            return results
+
+        api_key_env = API_KEY_ENV[model]
+        if not env.get(api_key_env):
+            results[test_label] = {
+                "title": test_label,
+                "status": "error",
+                "message": f"The AI tester is missing {api_key_env}. Ask the autotester administrator to set it "
+                "under ai_tester_env.",
             }
             return results
 

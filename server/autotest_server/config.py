@@ -121,6 +121,14 @@ class _Config:
 
         return constructor
 
+    @staticmethod
+    def _check_private(settings_file: str) -> None:
+        """Raise if settings_file, which holds AI tester secrets, is readable by anyone but its owner."""
+        if os.stat(settings_file).st_mode & 0o077:
+            raise PermissionError(
+                f"{settings_file} sets ai_tester_env, so only its owner may access it. Run: chmod 600 {settings_file}"
+            )
+
     def _validate(self):
         with open(os.path.join(DEFAULT_ROOT, "settings_schema.json")) as f:
             schema = json.load(f)
@@ -140,6 +148,8 @@ class _Config:
                 with open(settings_file) as f:
                     local_config = yaml.load(f, Loader=self._yaml_loader)
                     if local_config is not None:
+                        if "ai_tester_env" in local_config:
+                            self._check_private(settings_file)
                         config_dicts.append(local_config)
         return self._merge_dicts(config_dicts)
 
