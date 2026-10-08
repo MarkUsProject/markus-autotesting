@@ -1,4 +1,5 @@
 import subprocess
+import sys
 
 import pytest
 import fakeredis
@@ -243,6 +244,7 @@ def _run_specs_capturing_stdin(monkeypatch, tmp_path, **kwargs):
     monkeypatch.setattr(autotest_server.subprocess, "Popen", lambda *a, **kw: FakeProc())
     monkeypatch.setattr(autotest_server, "_get_env_vars", lambda _user: {})
     monkeypatch.setattr(autotest_server, "_get_feedback", lambda *a: ([], []))
+    monkeypatch.setattr(autotest_server, "_stop_tester_processes", lambda _user: None)
     settings = {"testers": [{"tester_type": "ai", "test_data": [{"category": ["student"], "timeout": 1}]}]}
     autotest_server._run_test_specs("{}", settings, ["student"], str(tmp_path), "tester", 1, {}, **kwargs)
     return captured["stdin"]
@@ -257,3 +259,80 @@ def test_run_test_specs_injects_attribution(monkeypatch, tmp_path):
 def test_run_test_specs_attribution_defaults_to_none(monkeypatch, tmp_path):
     received = _run_specs_capturing_stdin(monkeypatch, tmp_path)
     assert received["_attribution"] == {"files_url": None, "categories": ["student"], "batch_id": None}
+
+
+def _run_specs_capturing_envs(monkeypatch, tmp_path, tester_types, config=None, test_env_vars=None, events=None):
+    """Run _run_test_specs with fake tester processes; return the env each tester received, and the results."""
+    envs = {}
+    events = [] if events is None else events
+
+    class FakeProc:
+        returncode = 0
+
+        def communicate(self, input=None, timeout=None):
+            return "{}", ""
+
+    def fake_popen(*args, env=None, **kwargs):
+        tester_type = tester_types[len(envs)]
+        envs[tester_type] = env
+        events.append(f"popen:{tester_type}")
+        return FakeProc()
+
+    monkeypatch.setattr(autotest_server.subprocess, "Popen", fake_popen)
+    monkeypatch.setattr(autotest_server, "_get_env_vars", lambda _user: {})
+    monkeypatch.setattr(autotest_server, "_get_feedback", lambda *a: ([], []))
+    monkeypatch.setattr(autotest_server, "_stop_tester_processes", lambda _user: events.append("stop"))
+    monkeypatch.setattr(autotest_server, "config", config or {})
+    test_data = [{"category": ["student"], "timeout": 1}]
+    settings = {"testers": [{"tester_type": t, "test_data": test_data} for t in tester_types]}
+    results = autotest_server._run_test_specs(
+        "{}", settings, ["student"], str(tmp_path), "tester", 1, test_env_vars or {}
+    )
+    return envs, results
+
+
+AI_KEYS = {"ai_tester_env": {"GATEWAY_API_KEY": "gw-key", "REMOTE_API_KEY": "remote-key"}}
+
+
+def test_ai_tester_env_reaches_ai_tester(monkeypatch, tmp_path):
+    envs, _ = _run_specs_capturing_envs(monkeypatch, tmp_path, ["ai"], config=AI_KEYS)
+    assert envs["ai"]["GATEWAY_API_KEY"] == "gw-key"
+    assert envs["ai"]["REMOTE_API_KEY"] == "remote-key"
+    assert envs["ai"]["PYTHONSAFEPATH"] == "1"
+
+
+def test_ai_tester_env_stays_out_of_other_testers(monkeypatch, tmp_path):
+    envs, _ = _run_specs_capturing_envs(monkeypatch, tmp_path, ["py", "ai"], config=AI_KEYS)
+    assert "GATEWAY_API_KEY" not in envs["py"]
+    assert "REMOTE_API_KEY" not in envs["py"]
+    assert envs["ai"]["GATEWAY_API_KEY"] == "gw-key"
+
+
+def test_ai_tester_without_ai_tester_env_still_gets_safe_path(monkeypatch, tmp_path):
+    envs, _ = _run_specs_capturing_envs(monkeypatch, tmp_path, ["ai"])
+    assert envs["ai"]["PYTHONSAFEPATH"] == "1"
+    assert "GATEWAY_API_KEY" not in envs["ai"]
+
+
+def test_markus_env_vars_cannot_override_ai_tester_env(monkeypatch, tmp_path):
+    envs, results = _run_specs_capturing_envs(
+        monkeypatch, tmp_path, ["ai"], config=AI_KEYS, test_env_vars={"GATEWAY_API_KEY": "markus-key"}
+    )
+    assert envs == {}  # the AI tester never started
+    assert "cannot be overwritten for this test: GATEWAY_API_KEY" in json.dumps(results)
+
+
+def test_leftover_processes_stopped_before_ai_tester(monkeypatch, tmp_path):
+    events = []
+    _run_specs_capturing_envs(monkeypatch, tmp_path, ["py", "ai"], config=AI_KEYS, events=events)
+    assert events == ["popen:py", "stop", "popen:ai"]
+
+
+@pytest.mark.parametrize("tester_type, shadowed", [("ai", False), ("py", True)])
+def test_ai_tester_env_blocks_module_shadowing(monkeypatch, tmp_path, tester_type, shadowed):
+    monkeypatch.setattr(autotest_server, "config", {})
+    monkeypatch.delenv("PYTHONSAFEPATH", raising=False)
+    (tmp_path / "json.py").write_text("raise SystemExit('shadowed')\n")
+    env = {**os.environ, **autotest_server._get_tester_secret_env(tester_type)}
+    proc = subprocess.run([sys.executable, "-c", "import json"], cwd=tmp_path, env=env, capture_output=True, text=True)
+    assert ("shadowed" in proc.stderr) is shadowed

@@ -216,6 +216,10 @@ rlimit_settings: # RLIMIT settings (see details below)
   nproc: # for example, this setting sets the hard and soft limits for the number of processes available to 300
     - 300
     - 300
+
+ai_tester_env: # environment variables passed only to the ai tester, such as its API keys (see details below)
+  REMOTE_API_KEY: # API key for the "remote" model
+  GATEWAY_API_KEY: # API key for the "openai-remote" model
 ```
 
 ### autotester configuration details
@@ -246,6 +250,25 @@ Some test require the use of a dedicated port that is guaranteed not to be in us
 allows the user to specify a range from which these ports can be selected. When a test starts, the `PORT` environment
 variable will be set to the port number selected for this test run. Available port numbers will be different from test
 to test.  
+
+#### ai tester API keys
+
+The ai tester reads its API keys from the `ai_tester_env` setting. Instructors do not upload a `.env` file; the ai
+tester ignores one if present. Each key is passed to the ai tester process alone, never to other testers. A test that
+uses a model whose key is missing or empty reports an error naming the missing variable.
+
+```yaml
+ai_tester_env:
+  REMOTE_API_KEY: <key for the markus-ai-server proxy>
+  GATEWAY_API_KEY: <key for the ai-telemetry-gateway>
+```
+
+- Set the values in a configuration file readable by the autotester user alone (`chmod 600`). The autotester refuses to
+  start when a file that sets `ai_tester_env` is readable by its group or other users.
+- Write the values directly in the file. Values read with `!ENV` come from the autotester's own environment, which
+  every tester process inherits.
+- The ai tester sends the key to the test's `remote_url`. Keep `remote_url_whitelist` limited to trusted hosts.
+- A development server that does not check keys still needs a placeholder value.
 
 #### queue names and schemas
 
