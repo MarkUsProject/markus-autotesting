@@ -162,6 +162,37 @@ class TestRunTest(unittest.TestCase):
         self.assertEqual(call_args[0], "autotest:test_result:test_id_456")
         self.assertEqual(json.loads(call_args[1]), expected_result)
 
+    @patch("autotest_server.tester_user")
+    @patch("autotest_server.redis_connection")
+    def test_env_status_setup(self, mock_redis, mock_tester_user):
+        """
+        Test that run_test does not run tests queued before a settings update
+        while the new test environment is still being set up."""
+        mock_redis_instance = MagicMock()
+        mock_redis.return_value = mock_redis_instance
+
+        mock_settings = {"_env_status": "setup"}
+        mock_redis_instance.hget.return_value = json.dumps(mock_settings)
+
+        autotest_server.run_test(
+            settings_id="test_settings_id",
+            test_id="test_id_789",
+            files_url="http://example.com/files",
+            categories=["unit"],
+            user="test_user",
+            test_env_vars={},
+        )
+
+        expected_result = {
+            "test_groups": [],
+            "error": "Failed to run tests: Setting up test environment. Please try again later.",
+        }
+        mock_tester_user.assert_not_called()
+        mock_redis_instance.set.assert_called_once()
+        call_args = mock_redis_instance.set.call_args[0]
+        self.assertEqual(call_args[0], "autotest:test_result:test_id_789")
+        self.assertEqual(json.loads(call_args[1]), expected_result)
+
     @patch("autotest_server.redis_connection")
     @patch("autotest_server.tester_user")
     def test_general_exception(self, mock_tester_user, mock_redis):

@@ -405,6 +405,8 @@ def run_test(settings_id, test_id, files_url, categories, user, test_env_vars, b
         # If test settings contain errors, we do not want to run the tests.
         assert not settings.get("_error"), f"Error in test settings: {settings['_error']}"
         assert settings.get("_env_status") != "error", "Error in test settings"
+        # The settings may have been updated after this test was queued.
+        assert settings.get("_env_status") != "setup", "Setting up test environment. Please try again later."
 
         test_username, tests_path = tester_user()
         try:
