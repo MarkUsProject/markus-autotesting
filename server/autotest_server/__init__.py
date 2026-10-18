@@ -252,7 +252,7 @@ def _run_test_specs(
                     else:
                         timeout = min(timeout, max_timeout)
                 try:
-                    env = settings.get("_env", {})
+                    env = settings.get("_env") or {}
                     env_vars = {**os.environ, **_get_env_vars(test_username), **env}
                     env_vars = _update_env_vars(env_vars, test_env_vars)
                     proc = subprocess.Popen(
