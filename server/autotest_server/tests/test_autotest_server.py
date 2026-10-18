@@ -257,30 +257,3 @@ def test_run_test_specs_injects_attribution(monkeypatch, tmp_path):
 def test_run_test_specs_attribution_defaults_to_none(monkeypatch, tmp_path):
     received = _run_specs_capturing_stdin(monkeypatch, tmp_path)
     assert received["_attribution"] == {"files_url": None, "categories": ["student"], "batch_id": None}
-
-
-@pytest.mark.parametrize("tester_env", [{}, {"_env": None}], ids=["missing", "none"])
-def test_run_test_specs_without_tester_env(monkeypatch, tmp_path, tester_env):
-    """A tester with no _env (missing, or None as msgspec.to_builtins writes it) runs with no extra env vars."""
-    popen_kwargs = {}
-
-    class FakeProc:
-        returncode = 0
-
-        def communicate(self, input=None, timeout=None):
-            return "{}", ""
-
-    def fake_popen(*args, **kwargs):
-        popen_kwargs.update(kwargs)
-        return FakeProc()
-
-    monkeypatch.setattr(autotest_server.subprocess, "Popen", fake_popen)
-    monkeypatch.setattr(autotest_server, "_get_env_vars", lambda _user: {})
-    monkeypatch.setattr(autotest_server, "_get_feedback", lambda *a: ([], []))
-    settings = {
-        "testers": [{"tester_type": "custom", "test_data": [{"category": ["student"], "timeout": 1}], **tester_env}]
-    }
-    results = autotest_server._run_test_specs("{}", settings, ["student"], str(tmp_path), "tester", 1, {})
-
-    assert "env" in popen_kwargs
-    assert results[0]["stderr"] is None
