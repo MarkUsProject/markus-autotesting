@@ -20,6 +20,10 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
                        python3.12-venv \
                        python3.13 \
                        python3.13-venv \
+                       python3.14 \
+                       python3.14-venv \
+                       python3.15 \
+                       python3.15-venv \
                        redis-server \
                        postgresql-client \
                        libpq-dev \

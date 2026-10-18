@@ -22,6 +22,7 @@ All notable changes to this project will be documented here.
 - Add `openai-remote` model to the AI tester to route calls through the ai-telemetry-gateway with MarkUs attribution (#731)
 - Added msgspec validation tests for haskell, java, js, jupyter, r and racket tester settings (#759)
 - Updated Racket tester msgspec schema to require non-empty `script_file` paths (#762)
+- Added Python 3.14 and 3.15 support to the Python, Jupyter, and PyTA testers, the server Docker image, and the CI test matrix
 
 ## [v2.9.0]
 - Install stack with GHCup (#626)
