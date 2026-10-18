@@ -21,5 +21,5 @@ class RacketTestData(BaseTestData, kw_only=True):
 class _RacketScriptFile(Struct, kw_only=True):
     """The configuration for a single Racket test file."""
 
-    script_file: Annotated[AutotestFile, Meta(title="Test file")]
+    script_file: Annotated[AutotestFile, Meta(title="Test file", min_length=1)]
     test_suite_name: Annotated[str, Meta(title="Test suite name")] = "all-tests"

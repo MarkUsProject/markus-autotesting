@@ -51,6 +51,7 @@ def test_edge_settings_decode() -> None:
         pytest.param({"test_data": []}, id="empty test_data"),
         pytest.param({"test_data": [group(script_files=[])]}, id="empty script_files"),
         pytest.param({"test_data": [group(script_files=[{"test_suite_name": "x"}])]}, id="missing script_file"),
+        pytest.param({"test_data": [group(script_files=[{"script_file": ""}])]}, id="empty script_file"),
         pytest.param({"test_data": [group(script_files=["test.rkt"])]}, id="script file as string"),
     ],
 )

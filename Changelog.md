@@ -21,6 +21,7 @@ All notable changes to this project will be documented here.
 - Locked AI tester `model` field to `"remote"` and added `model_name` field (#739)
 - Add `openai-remote` model to the AI tester to route calls through the ai-telemetry-gateway with MarkUs attribution (#731)
 - Added msgspec validation tests for haskell, java, js, jupyter, r and racket tester settings (#759)
+- Updated Racket tester msgspec schema to require non-empty `script_file` paths (#762)
 
 ## [v2.9.0]
 - Install stack with GHCup (#626)
