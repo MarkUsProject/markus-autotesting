@@ -24,7 +24,7 @@ def set_required_env():
 
 @pytest.fixture(autouse=True)
 def set_api_keys(monkeypatch):
-    """The autotester server provides these from its ai_tester_env setting."""
+    """The server sets these from ai_tester_env."""
     monkeypatch.setenv("REMOTE_API_KEY", "remote-key")
     monkeypatch.setenv("GATEWAY_API_KEY", "gw-key")
 
@@ -279,11 +279,11 @@ def test_missing_api_key_errors_without_calling(monkeypatch, model, key_value):
     assert results["Test A"]["status"] == "error"
     assert api_key_env in results["Test A"]["message"]
     assert "ai_tester_env" in results["Test A"]["message"]
-    assert captured == {}  # the AI feedback subprocess was never invoked
+    assert captured == {}  # the AI call never ran
 
 
 def test_uploaded_dotenv_is_ignored(tmp_path):
-    """The worker starts the tester with `python -c` in the test files directory, where python-dotenv finds .env."""
+    """The worker runs the tester from the test folder. An uploaded .env file would sit there."""
     (tmp_path / ".env").write_text("REMOTE_API_KEY=uploaded-key\n")
     env = {k: v for k, v in os.environ.items() if k != "REMOTE_API_KEY"}
     script = (

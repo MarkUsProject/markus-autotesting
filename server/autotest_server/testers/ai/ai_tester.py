@@ -22,8 +22,7 @@ ALLOWED_MODELS = ("remote", "openai-remote")
 # privileged wins.
 _ROLE_PRIORITY = ("instructor", "student")
 
-# Environment variable each allowed model reads its API key from. The autotester
-# server sets these from its ai_tester_env setting.
+# The env var that holds the API key for each model. The server sets them from ai_tester_env.
 API_KEY_ENV = {"remote": "REMOTE_API_KEY", "openai-remote": "GATEWAY_API_KEY"}
 
 # Environment variable the AI feedback library reads for gateway attribution
@@ -148,8 +147,7 @@ class AiTester(Tester):
             results[test_label] = {
                 "title": test_label,
                 "status": "error",
-                "message": f"The AI tester is missing {api_key_env}. Ask the autotester administrator to set it "
-                "under ai_tester_env.",
+                "message": f"The AI tester is missing {api_key_env}. Ask the admin to set it under ai_tester_env.",
             }
             return results
 

@@ -262,7 +262,7 @@ def test_run_test_specs_attribution_defaults_to_none(monkeypatch, tmp_path):
 
 
 def _run_specs_capturing_envs(monkeypatch, tmp_path, tester_types, config=None, test_env_vars=None, events=None):
-    """Run _run_test_specs with fake tester processes; return the env each tester received, and the results."""
+    """Run _run_test_specs with fake testers. Return each tester's env and the results."""
     envs = {}
     events = [] if events is None else events
 
@@ -298,7 +298,6 @@ def test_ai_tester_env_reaches_ai_tester(monkeypatch, tmp_path):
     envs, _ = _run_specs_capturing_envs(monkeypatch, tmp_path, ["ai"], config=AI_KEYS)
     assert envs["ai"]["GATEWAY_API_KEY"] == "gw-key"
     assert envs["ai"]["REMOTE_API_KEY"] == "remote-key"
-    assert envs["ai"]["PYTHONSAFEPATH"] == "1"
 
 
 def test_ai_tester_env_stays_out_of_other_testers(monkeypatch, tmp_path):
@@ -308,17 +307,17 @@ def test_ai_tester_env_stays_out_of_other_testers(monkeypatch, tmp_path):
     assert envs["ai"]["GATEWAY_API_KEY"] == "gw-key"
 
 
-def test_ai_tester_without_ai_tester_env_still_gets_safe_path(monkeypatch, tmp_path):
-    envs, _ = _run_specs_capturing_envs(monkeypatch, tmp_path, ["ai"])
-    assert envs["ai"]["PYTHONSAFEPATH"] == "1"
-    assert "GATEWAY_API_KEY" not in envs["ai"]
+def test_every_tester_gets_safe_path(monkeypatch, tmp_path):
+    testers = ["ai", "py", "pyta", "jupyter", "java"]
+    envs, _ = _run_specs_capturing_envs(monkeypatch, tmp_path, testers)
+    assert {t: envs[t]["PYTHONSAFEPATH"] for t in testers} == dict.fromkeys(testers, "1")
 
 
 def test_markus_env_vars_cannot_override_ai_tester_env(monkeypatch, tmp_path):
     envs, results = _run_specs_capturing_envs(
         monkeypatch, tmp_path, ["ai"], config=AI_KEYS, test_env_vars={"GATEWAY_API_KEY": "markus-key"}
     )
-    assert envs == {}  # the AI tester never started
+    assert envs == {}  # no tester ran
     assert "cannot be overwritten for this test: GATEWAY_API_KEY" in json.dumps(results)
 
 
@@ -328,11 +327,26 @@ def test_leftover_processes_stopped_before_ai_tester(monkeypatch, tmp_path):
     assert events == ["popen:py", "stop", "popen:ai"]
 
 
-@pytest.mark.parametrize("tester_type, shadowed", [("ai", False), ("py", True)])
-def test_ai_tester_env_blocks_module_shadowing(monkeypatch, tmp_path, tester_type, shadowed):
+def _run_tester_command(monkeypatch, tmp_path, tester_type, module):
+    """Run the tester in a folder that has a fake module."""
     monkeypatch.setattr(autotest_server, "config", {})
-    monkeypatch.delenv("PYTHONSAFEPATH", raising=False)
-    (tmp_path / "json.py").write_text("raise SystemExit('shadowed')\n")
-    env = {**os.environ, **autotest_server._get_tester_secret_env(tester_type)}
-    proc = subprocess.run([sys.executable, "-c", "import json"], cwd=tmp_path, env=env, capture_output=True, text=True)
-    assert ("shadowed" in proc.stderr) is shadowed
+    monkeypatch.setattr(autotest_server, "get_resource_settings", lambda _config: {})
+    (tmp_path / f"{module}.py").write_text("raise SystemExit('shadowed')\n")
+    command = autotest_server._create_test_script_command(tester_type)
+    # Swap the tester import for a plain import. Then the test needs no tester packages.
+    command = command.replace(f"from testers.{tester_type}.{tester_type}_tester import", f"import {module}; import")
+    command = command.split("; from testers.specs")[0] + "'"
+    env = {**os.environ, "PYTHON": sys.executable, "PYTHONSAFEPATH": "1"}
+    return subprocess.run(command, shell=True, cwd=tmp_path, env=env, capture_output=True, text=True)
+
+
+@pytest.mark.parametrize("tester_type", ["ai", "java", "py", "pyta", "jupyter"])
+def test_uploaded_file_cannot_shadow_stdlib_module(monkeypatch, tmp_path, tester_type):
+    proc = _run_tester_command(monkeypatch, tmp_path, tester_type, "json")
+    assert "shadowed" not in proc.stderr
+
+
+@pytest.mark.parametrize("tester_type, imported", [("ai", False), ("java", False), ("py", True), ("jupyter", True)])
+def test_student_module_importable_only_by_python_testers(monkeypatch, tmp_path, tester_type, imported):
+    proc = _run_tester_command(monkeypatch, tmp_path, tester_type, "student_module")
+    assert ("shadowed" in proc.stderr) is imported
