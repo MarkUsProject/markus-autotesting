@@ -23,6 +23,7 @@ All notable changes to this project will be documented here.
 - Added msgspec validation tests for haskell, java, js, jupyter, r and racket tester settings (#759)
 - Updated Racket tester msgspec schema to require non-empty `script_file` paths (#762)
 - Prevented test runs queued before a settings update from running while the new test environment is being set up (#764)
+- Stopped failed settings creations from leaving placeholder settings with no testers in Redis (#765)
 - Moved AI tester API keys from an uploaded `.env` file to the `ai_tester_env` server setting (#761)
 
 ## [v2.9.0]
