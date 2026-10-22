@@ -30,6 +30,8 @@ from .utils import (
 
 DEFAULT_ENV_DIR = "defaultvenv"
 TEST_SCRIPT_DIR = os.path.join(config["workspace"], "scripts")
+STUDENT_IMPORT_TESTERS = {"py", "pyta", "jupyter"}  # these testers load student code
+SAFE_PATH_ENV = {"PYTHONSAFEPATH": "1"}  # keeps the test folder off the import path
 
 ResultData = Dict[str, Union[str, int, type(None), Dict]]
 
@@ -130,11 +132,18 @@ def _create_test_script_command(tester_type: str) -> str:
     """
     Return string representing a command line command to
     run tests.
+
+    A safe import path stops uploaded files from hiding the tester's modules. Some testers load student
+    code. They get the test folder back, last in line.
     """
     import_line = f"from testers.{tester_type}.{tester_type}_tester import {tester_type.capitalize()}Tester as Tester"
     python_lines = [
         "import sys, json",
         f'sys.path.append("{os.path.dirname(os.path.abspath(__file__))}")',
+    ]
+    if tester_type in STUDENT_IMPORT_TESTERS:
+        python_lines.append("import os; sys.path.append(os.getcwd())")
+    python_lines += [
         import_line,
         "from testers.specs import TestSpecs",
         f"Tester(resource_settings={get_resource_settings(config)}, specs=TestSpecs.from_json(sys.stdin.read())).run()",
@@ -173,6 +182,17 @@ def _get_env_vars(test_username: str) -> Dict[str, str]:
             env_vars["DATABASE_URL"] = postgresql_url
             env_vars["AUTOTESTENV"] = "true"
     return env_vars
+
+
+def _get_tester_secret_env(tester_type: str) -> Dict[str, str]:
+    """
+    Return the secret env vars for this tester.
+
+    The AI tester gets its API keys from the ai_tester_env setting. No other tester gets any.
+    """
+    if tester_type != "ai":
+        return {}
+    return config.get("ai_tester_env", {})
 
 
 def _get_feedback(test_data, tests_path, test_id) -> tuple[dict, str]:
@@ -237,6 +257,10 @@ def _run_test_specs(
 
         cmd_str = _create_test_script_command(tester_type)
         args = cmd.format(cmd_str)
+        secret_env = _get_tester_secret_env(tester_type)
+        if secret_env:
+            # An old tester process could still read this env. Stop it first.
+            _stop_tester_processes(test_username)
 
         for test_data in settings["test_data"]:
             test_category = test_data.get("category", [])
@@ -253,7 +277,7 @@ def _run_test_specs(
                         timeout = min(timeout, max_timeout)
                 try:
                     env = settings.get("_env", {})
-                    env_vars = {**os.environ, **_get_env_vars(test_username), **env}
+                    env_vars = {**os.environ, **SAFE_PATH_ENV, **_get_env_vars(test_username), **env, **secret_env}
                     env_vars = _update_env_vars(env_vars, test_env_vars)
                     proc = subprocess.Popen(
                         args,

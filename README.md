@@ -70,6 +70,9 @@ Both the autotester and the API are designed to be run on Ubuntu 20.04 (or suffi
    these testers are installed the autotester will search the PATH for available python executables. If you want users
    to be able to run tests with a specific python version, ensure that it is visible in the PATH of both the user running
    the autotester and all users who run tests.
+
+   Python 3.11 and up keep the test folder off the import path. Older versions do not. There, an uploaded file can
+   hide a module.
     
 8. Run the installer:
 
@@ -216,6 +219,10 @@ rlimit_settings: # RLIMIT settings (see details below)
   nproc: # for example, this setting sets the hard and soft limits for the number of processes available to 300
     - 300
     - 300
+
+ai_tester_env: # env vars for the ai tester alone, such as its API keys (see below)
+  REMOTE_API_KEY: # key for the `remote` model
+  GATEWAY_API_KEY: # key for the `openai-remote` model
 ```
 
 ### autotester configuration details
@@ -246,6 +253,26 @@ Some test require the use of a dedicated port that is guaranteed not to be in us
 allows the user to specify a range from which these ports can be selected. When a test starts, the `PORT` environment
 variable will be set to the port number selected for this test run. Available port numbers will be different from test
 to test.  
+
+#### ai tester API keys
+
+The ai tester reads its API keys from the `ai_tester_env` setting. You do not upload a `.env` file, and the ai tester
+ignores one. Each key goes to the ai tester alone. Other testers never see it. If a key is missing or empty, the test
+shows an error that names it.
+
+```yaml
+ai_tester_env:
+  REMOTE_API_KEY: <key for the markus-ai-server proxy>
+  GATEWAY_API_KEY: <key for the ai-telemetry-gateway>
+```
+
+- Put the keys in a config file. Only the autotester user may reach it. Run `chmod 600` on the file.
+- The autotester stops at start if other users can reach `settings.local.yml` or the `AUTOTESTER_CONFIG` file. Those
+  files may hold secrets, so it checks them with or without `ai_tester_env`. It checks `settings.yml` if that file
+  sets `ai_tester_env`.
+- Type the keys in the file. Do not use `!ENV`. Every tester can see the autotester's own env.
+- The ai tester sends the key to the test's `remote_url`. Keep `remote_url_whitelist` to hosts you trust.
+- A dev server that skips key checks still needs a fake key.
 
 #### queue names and schemas
 
