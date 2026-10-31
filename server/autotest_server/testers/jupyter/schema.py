@@ -6,8 +6,8 @@ from typing import Annotated
 from msgspec import Meta, Struct
 from markus_autotesting_core.types import AutotestFile, BaseTestData, BaseTesterSettings
 
-PYTHON_VERSIONS = [f"3.{x}" for x in range(11, 14) if shutil.which(f"python3.{x}")]
-PythonVersion = Enum("PythonVersion", {v.replace(".", "_"): v for v in PYTHON_VERSIONS})
+PYTHON_VERSIONS = [f"3.{x}" for x in range(11, 16) if shutil.which(f"python3.{x}")]
+PythonVersion = Enum("PythonVersion", {v.replace(".", "_"): v for v in PYTHON_VERSIONS}) if PYTHON_VERSIONS else str
 
 
 class JupyterTesterSettings(BaseTesterSettings):
@@ -35,6 +35,8 @@ class JupyterScriptFile(Struct, kw_only=True):
 class JupyterEnvData(Struct, kw_only=True):
     """The settings for the Python environment."""
 
-    python_version: Annotated[PythonVersion, Meta(title="Python version")] = PYTHON_VERSIONS[-1]
+    python_version: Annotated[PythonVersion, Meta(title="Python version")] = (
+        PYTHON_VERSIONS[-1] if PYTHON_VERSIONS else None
+    )
     pip_requirements: Annotated[str, Meta(title="Package requirements")] = ""
     pip_requirements_file: Annotated[str, Meta(title="Package requirements file")] = ""
