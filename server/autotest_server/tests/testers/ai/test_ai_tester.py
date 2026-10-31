@@ -3,12 +3,14 @@ import os
 from pathlib import Path
 
 import subprocess
+import sys
 import pytest
-from ....testers.ai.ai_tester import SPEND_METADATA_ENV, AiTester, AiTest, build_spend_metadata
+from ....testers.ai.ai_tester import API_KEY_ENV, SPEND_METADATA_ENV, AiTester, AiTest, build_spend_metadata
 from ....testers.specs import TestSpecs
 
 DEFAULT_REMOTE_URL = "https://polymouth.teach.cs.toronto.edu:443/chat"
 FIXTURES_DIR = str(Path(__file__).resolve().parent / "fixtures")
+AUTOTEST_SERVER_DIR = str(Path(__file__).resolve().parents[3])
 
 
 @pytest.fixture(autouse=True, scope="session")
@@ -18,6 +20,13 @@ def set_required_env():
     os.environ.setdefault("REDIS_URL", "redis://localhost:6379/0")
     os.environ.setdefault("SUPERVISOR_URL", "http://localhost:9001")
     os.makedirs(os.environ["WORKER_LOG_DIR"], exist_ok=True)
+
+
+@pytest.fixture(autouse=True)
+def set_api_keys(monkeypatch):
+    """The server sets these from ai_tester_env."""
+    monkeypatch.setenv("REMOTE_API_KEY", "remote-key")
+    monkeypatch.setenv("GATEWAY_API_KEY", "gw-key")
 
 
 GATEWAY_FILE_URL = "https://markus.example.edu/api/courses/12/assignments/34/groups/56/submission_files?collected=true"
@@ -252,3 +261,46 @@ def test_run_prints_output(monkeypatch, capsys):
     tester.run()
     captured = capsys.readouterr()
     assert "Test Passed" in captured.out
+
+
+@pytest.mark.parametrize("model, key_value", [("remote", None), ("openai-remote", ""), ("remote", "")])
+def test_missing_api_key_errors_without_calling(monkeypatch, model, key_value):
+    api_key_env = API_KEY_ENV[model]
+    if key_value is None:
+        monkeypatch.delenv(api_key_env)
+    else:
+        monkeypatch.setenv(api_key_env, key_value)
+    tester = _make_tester(
+        config_overrides={"model": model},
+        attribution={"files_url": GATEWAY_FILE_URL, "categories": ["student"], "batch_id": None},
+    )
+    captured = _capture_subprocess(monkeypatch)
+    results = tester.call_ai_feedback()
+    assert results["Test A"]["status"] == "error"
+    assert api_key_env in results["Test A"]["message"]
+    assert "ai_tester_env" in results["Test A"]["message"]
+    assert captured == {}  # the AI call never ran
+
+
+def test_uploaded_dotenv_is_ignored(tmp_path):
+    """The worker runs the tester from the test folder. An uploaded .env file would sit there."""
+    (tmp_path / ".env").write_text("REMOTE_API_KEY=uploaded-key\n")
+    env = {k: v for k, v in os.environ.items() if k != "REMOTE_API_KEY"}
+    script = (
+        "import json, sys; "
+        f"sys.path.append({AUTOTEST_SERVER_DIR!r}); "
+        "from testers.ai.ai_tester import AiTester; from testers.specs import TestSpecs; "
+        "print(json.dumps(AiTester(specs=TestSpecs.from_json(sys.stdin.read())).call_ai_feedback()))"
+    )
+    proc = subprocess.run(
+        [sys.executable, "-c", script],
+        input=json.dumps(_make_spec()),
+        cwd=tmp_path,
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+    assert proc.returncode == 0, proc.stderr
+    result = json.loads(proc.stdout)["Test A"]
+    assert result["status"] == "error"
+    assert "missing REMOTE_API_KEY" in result["message"]

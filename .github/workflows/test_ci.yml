@@ -42,5 +42,7 @@ jobs:
         run: |
           sudo adduser --disabled-login --no-create-home fake_user
           sudo adduser --disabled-login --no-create-home fake_user_2
+      - name: Make the test config private
+        run: chmod 600 $AUTOTESTER_CONFIG
       - name: run tests
         run: pytest ${{ matrix.test-dir }}

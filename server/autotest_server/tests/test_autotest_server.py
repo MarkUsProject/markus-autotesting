@@ -1,4 +1,5 @@
 import subprocess
+import sys
 
 import pytest
 import fakeredis
@@ -162,6 +163,37 @@ class TestRunTest(unittest.TestCase):
         self.assertEqual(call_args[0], "autotest:test_result:test_id_456")
         self.assertEqual(json.loads(call_args[1]), expected_result)
 
+    @patch("autotest_server.tester_user")
+    @patch("autotest_server.redis_connection")
+    def test_env_status_setup(self, mock_redis, mock_tester_user):
+        """
+        Test that run_test does not run tests queued before a settings update
+        while the new test environment is still being set up."""
+        mock_redis_instance = MagicMock()
+        mock_redis.return_value = mock_redis_instance
+
+        mock_settings = {"_env_status": "setup"}
+        mock_redis_instance.hget.return_value = json.dumps(mock_settings)
+
+        autotest_server.run_test(
+            settings_id="test_settings_id",
+            test_id="test_id_789",
+            files_url="http://example.com/files",
+            categories=["unit"],
+            user="test_user",
+            test_env_vars={},
+        )
+
+        expected_result = {
+            "test_groups": [],
+            "error": "Failed to run tests: Setting up test environment. Please try again later.",
+        }
+        mock_tester_user.assert_not_called()
+        mock_redis_instance.set.assert_called_once()
+        call_args = mock_redis_instance.set.call_args[0]
+        self.assertEqual(call_args[0], "autotest:test_result:test_id_789")
+        self.assertEqual(json.loads(call_args[1]), expected_result)
+
     @patch("autotest_server.redis_connection")
     @patch("autotest_server.tester_user")
     def test_general_exception(self, mock_tester_user, mock_redis):
@@ -212,6 +244,7 @@ def _run_specs_capturing_stdin(monkeypatch, tmp_path, **kwargs):
     monkeypatch.setattr(autotest_server.subprocess, "Popen", lambda *a, **kw: FakeProc())
     monkeypatch.setattr(autotest_server, "_get_env_vars", lambda _user: {})
     monkeypatch.setattr(autotest_server, "_get_feedback", lambda *a: ([], []))
+    monkeypatch.setattr(autotest_server, "_stop_tester_processes", lambda _user: None)
     settings = {"testers": [{"tester_type": "ai", "test_data": [{"category": ["student"], "timeout": 1}]}]}
     autotest_server._run_test_specs("{}", settings, ["student"], str(tmp_path), "tester", 1, {}, **kwargs)
     return captured["stdin"]
@@ -226,3 +259,94 @@ def test_run_test_specs_injects_attribution(monkeypatch, tmp_path):
 def test_run_test_specs_attribution_defaults_to_none(monkeypatch, tmp_path):
     received = _run_specs_capturing_stdin(monkeypatch, tmp_path)
     assert received["_attribution"] == {"files_url": None, "categories": ["student"], "batch_id": None}
+
+
+def _run_specs_capturing_envs(monkeypatch, tmp_path, tester_types, config=None, test_env_vars=None, events=None):
+    """Run _run_test_specs with fake testers. Return each tester's env and the results."""
+    envs = {}
+    events = [] if events is None else events
+
+    class FakeProc:
+        returncode = 0
+
+        def communicate(self, input=None, timeout=None):
+            return "{}", ""
+
+    def fake_popen(*args, env=None, **kwargs):
+        tester_type = tester_types[len(envs)]
+        envs[tester_type] = env
+        events.append(f"popen:{tester_type}")
+        return FakeProc()
+
+    monkeypatch.setattr(autotest_server.subprocess, "Popen", fake_popen)
+    monkeypatch.setattr(autotest_server, "_get_env_vars", lambda _user: {})
+    monkeypatch.setattr(autotest_server, "_get_feedback", lambda *a: ([], []))
+    monkeypatch.setattr(autotest_server, "_stop_tester_processes", lambda _user: events.append("stop"))
+    monkeypatch.setattr(autotest_server, "config", config or {})
+    test_data = [{"category": ["student"], "timeout": 1}]
+    settings = {"testers": [{"tester_type": t, "test_data": test_data} for t in tester_types]}
+    results = autotest_server._run_test_specs(
+        "{}", settings, ["student"], str(tmp_path), "tester", 1, test_env_vars or {}
+    )
+    return envs, results
+
+
+AI_KEYS = {"ai_tester_env": {"GATEWAY_API_KEY": "gw-key", "REMOTE_API_KEY": "remote-key"}}
+
+
+def test_ai_tester_env_reaches_ai_tester(monkeypatch, tmp_path):
+    envs, _ = _run_specs_capturing_envs(monkeypatch, tmp_path, ["ai"], config=AI_KEYS)
+    assert envs["ai"]["GATEWAY_API_KEY"] == "gw-key"
+    assert envs["ai"]["REMOTE_API_KEY"] == "remote-key"
+
+
+def test_ai_tester_env_stays_out_of_other_testers(monkeypatch, tmp_path):
+    envs, _ = _run_specs_capturing_envs(monkeypatch, tmp_path, ["py", "ai"], config=AI_KEYS)
+    assert "GATEWAY_API_KEY" not in envs["py"]
+    assert "REMOTE_API_KEY" not in envs["py"]
+    assert envs["ai"]["GATEWAY_API_KEY"] == "gw-key"
+
+
+def test_every_tester_gets_safe_path(monkeypatch, tmp_path):
+    testers = ["ai", "py", "pyta", "jupyter", "java"]
+    envs, _ = _run_specs_capturing_envs(monkeypatch, tmp_path, testers)
+    assert {t: envs[t]["PYTHONSAFEPATH"] for t in testers} == dict.fromkeys(testers, "1")
+
+
+def test_markus_env_vars_cannot_override_ai_tester_env(monkeypatch, tmp_path):
+    envs, results = _run_specs_capturing_envs(
+        monkeypatch, tmp_path, ["ai"], config=AI_KEYS, test_env_vars={"GATEWAY_API_KEY": "markus-key"}
+    )
+    assert envs == {}  # no tester ran
+    assert "cannot be overwritten for this test: GATEWAY_API_KEY" in json.dumps(results)
+
+
+def test_leftover_processes_stopped_before_ai_tester(monkeypatch, tmp_path):
+    events = []
+    _run_specs_capturing_envs(monkeypatch, tmp_path, ["py", "ai"], config=AI_KEYS, events=events)
+    assert events == ["popen:py", "stop", "popen:ai"]
+
+
+def _run_tester_command(monkeypatch, tmp_path, tester_type, module):
+    """Run the tester in a folder that has a fake module."""
+    monkeypatch.setattr(autotest_server, "config", {})
+    monkeypatch.setattr(autotest_server, "get_resource_settings", lambda _config: {})
+    (tmp_path / f"{module}.py").write_text("raise SystemExit('shadowed')\n")
+    command = autotest_server._create_test_script_command(tester_type)
+    # Swap the tester import for a plain import. Then the test needs no tester packages.
+    command = command.replace(f"from testers.{tester_type}.{tester_type}_tester import", f"import {module}; import")
+    command = command.split("; from testers.specs")[0] + "'"
+    env = {**os.environ, "PYTHON": sys.executable, "PYTHONSAFEPATH": "1"}
+    return subprocess.run(command, shell=True, cwd=tmp_path, env=env, capture_output=True, text=True)
+
+
+@pytest.mark.parametrize("tester_type", ["ai", "java", "py", "pyta", "jupyter"])
+def test_uploaded_file_cannot_shadow_stdlib_module(monkeypatch, tmp_path, tester_type):
+    proc = _run_tester_command(monkeypatch, tmp_path, tester_type, "json")
+    assert "shadowed" not in proc.stderr
+
+
+@pytest.mark.parametrize("tester_type, imported", [("ai", False), ("java", False), ("py", True), ("jupyter", True)])
+def test_student_module_importable_only_by_python_testers(monkeypatch, tmp_path, tester_type, imported):
+    proc = _run_tester_command(monkeypatch, tmp_path, tester_type, "student_module")
+    assert ("shadowed" in proc.stderr) is imported

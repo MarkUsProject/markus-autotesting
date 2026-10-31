@@ -31,6 +31,12 @@
       },
       "uniqueItems": true
     },
+    "ai_tester_env": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
     "rlimit_settings": {
       "type": "object"
     },
