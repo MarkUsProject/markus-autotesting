@@ -14,11 +14,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt-get update -y && \
     DEBIAN_FRONTEND=noninteractive apt-get -y install software-properties-common && \
     DEBIAN_FRONTEND=noninteractive add-apt-repository -y ppa:deadsnakes/ppa && \
-    DEBIAN_FRONTEND=noninteractive apt-get -y install python3.11 \
-                       python3.11-venv \
-                       python3.12 \
-                       python3.12-venv \
-                       python3.13 \
+    DEBIAN_FRONTEND=noninteractive apt-get -y install python3.13 \
                        python3.13-venv \
                        python3.14 \
                        python3.14-venv \
