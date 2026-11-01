@@ -2,7 +2,7 @@ rq==2.12.0
 redis==8.1.0
 pyyaml==6.0.3
 jsonschema==4.26.0
-markus-autotesting-core==0.1.0
+markus-autotesting-core==0.2.0
 msgspec==0.22.0
 requests==2.34.2
 psycopg2-binary==2.9.13
