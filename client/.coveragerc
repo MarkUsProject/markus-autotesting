@@ -1,0 +1,6 @@
+[run]
+source = autotest_client
+omit = autotest_client/tests/*
+
+[report]
+show_missing = True

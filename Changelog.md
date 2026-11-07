@@ -28,6 +28,7 @@ All notable changes to this project will be documented here.
 - Moved AI tester API keys from an uploaded `.env` file to the `ai_tester_env` server setting (#761)
 - Added Python 3.14 and 3.15 support to the Python, Jupyter, and PyTA testers, the server Docker image, and the CI test matrix, and removed Python 3.11 and 3.12 from the server Docker image (#763)
 - Updated markus-autotesting-core from 0.1.0 to 0.2.0 (#771)
+- Added test suite and coverage reporting for the autotest client, with pinned dev dependencies in `client/requirements-dev.txt` (#773)
 
 ## [v2.9.0]
 - Install stack with GHCup (#626)

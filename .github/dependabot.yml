@@ -1,9 +1,15 @@
 version: 2
 updates:
   - package-ecosystem: pip
-    directory: "/client"
+    directory: "/client"  # requirements.txt and requirements-dev.txt
     schedule:
       interval: "monthly"
+    groups:
+      client-dev-dependencies:
+        patterns:
+          - "fakeredis"
+          - "pytest"
+          - "pytest-cov"
   - package-ecosystem: pip
     directory: "/server"
     schedule:

@@ -30,13 +30,17 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt', '**/requirements-dev.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
-      - name: Install python packages
+      - name: Install python packages (client)
+        if: matrix.test-dir == 'client'
+        run: python -m pip install -r client/requirements.txt -r client/requirements-dev.txt
+      - name: Install python packages (server)
+        if: matrix.test-dir == 'server'
         run: |
           python -m pip install pytest python-dotenv fakeredis typing-extensions nbformat PyPDF2 \
-            -r ${{ matrix.test-dir }}/requirements.txt \
+            -r server/requirements.txt \
             -r server/autotest_server/testers/jupyter/requirements.txt
       - name: Create users
         run: |
@@ -44,5 +48,10 @@ jobs:
           sudo adduser --disabled-login --no-create-home fake_user_2
       - name: Make the test config private
         run: chmod 600 $AUTOTESTER_CONFIG
-      - name: run tests
-        run: pytest ${{ matrix.test-dir }}
+      - name: run tests (client)
+        if: matrix.test-dir == 'client'
+        working-directory: client
+        run: pytest --cov
+      - name: run tests (server)
+        if: matrix.test-dir == 'server'
+        run: pytest server
