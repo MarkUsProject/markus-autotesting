@@ -95,11 +95,30 @@ class TestCopyTree:
 
     def test_excluded_file_not_copied(self, src, tmp_path):
         dst = tmp_path / "dst"
-        copy_tree(str(src), str(dst), exclude=("a.txt",))
+        copied = copy_tree(str(src), str(dst), exclude=("a.txt",))
         assert not (dst / "a.txt").exists()
-
-    @pytest.mark.xfail(strict=True, reason="any non-empty exclude skips every file: os.path.relpath is always truthy")
-    def test_other_files_copied_with_exclude(self, src, tmp_path):
-        dst = tmp_path / "dst"
-        copy_tree(str(src), str(dst), exclude=("a.txt",))
         assert (dst / "sub" / "b.txt").read_text() == "b"
+        assert sorted(copied) == [("d", os.path.join(dst, "sub")), ("f", os.path.join(dst, "sub", "b.txt"))]
+
+    def test_excluded_dir_not_copied(self, src, tmp_path):
+        dst = tmp_path / "dst"
+        copied = copy_tree(str(src), str(dst), exclude=("sub",))
+        assert not (dst / "sub").exists()
+        assert copied == [("f", os.path.join(dst, "a.txt"))]
+
+    @pytest.mark.parametrize("exclude", ["sub/b.txt", "sub/"])
+    def test_excluded_nested_path_not_copied(self, src, tmp_path, exclude):
+        dst = tmp_path / "dst"
+        copy_tree(str(src), str(dst), exclude=(exclude,))
+        assert not (dst / "sub" / "b.txt").exists()
+        assert (dst / "a.txt").read_text() == "a"
+
+    def test_similarly_named_paths_copied(self, src, tmp_path):
+        (src / "subdir").mkdir()
+        (src / "subdir" / "c.txt").write_text("c")
+        (src / "sub" / "..c.txt").write_text("c")
+        dst = tmp_path / "dst"
+        copy_tree(str(src), str(dst), exclude=("su", "sub/b.txt", "subdir/c"))
+        assert (dst / "subdir" / "c.txt").read_text() == "c"
+        assert (dst / "sub" / "..c.txt").read_text() == "c"
+        assert not (dst / "sub" / "b.txt").exists()

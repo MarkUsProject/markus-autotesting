@@ -122,7 +122,8 @@ def copy_tree(src: str, dst: str, exclude: Tuple = tuple()) -> List[Tuple[str, s
     copied = []
     for fd, file_or_dir in recursive_iglob(src):
         src_path = os.path.relpath(file_or_dir, src)
-        if src_path in exclude or any(os.path.relpath(src_path, ex) for ex in exclude):
+        # skip src_path if it is an excluded path or inside one
+        if any(os.path.relpath(src_path, ex).split(os.sep)[0] != os.pardir for ex in exclude):
             continue
         target = os.path.join(dst, src_path)
         if fd == "d":
