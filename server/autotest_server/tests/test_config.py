@@ -77,14 +77,6 @@ def test_shared_local_file_raises(default_root):
         _Config()
 
 
-@pytest.mark.parametrize("value, valid", [({"GATEWAY_API_KEY": "gw-key"}, True), ({"GATEWAY_API_KEY": 123}, False)])
-def test_schema_requires_string_ai_tester_env_values(value, valid):
-    with open(os.path.join(DEFAULT_ROOT, "settings_schema.json")) as f:
-        schema = json.load(f)
-    errors = list(jsonschema.Draft7Validator(schema).iter_errors({"ai_tester_env": value}))
-    assert (not errors) is valid
-
-
 class TestAccess:
     @pytest.fixture
     def config(self, monkeypatch, tmp_path):
@@ -132,7 +124,9 @@ class TestLoading:
         with open(default_root / "settings.yml", "a") as f:
             f.write("max_test_timeout: 10\nrlimit_settings:\n  nproc: [1, 2]\n")
         env_file = tmp_path / "env.yml"
-        env_file.write_text("max_test_timeout: 20\nrlimit_settings:\n  cpu: [3, 4]\nworkers:\n  - user: env_user\n")
+        env_file.write_text(
+            "max_test_timeout: 20\nrlimit_settings:\n  cpu: [3, 4]\nworkers:\n  - user: env_user\n    queues: [low]\n"
+        )
         os.chmod(env_file, 0o600)
         monkeypatch.setenv("AUTOTESTER_CONFIG", str(env_file))
 
@@ -140,7 +134,7 @@ class TestLoading:
 
         assert config["max_test_timeout"] == 20
         assert config["rlimit_settings"] == {"cpu": [3, 4], "nproc": [1, 2]}
-        assert config["workers"] == [{"user": "env_user"}]
+        assert config["workers"] == [{"user": "env_user", "queues": ["low"]}]
 
     def test_empty_file_ignored(self, default_root, monkeypatch, tmp_path):
         env_file = tmp_path / "env.yml"
@@ -153,8 +147,50 @@ class TestLoading:
             _load(monkeypatch, tmp_path, "max_test_timeout: 0\n", 0o600)
 
 
-@pytest.mark.xfail(strict=True, reason="settings_schema.json puts its required lists inside properties")
-def test_schema_requires_core_settings():
-    with open(os.path.join(DEFAULT_ROOT, "settings_schema.json")) as f:
-        schema = json.load(f)
-    assert list(jsonschema.Draft7Validator(schema).iter_errors({}))
+class TestSettingsSchema:
+    @pytest.fixture
+    def schema(self):
+        with open(os.path.join(DEFAULT_ROOT, "settings_schema.json")) as f:
+            return json.load(f)
+
+    @pytest.fixture
+    def settings(self):
+        return {
+            "workspace": "/workspace",
+            "redis_url": "redis://localhost",
+            "supervisor_url": "localhost:9001",
+            "workers": [{"user": "autotst0", "queues": ["low"]}],
+        }
+
+    def test_schema_is_valid(self, schema):
+        jsonschema.Draft7Validator.check_schema(schema)
+
+    def test_valid_settings(self, schema, settings):
+        jsonschema.Draft7Validator(schema).validate(settings)
+
+    @pytest.mark.parametrize("key", ["workspace", "redis_url", "supervisor_url", "workers"])
+    def test_required_setting(self, schema, settings, key):
+        del settings[key]
+        with pytest.raises(jsonschema.ValidationError, match=f"'{key}' is a required property"):
+            jsonschema.Draft7Validator(schema).validate(settings)
+
+    @pytest.mark.parametrize("key", ["user", "queues"])
+    def test_required_worker_setting(self, schema, settings, key):
+        del settings["workers"][0][key]
+        with pytest.raises(jsonschema.ValidationError, match=f"'{key}' is a required property"):
+            jsonschema.Draft7Validator(schema).validate(settings)
+
+    @pytest.mark.parametrize("value, valid", [({"GATEWAY_API_KEY": "gw-key"}, True), ({"GATEWAY_API_KEY": 123}, False)])
+    def test_ai_tester_env_values_must_be_strings(self, schema, settings, value, valid):
+        errors = list(jsonschema.Draft7Validator(schema).iter_errors({**settings, "ai_tester_env": value}))
+        assert (not errors) is valid
+
+
+def test_worker_missing_queues_rejected_on_load(default_root, monkeypatch, tmp_path):
+    """Workers in a config file replace the default workers, so each one must be complete."""
+    env_file = tmp_path / "env.yml"
+    env_file.write_text("workers:\n  - user: env_user\n")
+    os.chmod(env_file, 0o600)
+    monkeypatch.setenv("AUTOTESTER_CONFIG", str(env_file))
+    with pytest.raises(jsonschema.ValidationError, match="'queues' is a required property"):
+        _Config()

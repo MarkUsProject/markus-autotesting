@@ -1,12 +1,12 @@
 {
   "type": "object",
+  "required": [
+    "workspace",
+    "redis_url",
+    "supervisor_url",
+    "workers"
+  ],
   "properties": {
-    "required": [
-      "workspace",
-      "redis_url",
-      "supervisor_url",
-      "workers"
-    ],
     "workspace": {
       "type": "string",
       "minLength": 1
@@ -49,11 +49,11 @@
       "minItems": 1,
       "items": {
         "type": "object",
+        "required": [
+          "user",
+          "queues"
+        ],
         "properties": {
-          "required": [
-            "user",
-            "queues"
-          ],
           "user": {
             "type": "string",
             "minLength": 1
