@@ -103,9 +103,10 @@ def clean(age, dry_run):
         access = int(time.time() - (last_access_timestamp or 0))
         if last_access_timestamp is None or (access > (age * SECONDS_PER_DAY)):
             dir_path = os.path.join(config["workspace"], "scripts", str(settings_id))
-            if dry_run and os.path.isdir(dir_path):
-                last_access = "UNKNOWN" if last_access_timestamp is None else access // SECONDS_PER_DAY
-                print(f"{dir_path} -> last accessed {last_access or '< 1'} days ago")
+            if dry_run:
+                if os.path.isdir(dir_path):
+                    last_access = "UNKNOWN" if last_access_timestamp is None else access // SECONDS_PER_DAY
+                    print(f"{dir_path} -> last accessed {last_access or '< 1'} days ago")
             else:
                 settings["_error"] = "the settings for this test have expired, please re-upload the settings."
                 REDIS_CONNECTION.hset("autotest:settings", key=settings_id, value=json.dumps(settings))
