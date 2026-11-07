@@ -4,13 +4,7 @@ updates:
     directory: "/client"  # requirements.txt and requirements-dev.txt
     schedule:
       interval: "monthly"
-    groups:
-      client-dev-dependencies:
-        patterns:
-          - "fakeredis"
-          - "pytest"
-          - "pytest-cov"
   - package-ecosystem: pip
-    directory: "/server"
+    directory: "/server"  # requirements.txt and requirements-dev.txt
     schedule:
       interval: "monthly"

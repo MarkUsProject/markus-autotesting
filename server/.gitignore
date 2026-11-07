@@ -7,3 +7,6 @@ autotest_server/testers/java/lib/
 __pycache__
 .DS_Store
 .hypothesis/
+.coverage
+htmlcov/
+coverage.lcov

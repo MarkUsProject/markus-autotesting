@@ -8,6 +8,10 @@ printf "[MarkUs] Running pip install -q -r /app/requirements.txt..."
 if markus_venv/bin/pip install -q -r /app/requirements.txt; then
   printf " \e[32m✔\e[0m \n"
 fi
+printf "[MarkUs] Running pip install -q -r /app/requirements-dev.txt..."
+if markus_venv/bin/pip install -q -r /app/requirements-dev.txt; then
+  printf " \e[32m✔\e[0m \n"
+fi
 
 # Execute the provided command
 exec "$@"

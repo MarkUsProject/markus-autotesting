@@ -30,6 +30,7 @@ All notable changes to this project will be documented here.
 - Updated markus-autotesting-core from 0.1.0 to 0.2.0 (#771)
 - Added test suite and coverage reporting for the autotest client, with pinned dev dependencies in `client/requirements-dev.txt` (#773)
 - Fixed client error handler crashing on requests without an API key (#774)
+- Added test suite and coverage reporting for the autotest server, with pinned dev dependencies in `server/requirements-dev.txt`, and Coveralls coverage reporting in CI (#775)
 
 ## [v2.9.0]
 - Install stack with GHCup (#626)
