@@ -32,6 +32,7 @@ All notable changes to this project will be documented here.
 - Fixed client error handler crashing on requests without an API key (#774)
 - Added test suite and coverage reporting for the autotest server, with pinned dev dependencies in `server/requirements-dev.txt`, and Coveralls coverage reporting in CI (#775)
 - Fixed `copy_tree` skipping every file when given an exclude list (#777)
+- Fixed `start_stop.py clean --dry-run` expiring settings whose scripts directory doesn't exist (#778)
 
 ## [v2.9.0]
 - Install stack with GHCup (#626)
