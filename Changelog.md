@@ -31,6 +31,7 @@ All notable changes to this project will be documented here.
 - Added test suite and coverage reporting for the autotest client, with pinned dev dependencies in `client/requirements-dev.txt` (#773)
 - Fixed client error handler crashing on requests without an API key (#774)
 - Added test suite and coverage reporting for the autotest server, with pinned dev dependencies in `server/requirements-dev.txt`, and Coveralls coverage reporting in CI (#775)
+- Fixed `copy_tree` skipping every file when given an exclude list (#777)
 
 ## [v2.9.0]
 - Install stack with GHCup (#626)
