@@ -145,15 +145,27 @@ class TestErrorHandler:
         assert response.status_code == 404
         assert response.json["message"]
 
-    @pytest.mark.xfail(
-        strict=True,
-        raises=TypeError,
-        reason="_handle_error calls str.replace(None, ...) when the request has no Api-Key header",
+    @pytest.mark.parametrize(
+        "method, path, kwargs, status_code",
+        [
+            pytest.param("get", "/no-such-route", {}, 404, id="unknown route"),
+            pytest.param("get", "/register", {}, 405, id="wrong method"),
+            pytest.param("post", "/register", {"data": "not json"}, 415, id="not json"),
+        ],
     )
-    def test_http_error_without_api_key(self, client):
-        response = client.get("/no-such-route")
-        assert response.status_code == 404
+    def test_http_error_without_api_key(self, client, method, path, kwargs, status_code):
+        response = getattr(client, method)(path, **kwargs)
+        assert response.status_code == status_code
         assert response.json["message"]
+
+    def test_exception_without_api_key(self, client, fake_redis_conn, monkeypatch):
+        def hsetnx(*_args, **_kwargs):
+            raise RuntimeError("boom")
+
+        monkeypatch.setattr(fake_redis_conn, "hsetnx", hsetnx)
+        response = client.post("/register", json={"auth_type": "test", "credentials": "12345"})
+        assert response.status_code == 500
+        assert response.json["message"] == "boom"
 
 
 class TestResetCredentials:
