@@ -39,6 +39,9 @@ jobs:
       - name: Install python packages
         working-directory: ${{ matrix.test-dir }}
         run: python -m pip install -r requirements.txt -r requirements-dev.txt
+      - name: Install tester packages
+        if: matrix.test-dir == 'server'
+        run: python -m pip install nbformat PyPDF2 -r server/autotest_server/testers/jupyter/requirements.txt
       - name: Create users
         run: |
           sudo adduser --disabled-login --no-create-home fake_user

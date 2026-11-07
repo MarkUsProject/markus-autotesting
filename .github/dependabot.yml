@@ -14,8 +14,3 @@ updates:
     directory: "/server"  # requirements.txt and requirements-dev.txt
     schedule:
       interval: "monthly"
-    groups:
-      server-dev-dependencies:
-        patterns:
-          - "fakeredis"
-          - "pytest-cov"
