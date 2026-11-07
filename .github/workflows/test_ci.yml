@@ -2,6 +2,9 @@ name: Autotester tests
 on:
   pull_request:
     types: [ opened, synchronize, reopened, ready_for_review ]
+  push:
+    branches:
+      - master
 jobs:
   test:
     if: github.event.pull_request.draft == false
@@ -19,7 +22,7 @@ jobs:
           - server
     name: ${{ matrix.test-dir }} tests with python ${{ matrix.python-version }}
     env:
-      AUTOTESTER_CONFIG: server/autotest_server/tests/fixtures/test_config.yml
+      AUTOTESTER_CONFIG: ${{ github.workspace }}/server/autotest_server/tests/fixtures/test_config.yml
     steps:
       - uses: actions/checkout@v4
       - name: Setup python
@@ -33,25 +36,41 @@ jobs:
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt', '**/requirements-dev.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
-      - name: Install python packages (client)
-        if: matrix.test-dir == 'client'
-        run: python -m pip install -r client/requirements.txt -r client/requirements-dev.txt
-      - name: Install python packages (server)
+      - name: Install python packages
+        working-directory: ${{ matrix.test-dir }}
+        run: python -m pip install -r requirements.txt -r requirements-dev.txt
+      - name: Install tester packages
         if: matrix.test-dir == 'server'
-        run: |
-          python -m pip install pytest python-dotenv fakeredis typing-extensions nbformat PyPDF2 \
-            -r server/requirements.txt \
-            -r server/autotest_server/testers/jupyter/requirements.txt
+        run: python -m pip install nbformat PyPDF2 -r server/autotest_server/testers/jupyter/requirements.txt
       - name: Create users
         run: |
           sudo adduser --disabled-login --no-create-home fake_user
           sudo adduser --disabled-login --no-create-home fake_user_2
       - name: Make the test config private
         run: chmod 600 $AUTOTESTER_CONFIG
-      - name: run tests (client)
-        if: matrix.test-dir == 'client'
-        working-directory: client
-        run: pytest --cov
-      - name: run tests (server)
-        if: matrix.test-dir == 'server'
-        run: pytest server
+      - name: run tests
+        working-directory: ${{ matrix.test-dir }}
+        run: pytest --cov --cov-report=term --cov-report=lcov
+      - name: Coveralls Parallel
+        if: matrix.python-version == '3.13'
+        uses: coverallsapp/github-action@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          flag-name: ${{ matrix.test-dir }}
+          parallel: true
+          file: ${{ matrix.test-dir }}/coverage.lcov
+          base-path: ${{ matrix.test-dir }}
+
+  finish:
+    needs: [test]
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-22.04
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Coveralls Finished
+        uses: coverallsapp/github-action@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          parallel-finished: true
+          carryforward: "client,server"
