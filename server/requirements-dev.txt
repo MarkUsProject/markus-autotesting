@@ -1,0 +1,4 @@
+-r autotest_server/testers/ai/requirements.txt
+-r autotest_server/testers/jupyter/requirements.txt
+fakeredis==2.40.0
+pytest-cov==7.1.0

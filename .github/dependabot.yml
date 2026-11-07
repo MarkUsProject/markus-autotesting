@@ -11,6 +11,11 @@ updates:
           - "pytest"
           - "pytest-cov"
   - package-ecosystem: pip
-    directory: "/server"
+    directory: "/server"  # requirements.txt and requirements-dev.txt
     schedule:
       interval: "monthly"
+    groups:
+      server-dev-dependencies:
+        patterns:
+          - "fakeredis"
+          - "pytest-cov"

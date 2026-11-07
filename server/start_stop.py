@@ -120,7 +120,7 @@ def _exec_type(path):
     raise argparse.ArgumentTypeError(f"no executable found at: '{path}'")
 
 
-if __name__ == "__main__":
+def main(argv=None):
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest="command")
 
@@ -147,7 +147,7 @@ if __name__ == "__main__":
                 help=f"path to supervisord executable, default={_SUPERVISORD}",
             )
 
-    args, remainder = parser.parse_known_args()
+    args, remainder = parser.parse_known_args(argv)
     if args.command == "start":
         start(args.rq, args.supervisord, remainder)
     elif args.command == "stop":
@@ -159,3 +159,7 @@ if __name__ == "__main__":
         stat(args.rq, remainder)
     elif args.command == "clean":
         clean(args.age, args.dry_run)
+
+
+if __name__ == "__main__":
+    main()
