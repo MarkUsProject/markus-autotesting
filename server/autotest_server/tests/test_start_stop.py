@@ -125,11 +125,11 @@ class TestClean:
         assert not any(self.expired(start_stop, i) for i in (1, 2, 3, 4))
         assert sorted(os.listdir(scripts)) == ["1", "2", "3", "4"]
 
-    @pytest.mark.xfail(strict=True, reason="a dry run expires settings whose scripts directory doesn't exist")
-    def test_dry_run_without_scripts_dir(self, start_stop, scripts):
+    def test_dry_run_without_scripts_dir(self, start_stop, scripts, capsys):
         self.add_settings(start_stop, scripts, 1, days_ago=10, has_dir=False)
         start_stop.clean(age=3, dry_run=True)
         assert not self.expired(start_stop, 1)
+        assert capsys.readouterr().out == ""
 
 
 class TestExecType:
