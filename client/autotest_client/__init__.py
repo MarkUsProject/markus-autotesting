@@ -59,8 +59,8 @@ def _handle_error(e):
             api_key = "ERROR: user not found"
         f.write(f"{datetime.now()}\n\tuser: {api_key}\n\t{traceback.format_exc()}\n")
         f.flush()
-    if not app.debug:
-        error = str(e).replace(api_key, "[client-api-key]")
+    if not app.debug and api_key:
+        error = error.replace(api_key, "[client-api-key]")
     return jsonify(message=error), code
 
 
