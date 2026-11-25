@@ -1,10 +1,10 @@
 version: 2
 updates:
   - package-ecosystem: pip
-    directory: "/client"
+    directory: "/client"  # requirements.txt and requirements-dev.txt
     schedule:
       interval: "monthly"
   - package-ecosystem: pip
-    directory: "/server"
+    directory: "/server"  # requirements.txt and requirements-dev.txt
     schedule:
       interval: "monthly"

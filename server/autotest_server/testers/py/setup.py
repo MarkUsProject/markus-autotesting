@@ -25,24 +25,16 @@ def create_environment(settings_, env_dir, _default_env_dir):
 def settings():
     json_schema, components = generate_schema(PyTesterSettings)
 
-    # Modify output_verbosity enum manually. msgspec does not support JSON schema generation for
-    # Literal type annotations that contain multiple types.
-    components["PyTestData"]["properties"]["output_verbosity"]["enum"] = [
-        "",
-        0,
-        1,
-        2,
-        "auto",
-        "line",
-        "long",
-        "native",
-        "no",
-        "short",
-    ]
+    # output_verbosity is a union of two same-typed Literals (str set | int set),
+    # so msgspec emits it as anyOf of two enums. Flatten into a single enum for the
+    # JSON Schema form, which expects a flat dropdown rather than an anyOf selector.
+    prop = components["PyTestData"]["properties"]["output_verbosity"]
+    if "anyOf" in prop:
+        prop["enum"] = [v for sub in prop.pop("anyOf") for v in sub["enum"]]
     # The runtime default "" is a fall-back sentinel that is not a valid choice in
     # either tester branch of the dependencies block; dropping it lets the form
     # apply the branch default instead.
-    components["PyTestData"]["properties"]["output_verbosity"].pop("default", None)
+    prop.pop("default", None)
 
     # Inject dependencies for output_verbosity for JSON Schema form
     json_schema["properties"]["test_data"]["items"]["dependencies"] = {

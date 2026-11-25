@@ -1,6 +1,28 @@
 # CHANGELOG
 All notable changes to this project will be documented here.
 
+## [v2.10.5]
+- Add libuv1-dev system dependency required by fs 2.x (#732)
+- Fix output_verbosity Literal to accept int values for unittest tester (#733)
+- Added `localhost:3000` forwarding to `server` Docker container (#740)
+- Added documentation for the autotester's timeout layers in `docs/TIMEOUT-OVERVIEW.md` (#741)
+- Locked AI tester `model` field to `"remote"` and added `model_name` field (#739)
+- Add `openai-remote` model to the AI tester to route calls through the ai-telemetry-gateway with MarkUs attribution (#731)
+- Added msgspec validation tests for haskell, java, js, jupyter, r and racket tester settings (#759)
+- Updated Racket tester msgspec schema to require non-empty `script_file` paths (#762)
+- Prevented test runs queued before a settings update from running while the new test environment is being set up (#764)
+- Updated pytest from 7.1.2 to 9.1.1 in the Python and Jupyter testers (#766)
+- Stopped failed settings creations from leaving placeholder settings with no testers in Redis (#765)
+- Moved AI tester API keys from an uploaded `.env` file to the `ai_tester_env` server setting (#761)
+- Added Python 3.14 and 3.15 support to the Python, Jupyter, and PyTA testers, the server Docker image, and the CI test matrix, and removed Python 3.11 and 3.12 from the server Docker image (#763)
+- Updated markus-autotesting-core from 0.1.0 to 0.2.0 (#771)
+- Added test suite and coverage reporting for the autotest client, with pinned dev dependencies in `client/requirements-dev.txt` (#773)
+- Fixed client error handler crashing on requests without an API key (#774)
+- Added test suite and coverage reporting for the autotest server, with pinned dev dependencies in `server/requirements-dev.txt`, and Coveralls coverage reporting in CI (#775)
+- Fixed `copy_tree` skipping every file when given an exclude list (#777)
+- Fixed `start_stop.py clean --dry-run` expiring settings whose scripts directory doesn't exist (#778)
+- Fixed required settings not being enforced by the server settings schema (#779)
+
 ## [v2.10.3]
 - Fixed unselected output verbosity default in Python tester test groups (#748)
 

@@ -103,9 +103,10 @@ def clean(age, dry_run):
         access = int(time.time() - (last_access_timestamp or 0))
         if last_access_timestamp is None or (access > (age * SECONDS_PER_DAY)):
             dir_path = os.path.join(config["workspace"], "scripts", str(settings_id))
-            if dry_run and os.path.isdir(dir_path):
-                last_access = "UNKNOWN" if last_access_timestamp is None else access // SECONDS_PER_DAY
-                print(f"{dir_path} -> last accessed {last_access or '< 1'} days ago")
+            if dry_run:
+                if os.path.isdir(dir_path):
+                    last_access = "UNKNOWN" if last_access_timestamp is None else access // SECONDS_PER_DAY
+                    print(f"{dir_path} -> last accessed {last_access or '< 1'} days ago")
             else:
                 settings["_error"] = "the settings for this test have expired, please re-upload the settings."
                 REDIS_CONNECTION.hset("autotest:settings", key=settings_id, value=json.dumps(settings))
@@ -120,7 +121,7 @@ def _exec_type(path):
     raise argparse.ArgumentTypeError(f"no executable found at: '{path}'")
 
 
-if __name__ == "__main__":
+def main(argv=None):
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest="command")
 
@@ -147,7 +148,7 @@ if __name__ == "__main__":
                 help=f"path to supervisord executable, default={_SUPERVISORD}",
             )
 
-    args, remainder = parser.parse_known_args()
+    args, remainder = parser.parse_known_args(argv)
     if args.command == "start":
         start(args.rq, args.supervisord, remainder)
     elif args.command == "stop":
@@ -159,3 +160,7 @@ if __name__ == "__main__":
         stat(args.rq, remainder)
     elif args.command == "clean":
         clean(args.age, args.dry_run)
+
+
+if __name__ == "__main__":
+    main()
