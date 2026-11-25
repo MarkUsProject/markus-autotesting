@@ -66,10 +66,12 @@ Both the autotester and the API are designed to be run on Ubuntu 20.04 (or suffi
 6. [Configure the autotester](#autotester-configuration-options)
 7. Optionally install additional python versions.
    
-   The `py` (python3) and `pyta` testers can be run using any version of python between versions 3.7 and 3.12. When
-   these testers are installed the autotester will search the PATH for available python executables. If you want users
-   to be able to run tests with a specific python version, ensure that it is visible in the PATH of both the user running
-   the autotester and all users who run tests.
+   The `py` (python3), `jupyter`, and `pyta` testers can be run using any version of python between versions 3.11 and
+   3.15. When these testers are installed the autotester will search the PATH for available python executables. If you
+   want users to be able to run tests with a specific python version, ensure that it is visible in the PATH of both the
+   user running the autotester and all users who run tests.
+
+   All of these versions keep the test folder off the import path, so an uploaded file cannot hide a module.
     
 8. Run the installer:
 
@@ -206,14 +208,20 @@ supervisor_url: # url used by the supervisor process. default is: '127.0.0.1:900
 
 worker_log_dir: # an absolute path to a directory containing the worker's stdout and stderr logs.
 
-max_test_timeout: # maximum number of seconds a single test is allowed to run before being killed.
-                  # When set, any per-test timeout exceeding this value is capped to it, and tests
-                  # with no timeout default to this value. default is: 3600
+max_test_timeout: # maximum number of seconds a test group is allowed to run before being killed.
+                  # When set, any per-test-group timeout exceeding this value is capped to it, and
+                  # groups with no timeout default to this value. default is: 3600
+                  # See docs/TIMEOUT-OVERVIEW.md for the full picture of how this interacts with the
+                  # instructor-configured per-test-group timeout and the infrastructure-level job timeout.
 
 rlimit_settings: # RLIMIT settings (see details below)
   nproc: # for example, this setting sets the hard and soft limits for the number of processes available to 300
     - 300
     - 300
+
+ai_tester_env: # env vars for the ai tester alone, such as its API keys (see below)
+  REMOTE_API_KEY: # key for the `remote` model
+  GATEWAY_API_KEY: # key for the `openai-remote` model
 ```
 
 ### autotester configuration details
@@ -245,6 +253,26 @@ allows the user to specify a range from which these ports can be selected. When 
 variable will be set to the port number selected for this test run. Available port numbers will be different from test
 to test.  
 
+#### ai tester API keys
+
+The ai tester reads its API keys from the `ai_tester_env` setting. You do not upload a `.env` file, and the ai tester
+ignores one. Each key goes to the ai tester alone. Other testers never see it. If a key is missing or empty, the test
+shows an error that names it.
+
+```yaml
+ai_tester_env:
+  REMOTE_API_KEY: <key for the markus-ai-server proxy>
+  GATEWAY_API_KEY: <key for the ai-telemetry-gateway>
+```
+
+- Put the keys in a config file. Only the autotester user may reach it. Run `chmod 600` on the file.
+- The autotester stops at start if other users can reach `settings.local.yml` or the `AUTOTESTER_CONFIG` file. Those
+  files may hold secrets, so it checks them with or without `ai_tester_env`. It checks `settings.yml` if that file
+  sets `ai_tester_env`.
+- Type the keys in the file. Do not use `!ENV`. Every tester can see the autotester's own env.
+- The ai tester sends the key to the test's `remote_url`. Keep `remote_url_whitelist` to hosts you trust.
+- A dev server that skips key checks still needs a fake key.
+
 #### queue names and schemas
 
 When a test run is sent to the autotester from a client, the test is not run immediately. Instead it is put in a queue and
@@ -271,7 +299,7 @@ Please see below for a description of all options and defaults:
 REDIS_URL=  # url of the redis database (this should be the same url set for the autotester or else the two cannot communicate)
 ACCESS_LOG= # file to write access log information to (default is stdout)
 ERROR_LOG= # file to write error log informatoin to (default is stderr)
-SETTINGS_JOB_TIMEOUT= # the maximum runtime (in seconds) of a job that updates settings before it is interrupted (default is 60) 
+SETTINGS_JOB_TIMEOUT= # the maximum runtime (in seconds) of a job that updates settings before it is interrupted (default is 1200) 
 ```
 
 ## Stack configuration

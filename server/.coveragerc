@@ -1,0 +1,10 @@
+[run]
+source = .
+omit =
+    autotest_server/tests/*
+    autotest_server/testers/*/*
+
+[report]
+show_missing = True
+exclude_also =
+    if __name__ == .__main__.:

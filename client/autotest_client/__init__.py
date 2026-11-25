@@ -59,8 +59,8 @@ def _handle_error(e):
             api_key = "ERROR: user not found"
         f.write(f"{datetime.now()}\n\tuser: {api_key}\n\t{traceback.format_exc()}\n")
         f.flush()
-    if not app.debug:
-        error = str(e).replace(api_key, "[client-api-key]")
+    if not app.debug and api_key:
+        error = error.replace(api_key, "[client-api-key]")
     return jsonify(message=error), code
 
 
@@ -212,9 +212,6 @@ def settings(settings_id, **_kw):
 @authorize
 def create_settings(user):
     settings_id = REDIS_CONNECTION.incr("autotest:settings_id")
-    REDIS_CONNECTION.hset(
-        "autotest:settings", key=settings_id, value=json.dumps({"_user": user, "_env_status": "setup"})
-    )
     _update_settings(settings_id, user)
     return {"settings_id": settings_id}
 
@@ -242,6 +239,7 @@ def run_tests(settings_id, user):
 
     test_data = request.json["test_data"]
     categories = request.json["categories"]
+    batch_id = request.json.get("batch_id")
     high_priority = request.json.get("request_high_priority")
     queue_name = "batch" if len(test_data) > 1 else ("high" if high_priority else "low")
     queue = rq.Queue(queue_name, connection=REDIS_CONNECTION)
@@ -264,6 +262,7 @@ def run_tests(settings_id, user):
             "test_id": id_,
             "files_url": url,
             "categories": categories,
+            "batch_id": batch_id,
             "user": user,
             "test_env_vars": test_env_vars,
         }

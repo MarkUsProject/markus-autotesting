@@ -121,6 +121,14 @@ class _Config:
 
         return constructor
 
+    @staticmethod
+    def _check_private(settings_file: str) -> None:
+        """Raise if other users can open settings_file. It may hold secrets."""
+        if os.stat(settings_file).st_mode & 0o077:
+            raise PermissionError(
+                f"{settings_file} may hold secrets. Keep other users out. Run: chmod 600 {settings_file}"
+            )
+
     def _validate(self):
         with open(os.path.join(DEFAULT_ROOT, "settings_schema.json")) as f:
             schema = json.load(f)
@@ -135,11 +143,15 @@ class _Config:
         base_settings = os.path.join(DEFAULT_ROOT, "settings.yml")
         local_settings = os.path.join(DEFAULT_ROOT, "settings.local.yml")
         env_settings = os.environ.get("AUTOTESTER_CONFIG")
+        # Git cannot save mode 600. So base_settings is checked when it sets ai_tester_env.
+        # Files that an admin adds get checked each time.
         for settings_file in (env_settings, local_settings, base_settings):
             if settings_file and os.path.isfile(settings_file):
                 with open(settings_file) as f:
                     local_config = yaml.load(f, Loader=self._yaml_loader)
                     if local_config is not None:
+                        if settings_file != base_settings or "ai_tester_env" in local_config:
+                            self._check_private(settings_file)
                         config_dicts.append(local_config)
         return self._merge_dicts(config_dicts)
 
