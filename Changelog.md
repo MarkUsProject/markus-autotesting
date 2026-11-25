@@ -5,6 +5,7 @@ All notable changes to this project will be documented here.
 - Add libuv1-dev system dependency required by fs 2.x (#732)
 - Fix output_verbosity Literal to accept int values for unittest tester (#733)
 - Added `localhost:3000` forwarding to `server` Docker container (#740)
+- Added documentation for the autotester's timeout layers in `docs/TIMEOUT-OVERVIEW.md` (#741)
 - Locked AI tester `model` field to `"remote"` and added `model_name` field (#739)
 - Add `openai-remote` model to the AI tester to route calls through the ai-telemetry-gateway with MarkUs attribution (#731)
 - Added msgspec validation tests for haskell, java, js, jupyter, r and racket tester settings (#759)
