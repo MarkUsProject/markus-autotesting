@@ -1,23 +1,7 @@
 # CHANGELOG
 All notable changes to this project will be documented here.
 
-## [v2.10.3]
-- Fixed unselected output verbosity default in Python tester test groups (#748)
-
-## [v2.10.0]
-- Fixed Haskell test results to only include the function name (#687)
-- Improved robustness of tester installation scripts and Docker configuration (#688)
-- Moved tidyverse installation steps from server Dockerfile into R tester requirements.system (#688)
-- Fixed Haskell tester installation using ghcup to install stack system-wide (#688)
-- Updated tester schema generation to use msgspec datatypes (#689)
-- Specify dockerfile frontend version (#691)
-- Add a new Javascript (Jest) tester to support Javascript autotesting (#698)
-- Add remote URL whitelist for AI tester to restrict allowed endpoints (#693)
-- Increased default settings job timeout from 600s to 1200s (#707)
-- Disable pytest cacheprovider to avoid creating .pytest_cache in isolated runs (#709)
-- Fixed Python tester to correctly report marks when `markus_marks_earned` equals total or zero (#716)
-- Fix worker orphan processes and add server-side max test timeout cap (#710)
-- Resolve ghcup isolation installation failure in Haskell autotester (#725)
+## [v2.10.5]
 - Add libuv1-dev system dependency required by fs 2.x (#732)
 - Fix output_verbosity Literal to accept int values for unittest tester (#733)
 - Added `localhost:3000` forwarding to `server` Docker container (#740)
@@ -37,6 +21,24 @@ All notable changes to this project will be documented here.
 - Fixed `copy_tree` skipping every file when given an exclude list (#777)
 - Fixed `start_stop.py clean --dry-run` expiring settings whose scripts directory doesn't exist (#778)
 - Fixed required settings not being enforced by the server settings schema (#779)
+
+## [v2.10.3]
+- Fixed unselected output verbosity default in Python tester test groups (#748)
+
+## [v2.10.0]
+- Fixed Haskell test results to only include the function name (#687)
+- Improved robustness of tester installation scripts and Docker configuration (#688)
+- Moved tidyverse installation steps from server Dockerfile into R tester requirements.system (#688)
+- Fixed Haskell tester installation using ghcup to install stack system-wide (#688)
+- Updated tester schema generation to use msgspec datatypes (#689)
+- Specify dockerfile frontend version (#691)
+- Add a new Javascript (Jest) tester to support Javascript autotesting (#698)
+- Add remote URL whitelist for AI tester to restrict allowed endpoints (#693)
+- Increased default settings job timeout from 600s to 1200s (#707)
+- Disable pytest cacheprovider to avoid creating .pytest_cache in isolated runs (#709)
+- Fixed Python tester to correctly report marks when `markus_marks_earned` equals total or zero (#716)
+- Fix worker orphan processes and add server-side max test timeout cap (#710)
+- Resolve ghcup isolation installation failure in Haskell autotester (#725)
 
 ## [v2.9.0]
 - Install stack with GHCup (#626)
